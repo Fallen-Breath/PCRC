@@ -1,0 +1,14 @@
+{
+	"offline": true,
+	"username": "test",
+	"password": "asd",
+	"address": "127.0.0.1",
+	"port": 20000,
+	"minimal_packets": true,
+	"daytime": 6000,
+	"weather": false,
+	"with_player_only": true,
+	"remove_items": false,
+	"remove_bats": true,
+	"debug_mode": false
+}
