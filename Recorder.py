@@ -36,7 +36,8 @@ class Recorder():
 
 	def __init__(self, configFileName):
 		self.config = Config(configFileName)
-		self.started = False
+		self.recording = False
+		self.online = False
 		self.logger = Logger(name='Recorder', file_name='PCRC.log', display_debug=self.config.debug_mode)
 
 		if self.config.offline:
@@ -49,35 +50,43 @@ class Recorder():
 			self.connection = Connection(self.config.address, self.config.port, auth_token=auth_token)
 
 		self.connection.register_packet_listener(self.processPacketData, PycraftPacket)
-		self.connection.register_packet_listener(self.on_gamejoin, clientbound.play.JoinGamePacket)
-		self.connection.register_packet_listener(self.on_disconnect, clientbound.play.DisconnectPacket)
+		self.connection.register_packet_listener(self.onGameJoin, clientbound.play.JoinGamePacket)
+		self.connection.register_packet_listener(self.onDisconnect, clientbound.play.DisconnectPacket)
 
 		self.protocolMap = {}
 
-	def on_gamejoin(self, packet):
-		self.logger.log('Joined the game as {}'.format(self.config.username))
+	def isOnline(self):
+		return self.online
 
-	def on_disconnect(self, packet):
-		self.logger.log('Disconnected form server, reason = {}'.format(packet.json_data))
-		self.stop_recording()
+	def isRecording(self):
+		return self.recording
+
+	def onGameJoin(self, packet):
+		self.logger.log('Connected to the server')
+		self.online = True
+
+	def onDisconnect(self, packet):
+		self.logger.log('Disconnected from the server, reason = {}'.format(packet.json_data))
+		self.online = False
+		if self.isRecording():
+			self.stop()
+			for i in range(3):
+				self.logger.log('Restart in {}s'.format(3 - i))
+				time.sleep(1)
+			self.start()
 
 	def connect(self):
-		self.start_recording()
-		# start the bot
+		if self.isOnline():
+			self.logger.warn('Cannot connect when connected')
+			return
 		self.connection.connect()
 
-		# version check
-		versionMap = {}
-		for i in pycraft.SUPPORTED_MINECRAFT_VERSIONS.items():
-			versionMap[i[1]] = i[0]
-		protocol_version = self.connection.context.protocol_version
-		self.logger.log('protocol = {}, mc version = {}'.format(protocol_version, versionMap[protocol_version]))
-		if protocol_version != 498:
-			self.logger.log('protocol version not support! should be 498 (MC version 1.14.4)')
-			return False
-		with open('protocol.json', 'r') as f:
-			self.protocolMap = json.load(f)[str(protocol_version)]['Clientbound']
-		return True
+	def disconnect(self):
+		if not self.isOnline():
+			self.logger.warn('Cannot disconnect when disconnected')
+			return
+		self.connection.disconnect()
+		self.online = False
 
 	def updatePlayerMovement(self, t=None):
 		if t is None:
@@ -90,8 +99,8 @@ class Recorder():
 		return t - self.last_player_movement >= 10 * 1000
 
 	def processPacketData(self, packet_raw):
-		if not self.started or self.stopping:
-			return False
+		if not self.isRecording():
+			return
 		t = utils.getMilliTime()
 		bytes = packet_raw.data
 		if bytes[0] == 0x00:
@@ -176,28 +185,28 @@ class Recorder():
 				packet_recorded = None
 
 		# Increase afk timer when recording stopped, afk timer prevents afk time in replays
-		if t - self.last_player_movement > 5000:
+		if self.config.with_player_only and self.noPlayerMovement(t):
 			self.afk_time += t - self.last_t
 		self.last_t = t
 
 		# Recording
-		if not self.stopping and packet_recorded is not None and not (self.noPlayerMovement() and self.config.with_player_only):
+		if self.isRecording() and packet_recorded is not None and not (self.noPlayerMovement() and self.config.with_player_only):
 			bytes = packet_recorded.read(packet_recorded.remaining())
 			data = int(t - self.start_time).to_bytes(4, byteorder='big', signed=True)
 			data += len(bytes).to_bytes(4, byteorder='big', signed=True)
 			data += bytes
 			self.write(data)
 
-		if not self.stopping and self.file_size > utils.FileSizeLimit:
+		if self.isRecording() and self.file_size > utils.FileSizeLimit:
 			self.logger.log('tmcpr file size limit {}MB reached!'.format(utils.convert_file_size(utils.FileSizeLimit)))
-			self.restart_recording()
+			self.restart()
 
 		time_passed_all = t - self.start_time
 		time_passed = time_passed_all - self.afk_time
 
-		if not self.stopping and time_passed > 1000 * 60 * 60 * 5:
+		if self.isRecording() and time_passed > 1000 * 60 * 60 * 5:
 			self.logger.log('5h recording reached!')
-			self.restart_recording()
+			self.restart()
 
 		self.packet_counter += 1
 		if int(time_passed_all / (60 * 1000)) != self.last_showinfo_time or self.packet_counter - self.last_showinfo_packetcounter >= 100000:
@@ -208,10 +217,12 @@ class Recorder():
 	def flush(self):
 		if len(self.file_buffer) == 0:
 			return
-		with open('recording.tmcpr', 'ab+') as replay_recording:
+		with open(utils.RecordingFileName, 'ab+') as replay_recording:
 			replay_recording.write(self.file_buffer)
 		self.file_size += len(self.file_buffer)
-		self.logger.log('Flushing {} bytes to tmcpr file, file size = {}MB now'.format(len(self.file_buffer), utils.convert_file_size(self.file_size)))
+		self.logger.log('Flushing {} bytes to "{}" file, file size = {}MB now'.format(
+			len(self.file_buffer), utils.RecordingFileName, utils.convert_file_size(self.file_size)
+		))
 		self.file_buffer = bytearray()
 
 	def write(self, data):
@@ -223,10 +234,14 @@ class Recorder():
 		self.flush()
 		self.file_size = 0
 
+		if not os.path.isfile(utils.RecordingFileName):
+			self.logger.warn('"{}" file not found, abort create replay file'.format(utils.RecordingFileName))
+			return
+
 		# Creating .mcpr zipfile based on timestamp
 		self.logger.log('Time recorded: {}'.format(utils.convert_millis(utils.getMilliTime() - self.start_time)))
-		self.logger.log('Creating .mcpr file...')
 		file_name = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S') + '.mcpr'
+		self.logger.log('Creating "{}"'.format(file_name))
 		zipf = zipfile.ZipFile(file_name, 'w', zipfile.ZIP_DEFLATED)
 
 		meta_data = {
@@ -245,13 +260,34 @@ class Recorder():
 		utils.addFile(zipf, 'markers.json', '[]')
 		utils.addFile(zipf, 'mods.json', '{"requiredMods":[]}')
 		utils.addFile(zipf, 'metaData.json', json.dumps(meta_data))
-		utils.addFile(zipf, 'recording.tmcpr.crc32', str(utils.crc32f('recording.tmcpr')))
-		utils.addFile(zipf, 'recording.tmcpr')
+		utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), str(utils.crc32f(utils.RecordingFileName)))
+		utils.addFile(zipf, utils.RecordingFileName)
 
-		self.logger.log('Size of replay file {}: {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
+		self.logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
 
-	def start_recording(self):
-		open('recording.tmcpr', 'w').close()
+	def start(self):
+		if self.isRecording():
+			return
+		self.on_recording_start()
+		# start the bot
+		self.connect()
+		# version check
+		versionMap = {}
+		for i in pycraft.SUPPORTED_MINECRAFT_VERSIONS.items():
+			versionMap[i[1]] = i[0]
+		protocol_version = self.connection.context.protocol_version
+		self.logger.log('protocol = {}, mc version = {}'.format(protocol_version, versionMap[protocol_version]))
+		if protocol_version != 498:
+			self.logger.log('protocol version not support! should be 498 (MC version 1.14.4)')
+			return False
+		with open('protocol.json', 'r') as f:
+			self.protocolMap = json.load(f)[str(protocol_version)]['Clientbound']
+		return True
+
+	# initializing stuffs
+	def on_recording_start(self):
+		self.recording = True
+		open(utils.RecordingFileName, 'w').close()
 		self.start_time = utils.getMilliTime()
 		self.last_player_movement = self.start_time
 		self.afk_time = 0
@@ -266,23 +302,18 @@ class Recorder():
 		self.last_showinfo_packetcounter = 0
 		if 'Time Update' in utils.BAD_PACKETS:
 			utils.BAD_PACKETS.remove('Time Update')
-		self.started = True
-		self.stopping = False
-		self.logger.log('Recorder started')
 
-	def stop_recording(self):  # Create metadata file
-		self.stopping = True
+	def stop(self):
+		if not self.isRecording():
+			return
+		self.recording = False
 		self.createReplayFile()
-		self.connection.disconnect()
-		self.started = False
-		self.logger.log('Recorder stopped')
+		self.disconnect()
+		self.logger.log('Recorder stopped, ignore the BrokenPipeError below XD')
 
-	def restart_recording(self):  # Create metadata file
-		self.logger.log('Restarting bot')
-		self.stop_recording()
-		self.connection.disconnect()
-		self.logger.log('{} disconnected'.format(self.config.username))
+	def restart(self):
+		self.logger.log('Restarting recorder')
+		self.stop()
 		self.logger.log('---------------------------------------')
 		time.sleep(1)
-		self.connection.connect()
-		self.start_recording()
+		self.start()

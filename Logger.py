@@ -2,11 +2,11 @@ import time
 
 
 class Logger:
-	def __init__(self, name=None, thread=None, file_name=None, display_debug=None):
+	def __init__(self, name=None, thread=None, file_name=None, display_debug=False):
 		self.name = name
 		self.thread = thread
 		self.file_name = file_name
-		self.display_debug = False if display_debug is None else display_debug
+		self.display_debug = display_debug
 
 	def _log(self, msg, log_type):
 		if not isinstance(msg, str):

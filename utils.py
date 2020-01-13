@@ -2,6 +2,7 @@ import binascii
 import os
 import time
 
+RecordingFileName = 'recording.tmcpr'
 LoggingFileName = 'PCRC.log'
 FileBufferSize = 10 * 1024 * 1024
 FileSizeLimit = 500 * 1014 * 1024

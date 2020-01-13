@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import copy
+import traceback
 from collections import deque
 from threading import RLock
 import zlib
@@ -14,6 +15,7 @@ import re
 
 from future.utils import raise_
 
+import Logger
 from .types import VarInt
 from .packets import clientbound, serverbound
 from . import packets
@@ -531,25 +533,28 @@ class NetworkingThread(threading.Thread):
         self.connection = connection
         self.name = "Networking Thread"
         self.daemon = True
-
+        self.logger = Logger.Logger(name='Connection', thread='Networking', file_name='PCRC.log')
         self.previous_thread = previous
 
     def run(self):
         try:
-            if self.previous_thread is not None:
-                if self.previous_thread.is_alive():
-                    self.previous_thread.join()
+            try:
+                if self.previous_thread is not None:
+                    if self.previous_thread.is_alive():
+                        self.previous_thread.join()
+                    with self.connection._write_lock:
+                        self.connection.networking_thread = self
+                        self.connection.new_networking_thread = None
+                self._run()
+                self.connection._handle_exit()
+            except Exception as e:
+                self.interrupt = True
+                self.connection._handle_exception(e, sys.exc_info())
+            finally:
                 with self.connection._write_lock:
-                    self.connection.networking_thread = self
-                    self.connection.new_networking_thread = None
-            self._run()
-            self.connection._handle_exit()
+                    self.connection.networking_thread = None
         except Exception as e:
-            self.interrupt = True
-            self.connection._handle_exception(e, sys.exc_info())
-        finally:
-            with self.connection._write_lock:
-                self.connection.networking_thread = None
+            self.logger.error(traceback.format_exc().splitlines()[-1])
 
     def _run(self):
         while not self.interrupt:
