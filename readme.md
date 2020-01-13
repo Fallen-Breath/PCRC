@@ -11,6 +11,8 @@ Great thanks to [SARC](https://github.com/Robitobi01/SARC) for the replay logic 
 
 **Supports 1.14.4 server only** tho with a bit modification it works in any version as long as pyCraft supports that
 
+needs python3, at least works on python 3.6.6
+
 ## Advantage
 
 - Can be hosted serverside for 24/7 recording
@@ -40,7 +42,7 @@ Great thanks to [SARC](https://github.com/Robitobi01/SARC) for the replay logic 
 
 `remove_bats` : If set to true, bats wont be recorded. This can potentially decrease filesize.
 
-`debug_mode` : Outputs all received, sent and recorded packets.
+`debug_mode` : Outputs debug info
 
 `auto_relog` : If this option is enabled and the client gets disconnected, it will automatically reconnect after 3 seconds.
 
