@@ -46,3 +46,14 @@ needs python3, at least works on python 3.6.6
 
 `auto_relog` : If this option is enabled and the client gets disconnected, it will automatically reconnect after 3 seconds.
 
+## Command
+
+`start`: start PCRC and stop recording
+
+`stop`: stop PCRC and stop recording
+
+`restart`: restart PCRC
+
+`exit`: exit
+
+`say <message>`: send chat message `<message>` to the server

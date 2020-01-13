@@ -3,6 +3,7 @@ import copy
 import os
 import time
 import json
+import traceback
 import zipfile
 import datetime
 import utils
@@ -10,7 +11,7 @@ import pycraft
 from Logger import Logger
 from pycraft import authentication
 from pycraft.networking.connection import Connection
-from pycraft.networking.packets import Packet as PycraftPacket, clientbound
+from pycraft.networking.packets import Packet as PycraftPacket, clientbound, serverbound
 from SARC.packet import Packet as SARCPacket
 
 
@@ -52,6 +53,7 @@ class Recorder():
 		self.connection.register_packet_listener(self.processPacketData, PycraftPacket)
 		self.connection.register_packet_listener(self.onGameJoin, clientbound.play.JoinGamePacket)
 		self.connection.register_packet_listener(self.onDisconnect, clientbound.play.DisconnectPacket)
+		self.connection.register_packet_listener(self.onChatMessage, clientbound.play.ChatMessagePacket)
 
 		self.protocolMap = {}
 
@@ -74,6 +76,34 @@ class Recorder():
 				self.logger.log('Restart in {}s'.format(3 - i))
 				time.sleep(1)
 			self.start()
+
+	def onChatMessage(self, packet):
+		try:
+			js = json.loads(packet.json_data)
+			translate = js['translate']
+			msg = js['with'][-1]
+			message = '({}) '.format(packet.field_string('position'))
+			try:
+				name = js['with'][0]['insertion']
+			except:
+				pass
+			if translate == 'chat.type.announcement':
+				message += '[Server] {}'.format(msg['text'])
+			elif translate == 'chat.type.text':
+				message += '<{}> {}'.format(name, msg)
+			elif translate == 'commands.message.display.incoming':
+				message += '<{}>(tell) {}'.format(name, msg['text'])
+			elif translate in ['multiplayer.player.joined', 'multiplayer.player.left']:
+				message += '{} {} the game'.format(name, translate.split('.')[2])
+			elif translate == 'chat.type.emote':
+				message += '* {} {}'.format(name, msg)
+			else:
+				message = packet.json_data
+			if message is not None:
+				print(message)
+				self.logger.log(message, do_print=False)
+		except:
+			pass
 
 	def connect(self):
 		if self.isOnline():
@@ -317,3 +347,21 @@ class Recorder():
 		self.logger.log('---------------------------------------')
 		time.sleep(1)
 		self.start()
+
+	def sendChat(self, text):
+		if self.isOnline():
+			packet = serverbound.play.ChatPacket()
+			packet.message = text
+			self.connection.write_packet(packet)
+			self.logger.log('sent chat message "{}" to the server'.format(text))
+		else:
+			self.logger.warn('Cannot send chat when disconnected')
+
+	def sendRespawn(self):
+		if self.isOnline():
+			packet = serverbound.play.ClientStatusPacket()
+			packet.action_id = serverbound.play.ClientStatusPacket.RESPAWN
+			self.connection.write_packet(packet)
+			self.logger.log('sent respawn packet to the server')
+		else:
+			self.logger.warn('Cannot send respawn when disconnected')

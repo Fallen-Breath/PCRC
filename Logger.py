@@ -8,7 +8,7 @@ class Logger:
 		self.file_name = file_name
 		self.display_debug = display_debug
 
-	def _log(self, msg, log_type):
+	def _log(self, msg, log_type, do_print):
 		if not isinstance(msg, str):
 			msg = str(msg)
 		message = '[{} {}]'.format(format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))), log_type)
@@ -17,7 +17,8 @@ class Logger:
 		if self.thread is not None:
 			message += ' [Thread {}]'.format(self.thread)
 		message += ' {}\n'.format(msg)
-		print(message, end='')
+		if do_print:
+			print(message, end='')
 		if self.file_name is not None:
 			try:
 				with open(self.file_name, 'a') as f:
@@ -26,21 +27,21 @@ class Logger:
 				print('fail to write log to file "{}"'.format(self.file_name))
 				print(e.args)
 
-	def log(self, msg, log_type=None):
+	def log(self, msg, log_type=None, do_print=True):
 		if log_type is None:
-			self.info(msg)
+			self.info(msg, do_print)
 		else:
-			self.log(msg, log_type)
+			self._log(msg, log_type, do_print)
 
-	def info(self, msg):
-		self._log(msg, 'INFO')
+	def info(self, msg, do_print=True):
+		self._log(msg, 'INFO', do_print)
 
-	def debug(self, msg):
+	def debug(self, msg, do_print=True):
 		if self.display_debug:
-			self._log(msg, 'DEBUG')
+			self._log(msg, 'DEBUG', do_print)
 
-	def warn(self, msg):
-		self._log(msg, 'WARN')
+	def warn(self, msg, do_print=True):
+		self._log(msg, 'WARN', do_print)
 
-	def error(self, msg):
-		self._log(msg, 'ERROR')
+	def error(self, msg, do_print=True):
+		self._log(msg, 'ERROR', do_print)

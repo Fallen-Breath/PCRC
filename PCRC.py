@@ -2,8 +2,8 @@
 
 from __future__ import print_function
 
-import sys
 import time
+import traceback
 
 import utils
 from Logger import Logger
@@ -23,25 +23,26 @@ def main():
 	while True:
 		try:
 			text = input()
-			if text == "/start":
+			if text == "start":
 				if not recorder.isRecording():
 					recorder.start()
 				else:
 					logger.warn('Recorder is running, ignore')
-			elif text == "/stop":
+			elif text == "stop":
 				if recorder.isRecording():
 					recorder.stop()
 				else:
 					logger.warn('Recorder is not running, ignore')
-			elif text == "/restart":
+			elif text == "restart":
 				recorder.restart()
-		except KeyboardInterrupt:
-			recorder.stop()
-			logger.log("Bye!")
-			sys.exit()
+			elif text == "exit":
+				break
+			elif text.startswith('say '):
+				recorder.sendChat(text[4:])
 		except Exception as e:
-			recorder.stop()
-			logger.error(e.args)
+			logger.error(traceback.format_exc())
+			break
+	recorder.stop()
 
 try:
 	if __name__ == "__main__":
