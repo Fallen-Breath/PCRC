@@ -1,3 +1,5 @@
+import copy
+
 from .packet_buffer import PacketBuffer
 from zlib import compress
 from pycraft.networking.types import (
@@ -97,6 +99,7 @@ class Packet(object):
         VarInt.send(self.id, packet_buffer)
         # write every individual field
         self.write_fields(packet_buffer)
+        self.data = copy.deepcopy(packet_buffer.bytes.getvalue())
         self._write_buffer(socket, packet_buffer, compression_threshold)
 
     def write_fields(self, packet_buffer):

@@ -1,8 +1,8 @@
 {
-	"offline": true,
+	"online_mode": false,
 	"username": "test",
 	"password": "asd",
-	"address": "127.0.0.1",
+	"address": "localhost",
 	"port": 20000,
 	"minimal_packets": true,
 	"daytime": 6000,
@@ -10,5 +10,7 @@
 	"with_player_only": true,
 	"remove_items": false,
 	"remove_bats": true,
+	"upload_file": true,
+	"auto_relogin": true,
 	"debug_mode": false
 }

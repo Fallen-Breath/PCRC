@@ -5,8 +5,8 @@ from pycraft.networking.packets import (
 from pycraft.networking.types import (
     Double, Float, Boolean, VarInt, String, Byte, Position, Enum,
     RelativeHand, BlockFace, Vector, Direction, PositionAndLook,
-    multi_attribute_alias
-)
+    multi_attribute_alias,
+    UUID)
 
 from .client_settings_packet import ClientSettingsPacket
 
@@ -251,3 +251,13 @@ class UseItemPacket(Packet):
         {'hand': VarInt}])
 
     Hand = RelativeHand
+
+class SpectatePacket(Packet):
+    @staticmethod
+    def get_id(context):
+        return 0x2B
+
+    packet_name = "Spectate"
+
+    get_definition = staticmethod(lambda context: [
+        {'target': UUID}])

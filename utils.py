@@ -6,6 +6,16 @@ RecordingFileName = 'recording.tmcpr'
 LoggingFileName = 'PCRC.log'
 FileBufferSize = 10 * 1024 * 1024
 FileSizeLimit = 500 * 1014 * 1024
+CommandHelpMessage = '''----- Command List -----
+!!PCRC: show help
+!!PCRC status: show status
+!!PCRC here: emit a "!!here" command
+!!PCRC pos: show position, might not be 100% accurate
+!!PCRC sepc: spectator teleport to the player
+!!PCRC stop: stop PCRC
+!!PCRC url: print all urls of recorded files
+'''
+
 
 def addFile(zip, fileName, str=None):
 	if str != None:
@@ -27,6 +37,10 @@ def convert_file_size(file_size):
 
 def getMilliTime():
 	return int(time.time() * 1000)
+
+def format_vector(vec, f='.2f'):
+	return '({}, {}, {})'.format(format(vec.x, f), format(vec.y, f), format(vec.z, f))
+
 
 # from SARC
 

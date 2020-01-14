@@ -1,4 +1,5 @@
 import time
+import traceback
 
 
 class Logger:
@@ -23,9 +24,9 @@ class Logger:
 			try:
 				with open(self.file_name, 'a') as f:
 					f.write(message)
-			except Exception as e:
+			except Exception:
 				print('fail to write log to file "{}"'.format(self.file_name))
-				print(e.args)
+				print(traceback.format_exc())
 
 	def log(self, msg, log_type=None, do_print=True):
 		if log_type is None:

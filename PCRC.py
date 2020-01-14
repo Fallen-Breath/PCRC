@@ -38,7 +38,7 @@ def main():
 			elif text == "exit":
 				break
 			elif text.startswith('say '):
-				recorder.sendChat(text[4:])
+				recorder.chat(text[4:])
 		except Exception as e:
 			logger.error(traceback.format_exc())
 			break
@@ -47,6 +47,5 @@ def main():
 try:
 	if __name__ == "__main__":
 		main()
-except Exception as e:
-	print(e.args)
-	time.sleep(100)
+except Exception:
+	print(traceback.format_exc())
