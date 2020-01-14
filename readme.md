@@ -54,15 +54,17 @@ needs python3, at least works on python 3.6.6
 
 ### Console Command
 
-`start`: start PCRC and stop recording
+`start`: start PCRC and start recording
 
 `stop`: stop PCRC and stop recording
 
 `restart`: restart PCRC
 
-`exit`: exit
+`exit`: exit the program
 
 `say <message>`: send chat message `<message>` to the server
+
+`set <option> <value>` set option to value in config.json
 
 ### In Game Command
 

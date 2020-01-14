@@ -45,17 +45,18 @@ class Recorder():
 		self.config = Config(configFileName)
 		self.recording = False
 		self.online = False
+		self.file_thread = None
 		self.file_urls = []
 		self.logger = Logger(name='Recorder', file_name='PCRC.log', display_debug=self.config.debug_mode)
 		self.printConfig()
 
 		if not self.config.online_mode:
-			self.logger.log("Connecting in offline mode...")
+			self.logger.log("Login in offline mode")
 			self.connection = Connection(self.config.address, self.config.port, username=self.config.username)
 		else:
 			auth_token = authentication.AuthenticationToken()
 			auth_token.authenticate(self.config.username, self.config.password)
-			self.logger.log("Logged in as %s..." % auth_token.profile.name)
+			self.logger.log("Logged in as %s" % auth_token.profile.name)
 			self.config.username = auth_token.profile.name
 			self.connection = Connection(self.config.address, self.config.port, auth_token=auth_token)
 
@@ -66,6 +67,10 @@ class Recorder():
 		self.connection.register_packet_listener(self.onChatMessage, clientbound.play.ChatMessagePacket)
 
 		self.protocolMap = {}
+		self.logger.log('init finish')
+
+	def __del__(self):
+		self.stop()
 
 	def printConfig(self):
 		message = '------- Config --------\n'
@@ -335,62 +340,72 @@ class Recorder():
 		self.file_thread.start()
 
 	def _createReplayFile(self, do_disconnect):
-		self.flush()
-		self.file_size = 0
-		logger = copy.deepcopy(self.logger)
-		logger.thread = 'File'
+		try:
+			self.flush()
+			self.file_size = 0
+			logger = copy.deepcopy(self.logger)
+			logger.thread = 'File'
 
-		if not os.path.isfile(utils.RecordingFileName):
-			logger.warn('"{}" file not found, abort create replay file'.format(utils.RecordingFileName))
-			return
+			if not os.path.isfile(utils.RecordingFileName):
+				logger.warn('"{}" file not found, abort create replay file'.format(utils.RecordingFileName))
+				return
 
-		# Creating .mcpr zipfile based on timestamp
-		logger.log('Time recorded: {}'.format(utils.convert_millis(utils.getMilliTime() - self.start_time)))
-		file_name = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S') + '.mcpr'
-		logger.log('Creating "{}"'.format(file_name))
-		self.chat('Creating .mcpr file')
-		zipf = zipfile.ZipFile(file_name, 'w', zipfile.ZIP_DEFLATED)
+			# Creating .mcpr zipfile based on timestamp
+			logger.log('Time recorded: {}'.format(utils.convert_millis(utils.getMilliTime() - self.start_time)))
+			file_name = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S') + '.mcpr'
+			logger.log('Creating "{}"'.format(file_name))
+			self.chat('Creating .mcpr file')
+			zipf = zipfile.ZipFile(file_name, 'w', zipfile.ZIP_DEFLATED)
 
-		meta_data = {
-			'singleplayer': False,
-			'serverName': 'SECRET SERVER',
-			'duration': utils.getMilliTime() - self.start_time,
-			'date': utils.getMilliTime(),
-			'mcversion': '1.14.4',
-			'fileFormat': 'MCPR',
-			'fileFormatVersion': '14',
-			'protocol': 498,
-			'generator': 'PCRC',
-			'selfId': -1,
-			'players': self.player_uuids
-		}
-		utils.addFile(zipf, 'markers.json', '[]')
-		utils.addFile(zipf, 'mods.json', '{"requiredMods":[]}')
-		utils.addFile(zipf, 'metaData.json', json.dumps(meta_data))
-		utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), str(utils.crc32f(utils.RecordingFileName)))
-		utils.addFile(zipf, utils.RecordingFileName)
+			meta_data = {
+				'singleplayer': False,
+				'serverName': 'SECRET SERVER',
+				'duration': utils.getMilliTime() - self.start_time,
+				'date': utils.getMilliTime(),
+				'mcversion': '1.14.4',
+				'fileFormat': 'MCPR',
+				'fileFormatVersion': '14',
+				'protocol': 498,
+				'generator': 'PCRC',
+				'selfId': -1,
+				'players': self.player_uuids
+			}
+			utils.addFile(zipf, 'markers.json', '[]')
+			utils.addFile(zipf, 'mods.json', '{"requiredMods":[]}')
+			utils.addFile(zipf, 'metaData.json', json.dumps(meta_data))
+			utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), str(utils.crc32f(utils.RecordingFileName)))
+			utils.addFile(zipf, utils.RecordingFileName)
 
-		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
+			logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
 
-		if self.config.upload_file:
-			self.chat('Uploading .mcpr file')
-			logger.log('Uploading "{}" to transfer.sh'.format(utils.RecordingFileName))
-			try:
-				ret, out = subprocess.getstatusoutput('curl --upload-file ./{0} https://transfer.sh/{0}'.format(file_name))
-				url = out.splitlines()[-1]
-				self.file_urls.append(url)
-				msg = '"{}" url = {}'.format(file_name, url)
-				self.chat(msg)
-			except Exception as e:
-				logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
-				logger.error(traceback.format_exc())
+			if self.config.upload_file:
+				self.chat('Uploading .mcpr file')
+				logger.log('Uploading "{}" to transfer.sh'.format(utils.RecordingFileName))
+				try:
+					ret, out = subprocess.getstatusoutput('curl --upload-file ./{0} https://transfer.sh/{0}'.format(file_name))
+					url = out.splitlines()[-1]
+					self.file_urls.append(url)
+					msg = '"{}" url = {}'.format(file_name, url)
+					self.chat(msg)
+				except Exception as e:
+					logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
+					logger.error(traceback.format_exc())
 
-		if do_disconnect:
-			logger.log('File operations finished, disconnect now')
-			self.disconnect()
+			if do_disconnect:
+				logger.log('File operations finished, disconnect now')
+				self.disconnect()
+		finally:
+			self.file_thread = None
+			self.logger.log('Recorder stopped, ignore the BrokenPipeError error below XD')
+
+	def canStart(self):
+		return not self.isRecording() and self.file_thread is None
+
+	def finishedStopping(self):
+		return self.canStart()
 
 	def start(self):
-		if self.isRecording():
+		if not self.canStart():
 			return
 		self.on_recording_start()
 		# start the bot
