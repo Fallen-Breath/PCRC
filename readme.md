@@ -48,7 +48,7 @@ needs python3, at least works on python 3.6.6
 
 `auto_relogin` : If this option is enabled and the client gets disconnected, it will automatically reconnect after 3 seconds
 
-`debug_mode` : Outputs packets and debug info
+`debug_mode` : Outputs debug info
 
 ## Command
 
