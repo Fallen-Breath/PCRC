@@ -365,68 +365,77 @@ class Recorder():
 
 	def _createReplayFile(self, do_disconnect):
 		try:
-			logger = copy.deepcopy(self.logger)
-			logger.thread = 'File'
-
-			self.flush()
-			self.file_size = 0
-
-			if not os.path.isfile(utils.RecordingFileName):
-				logger.warn('"{}" file not found, abort create replay file'.format(utils.RecordingFileName))
-
-			# Creating .mcpr zipfile based on timestamp
-			logger.log('Time recorded: {}'.format(utils.convert_millis(utils.getMilliTime() - self.start_time)))
-			file_name = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S') + '.mcpr'
-			logger.log('Creating "{}"'.format(file_name))
-			self.chat('Creating .mcpr file')
-			zipf = zipfile.ZipFile(file_name, 'w', zipfile.ZIP_DEFLATED)
-
-			meta_data = {
-				'singleplayer': False,
-				'serverName': 'SECRET SERVER',
-				'duration': utils.getMilliTime() - self.start_time,
-				'date': utils.getMilliTime(),
-				'mcversion': '1.14.4',
-				'fileFormat': 'MCPR',
-				'fileFormatVersion': '14',
-				'protocol': 498,
-				'generator': 'PCRC',
-				'selfId': -1,
-				'players': self.player_uuids
-			}
-			utils.addFile(zipf, 'markers.json', '[]')
-			utils.addFile(zipf, 'mods.json', '{"requiredMods":[]}')
-			utils.addFile(zipf, 'metaData.json', json.dumps(meta_data))
-			utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), str(utils.crc32f(utils.RecordingFileName)))
-			utils.addFile(zipf, utils.RecordingFileName)
-			zipf.close()
-
-			logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
-			folder = 'PCRC_recordings'
-			if not os.path.exists(folder):
-				os.makedirs(folder)
-			file_path = '{}/{}'.format(folder, file_name)
-			shutil.move(file_name, file_path)
-
-			if self.config.upload_file:
-				self.chat('Uploading .mcpr file')
-				logger.log('Uploading "{}" to transfer.sh'.format(utils.RecordingFileName))
-				try:
-					ret, out = subprocess.getstatusoutput('curl --upload-file {} https://transfer.sh/{}'.format(file_path, file_name))
-					url = out.splitlines()[-1]
-					self.file_urls.append(url)
-					msg = '"{}" url = {}'.format(file_name, url)
-					self.chat(msg)
-				except Exception as e:
-					logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
-					logger.error(traceback.format_exc())
-
-			if do_disconnect:
-				logger.log('File operations finished, disconnect now')
-				self.disconnect()
+			self.__createReplayFile(do_disconnect)
 		finally:
 			self.file_thread = None
 			self.logger.log('Recorder stopped, ignore the BrokenPipeError error below XD')
+
+	def __createReplayFile(self, do_disconnect):
+		logger = copy.deepcopy(self.logger)
+		logger.thread = 'File'
+
+		self.flush()
+		self.file_size = 0
+
+		if not self.isOnline():
+			logger.warn('PCRC is even not online, abort creating replay file')
+			return
+
+		if not os.path.isfile(utils.RecordingFileName):
+			logger.warn('"{}" file not found, abort creating replay file'.format(utils.RecordingFileName))
+			return
+
+		# Creating .mcpr zipfile based on timestamp
+		logger.log('Time recorded: {}'.format(utils.convert_millis(utils.getMilliTime() - self.start_time)))
+		file_name = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S') + '.mcpr'
+		logger.log('Creating "{}"'.format(file_name))
+		self.chat('Creating .mcpr file')
+		zipf = zipfile.ZipFile(file_name, 'w', zipfile.ZIP_DEFLATED)
+
+		meta_data = {
+			'singleplayer': False,
+			'serverName': 'SECRET SERVER',
+			'duration': utils.getMilliTime() - self.start_time,
+			'date': utils.getMilliTime(),
+			'mcversion': '1.14.4',
+			'fileFormat': 'MCPR',
+			'fileFormatVersion': '14',
+			'protocol': 498,
+			'generator': 'PCRC',
+			'selfId': -1,
+			'players': self.player_uuids
+		}
+		utils.addFile(zipf, 'markers.json', '[]')
+		utils.addFile(zipf, 'mods.json', '{"requiredMods":[]}')
+		utils.addFile(zipf, 'metaData.json', json.dumps(meta_data))
+		utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), str(utils.crc32f(utils.RecordingFileName)))
+		utils.addFile(zipf, utils.RecordingFileName)
+		zipf.close()
+
+		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
+		folder = 'PCRC_recordings'
+		if not os.path.exists(folder):
+			os.makedirs(folder)
+		file_path = '{}/{}'.format(folder, file_name)
+		shutil.move(file_name, file_path)
+
+		if self.config.upload_file:
+			self.chat('Uploading .mcpr file')
+			logger.log('Uploading "{}" to transfer.sh'.format(utils.RecordingFileName))
+			try:
+				ret, out = subprocess.getstatusoutput(
+					'curl --upload-file {} https://transfer.sh/{}'.format(file_path, file_name))
+				url = out.splitlines()[-1]
+				self.file_urls.append(url)
+				msg = '"{}" url = {}'.format(file_name, url)
+				self.chat(msg)
+			except Exception as e:
+				logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
+				logger.error(traceback.format_exc())
+
+		if do_disconnect:
+			logger.log('File operations finished, disconnect now')
+			self.disconnect()
 
 	def canStart(self):
 		return not self.isRecording() and self.file_thread is None

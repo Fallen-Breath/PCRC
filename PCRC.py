@@ -62,6 +62,15 @@ def main():
 					with open(configFile, 'r') as f:
 						js = json.load(f)
 					if target in js:
+						t = type(js[target])
+						print(t)
+						if t is str:
+							value = value
+						elif t is bool:
+							value = value in ['true', 'True', 'TRUE']
+						elif t is int:
+							value = int(value)
+						print(value)
 						js[target] = value
 						with open(configFile, 'w') as f:
 							json.dump(js, f, indent=4)
