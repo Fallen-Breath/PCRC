@@ -1,30 +1,47 @@
 PCRC
 --------
 
+[中文](https://github.com/Fallen-Breath/PCRC/blob/master/readme_cn.md)
+
 > PyCraft based Replay Client
 
 ~~SARC doesn't work in 1.13+ version so I made this crap~~
 
-An minecraft client that can record a replay file (*mcpr) which can be recognized by replay mod
+An Minecraft client that can record a replay file (*.mcpr) which can be recognized by [Replay Mod](https://www.replaymod.com/)
 
 Great thanks to [SARC](https://github.com/Robitobi01/SARC) for the replay logic stuffs and [pyCraft](https://github.com/ammaraskar/pyCraft) for the minecraft client stuffs
 
 **Supports 1.14.4 server only** tho with a bit modification it works in any version as long as pyCraft supports that
 
-needs python3, at least works on python 3.6.6
+## Environment
+
+Python version should be python3 and at least it works on Python 3.6 and Python 3.8
+
+### Python modules
+
+- cryptography
+- requests
+- future
+- PyYAML
+
+The requirements are also stored in `requirements.txt`
 
 ## Advantage
 
-- Can be hosted serverside for 24/7 recording
-- It starts recording as soon as it login
+- Can be hosted server side for 24/7 recording
 - It can be set to record only when the player is nearby
+- Multiple options can be set for custom recording
 
 
 ## Config
 
+The config file is `config.json`
+
+`language` : The language that the PCRC bot will speak in the game. Language file should be in folder `lang/`
+
 `online_mode` : Use online mode to login or offline mode instead
 
-`username` : Username or email for the used Minecraft account
+`username` : Username for offline mode or email for the used Minecraft account
 
 `password` : Password for the used Minecraft account if login in in online mode
 
@@ -38,7 +55,7 @@ needs python3, at least works on python 3.6.6
 
 `weather` : Turns weather in the recording on or off
 
-`with_player_only` : Only record packets if there are players nearby
+`with_player_only` : If set to true, PCRC only record packets if there are players nearby
 
 `remove_items` : If set to true, all dropped items wont be recorded. This can potentially decrease filesize
 
@@ -62,11 +79,13 @@ needs python3, at least works on python 3.6.6
 
 `exit`: exit the program
 
-`say <message>`: send chat message `<message>` to the server
+`say <text>`: send text `<text>` to the server as a chat message
 
-`set <option> <value>` set option to value in config.json
+`set <option> <value>` set option to value of PCRC and in the config file
 
 ### In Game Command
+
+Using normal in game chatting to trigger
 
 `!!PCRC`: show help
 
@@ -81,3 +100,7 @@ needs python3, at least works on python 3.6.6
 `!!PCRC stop`: stop PCRC
 
 `!!PCRC url`: print all urls of recorded files
+
+`!!PCRC set`: print all settable option
+
+`!!PCRC set <option> <value>`: set the value of `<option>` to `<value>` which won't write to config file

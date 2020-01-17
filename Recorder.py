@@ -59,7 +59,7 @@ class Recorder():
 	def __init__(self, config_file, translation_folder):
 		self.config = Config(config_file)
 		self.translations = Translation(translation_folder)
-		self.recording = False
+		self.working = False
 		self.online = False
 		self.file_thread = None
 		self.file_urls = []
@@ -116,8 +116,8 @@ class Recorder():
 	def isOnline(self):
 		return self.online
 
-	def isRecording(self):
-		return self.recording
+	def isWorking(self):
+		return self.working
 
 	def onPacketSent(self, packet):
 		self.logger.debug('<- {}'.format(packet.data))
@@ -135,7 +135,7 @@ class Recorder():
 	def onDisconnect(self, packet):
 		self.logger.log('Disconnected from the server, reason = {}'.format(packet.json_data))
 		self.online = False
-		if self.isRecording():
+		if self.isWorking():
 			self.stop()
 			if self.config.get('auto_relogin'):
 				for i in range(3):
@@ -217,7 +217,7 @@ class Recorder():
 		return self.timePassed(t) - self.afk_time
 
 	def processPacketData(self, packet_raw):
-		if not self.isRecording():
+		if not self.isWorking():
 			return
 		bytes = packet_raw.data
 		if bytes[0] == 0x00:
@@ -334,7 +334,7 @@ class Recorder():
 
 
 		# Recording
-		if self.isRecording() and packet_recorded is not None and not self.isAFKing():
+		if self.isWorking() and packet_recorded is not None and not self.isAFKing():
 			bytes = packet_recorded.read(packet_recorded.remaining())
 			data = int(t - self.start_time).to_bytes(4, byteorder='big', signed=True)
 			data += len(bytes).to_bytes(4, byteorder='big', signed=True)
@@ -345,11 +345,11 @@ class Recorder():
 		else:
 			self.logger.debug('{} packet ignore'.format(packet_name))
 
-		if self.isRecording() and self.file_size > utils.FileSizeLimit:
+		if self.isWorking() and self.file_size > utils.FileSizeLimit:
 			self.logger.log('tmcpr file size limit {}MB reached!'.format(utils.convert_file_size(utils.FileSizeLimit)))
 			self.restart()
 
-		if self.isRecording() and self.timeRecorded(t) > 1000 * 60 * 60 * 5:
+		if self.isWorking() and self.timeRecorded(t) > 1000 * 60 * 60 * 5:
 			self.logger.log('5h actual recording time reached!')
 			self.restart()
 
@@ -458,7 +458,7 @@ class Recorder():
 			self.disconnect()
 
 	def canStart(self):
-		return not self.isRecording() and self.file_thread is None
+		return not self.isWorking() and self.file_thread is None
 
 	def finishedStopping(self):
 		return self.canStart()
@@ -484,7 +484,7 @@ class Recorder():
 
 	# initializing stuffs
 	def on_recording_start(self):
-		self.recording = True
+		self.working = True
 		open(utils.RecordingFileName, 'w').close()
 		self.start_time = utils.getMilliTime()
 		self.last_player_movement = self.start_time
@@ -505,11 +505,11 @@ class Recorder():
 			utils.BAD_PACKETS.remove('Time Update')
 
 	def stop(self):
-		if not self.isRecording():
+		if not self.isWorking():
 			return
 		self.logger.log('Stopping recorder')
 		self.chat(self.translation('OnPCRCStopping'))
-		self.recording = False
+		self.working = False
 		self.createReplayFile(True)
 
 	def restart(self):
@@ -566,7 +566,7 @@ class Recorder():
 
 	def print_urls(self):
 		if len(self.file_urls) == 0:
-			self.chat(self.translation('URLNotFound'))
+			self.chat(self.translation('UrlNotFound'))
 		else:
 			self.chat(self.translation('PrintUrls').format(len(self.file_urls)))
 			for url in self.file_urls:
@@ -586,10 +586,10 @@ class Recorder():
 			if len(args) == 0 or args[0] != '!!PCRC' or sender == self.config.get('username'):
 				return
 			if len(args) == 1:
-				self.tell(sender, self.translation('CommandHelp'))
+				self.chat(self.translation('CommandHelp'))
 			elif len(args) == 2 and args[1] == 'status':
 				self.chat(self.translation('CommandStatusResult').format(
-					self.isRecording(), self.isRecording() and not self.isAFKing(),
+					self.isWorking(), self.isWorking() and not self.isAFKing(),
 					utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed()),
 					self.packet_counter, utils.convert_file_size(len(self.file_buffer)), utils.convert_file_size(self.file_size)
 				))
@@ -610,8 +610,8 @@ class Recorder():
 			elif len(args) == 4 and args[1] == 'set':
 				self.set_config(args[2], args[3])
 			elif len(args) == 2 and args[1] == 'set':
-				self.tell(sender, 'Settable options:')
-				self.tell(sender, ', '.join(Config.SettableOptions))
+				self.chat(self.translation('CommandSetListTitle'))
+				self.chat(', '.join(Config.SettableOptions))
 			else:
 				self.chat(self.translation('UnknownCommand'))
 		except Exception:

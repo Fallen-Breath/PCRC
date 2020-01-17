@@ -1,4 +1,5 @@
 .idea
+release
 __pycache__
 *.mcpr
 *.tmcpr

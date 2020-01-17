@@ -2,7 +2,6 @@
 
 from __future__ import print_function
 
-import json
 import time
 import traceback
 
@@ -29,8 +28,11 @@ def start():
 	else:
 		logger.warn('Recorder is running, ignore')
 
+def isWorking():
+	return recorder is not None and recorder.isWorking()
+
 def stop():
-	if recorder is not None and recorder.isRecording():
+	if isWorking():
 		recorder.stop()
 		while not recorder.finishedStopping():
 			time.sleep(0.1)
@@ -71,12 +73,14 @@ def main():
 					logger.err(traceback.format_exc())
 				if not success:
 					logger.log('Parameter error')
+			else:
+				logger.log('Command not found!')
 		except (KeyboardInterrupt, SystemExit):
 			break
 		except Exception:
 			logger.error(traceback.format_exc())
 	try:
-		if recorder.isRecording():
+		if isWorking():
 			logger.log('Stopping recorder before exit')
 			stop()
 	except (KeyboardInterrupt, SystemExit):
