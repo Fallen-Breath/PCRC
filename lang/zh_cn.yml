@@ -5,7 +5,7 @@ OnDisconnect: |
 RecordingContinue: |
     有玩家在附近活动，继续录制
 RecordingPause: |
-    所有玩家均已离开，暂停录制，开始挂机
+    所有玩家均已离开，暂停录制
 OnCreatingMCPRFile: |
     正在生成.mcpr文件
 OnUploadingMCPRFile: |
@@ -35,8 +35,16 @@ CommandPositionResult: |
     我在{0}
 CommandPositionResultUnknown: |
     我不知道我在哪 QWQ
+MarkerNotFound: |
+    未找到任何标记事件
 CommandSetListTitle: |
-   可设置的选项有: 
+    可设置的选项有:
+CommandMarkerListTitle: |
+    标记事件列表:
+OnMarkerAdded: |
+    已添加位于{0}的标记事件
+OnMarkerDeleted: |
+    已删除位于{0}的标记事件
 UnknownCommand: |
     未知指令！输入“!!PCRC”以获取帮助
 CommandHelp: |
@@ -50,3 +58,6 @@ CommandHelp: |
     !!PCRC url: 输出所有已录制文件的网址
     !!PCRC set: 输出所有可设置的选项
     !!PCRC set <选项> <值>: 将<选项>设置为<值>，不会写入配置文件
+    !!PCRC marker: 输出所有的标记事件
+    !!PCRC marker add [<备注>]: 添加一个在当前时刻的标记事件，并将其命名为<备注>（可选）
+    !!PCRC marker del <序号>: 删除序号为<序号>的标记事件

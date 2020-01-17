@@ -37,6 +37,14 @@ CommandPositionResultUnknown: |
     Idk where am I qwq
 CommandSetListTitle: |
     Settable options:
+MarkerNotFound: |
+    No marker found
+CommandMarkerListTitle: |
+    Marker list:
+OnMarkerAdded: |
+    Marker at {0} added
+OnMarkerdeleted: |
+    Marker at {0} deleted
 UnknownCommand: |
     Unknown command! Type "!!PCRC" for help
 CommandHelp: |
@@ -50,3 +58,6 @@ CommandHelp: |
     !!PCRC url: print all urls of recorded files
     !!PCRC set: print all settable option
     !!PCRC set <option> <value>: set the value of <option> to <value> which won't write to config file
+    !!PCRC marker: print all markers
+    !!PCRC marker add [<name>]: add a marker, and name it as <name> (optional)
+    !!PCRC marker del <index>: delete the marker at index <index>

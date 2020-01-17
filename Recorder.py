@@ -239,7 +239,7 @@ class Recorder():
 			flags = packet.read_byte()
 			if flags == 0:
 				self.pos = PositionAndLook(x=player_x, y=player_y, z=player_z, yaw=player_yaw, pitch=player_pitch)
-				self.logger.log('Set self\'s position to {}'.format(utils.format_vector(self.pos.position)))
+				self.logger.log('Set self\'s position to {}'.format(self.pos))
 
 		if packet_recorded is not None and (packet_name in utils.BAD_PACKETS or (self.config.get('minimal_packets') and packet_name in utils.USELESS_PACKETS)):
 			packet_recorded = None
@@ -407,7 +407,7 @@ class Recorder():
 			return
 
 		# Creating .mcpr zipfile based on timestamp
-		logger.log('Time recorded: {}'.format(utils.convert_millis(utils.getMilliTime() - self.start_time)))
+		logger.log('Time recorded/passed: {}/{}'.format(utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed())))
 		file_name = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S') + '.mcpr'
 		logger.log('Creating "{}"'.format(file_name))
 		self.chat(self.translation('OnCreatingMCPRFile'))
@@ -416,7 +416,7 @@ class Recorder():
 		meta_data = {
 			'singleplayer': False,
 			'serverName': 'SECRET SERVER',
-			'duration': utils.getMilliTime() - self.start_time,
+			'duration': self.timeRecorded(),
 			'date': utils.getMilliTime(),
 			'mcversion': '1.14.4',
 			'fileFormat': 'MCPR',
@@ -426,7 +426,7 @@ class Recorder():
 			'selfId': -1,
 			'players': self.player_uuids
 		}
-		utils.addFile(zipf, 'markers.json', '[]')
+		utils.addFile(zipf, 'markers.json', json.dumps(self.markers))
 		utils.addFile(zipf, 'mods.json', '{"requiredMods":[]}')
 		utils.addFile(zipf, 'metaData.json', json.dumps(meta_data))
 		utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), str(utils.crc32f(utils.RecordingFileName)))
@@ -500,6 +500,7 @@ class Recorder():
 		self.packet_counter = 0
 		self.last_showinfo_packetcounter = 0
 		self.file_thread = None
+		self.markers = []
 		self.pos = None
 		if 'Time Update' in utils.BAD_PACKETS:
 			utils.BAD_PACKETS.remove('Time Update')
@@ -580,6 +581,45 @@ class Recorder():
 		self.config.set_value(option, value)
 		self.logger.log('Option <{}> set to <{}>'.format(option, value))
 
+	def print_markers(self):
+		if len(self.markers) == 0:
+			self.chat(self.translation('MarkerNotFound'))
+		else:
+			self.chat(self.translation('CommandMarkerListTitle'))
+			for i in range(len(self.markers)):
+				self.chat('{}. {}'.format(i + 1, utils.convert_millis(self.markers[i]['realTimestamp'])))
+
+	def add_marker(self, name=None):
+		if self.pos is None:
+			self.logger.warn('Fail to add marker, position unknown!')
+			return
+		time_stamp = self.timeRecorded()
+		marker = {
+			'realTimestamp': time_stamp,
+			'value': {
+				'position': {
+					'x': self.pos.x,
+					'y': self.pos.y,
+					'z': self.pos.z,
+					# seems that replay mod switch this two value, idk y
+					'yaw': self.pos.pitch,
+					'pitch': self.pos.yaw,
+					'roll': 0.0
+				}
+			}
+		}
+		if name is not None:
+			marker['value']['name'] = name
+		self.markers.append(marker)
+		self.chat(self.translation('OnMarkerAdded').format(utils.convert_millis(time_stamp)))
+		self.logger.log('Marker added: {}, {} markers has been stored'.format(marker, len(self.markers)))
+
+	def delete_marker(self, index):
+		index -= 1
+		marker = self.markers.pop(index)
+		self.chat(self.translation('OnMarkerDeleted').format(utils.convert_millis(marker['realTimestamp'])))
+		self.logger.log('Marker deleted: {}, {} markers has been stored'.format(marker, len(self.markers)))
+
 	def processCommand(self, command, sender, uuid):
 		try:
 			args = command.split(' ')  # !!PCRC <> <> <> <>
@@ -612,6 +652,17 @@ class Recorder():
 			elif len(args) == 2 and args[1] == 'set':
 				self.chat(self.translation('CommandSetListTitle'))
 				self.chat(', '.join(Config.SettableOptions))
+			elif (len(args) == 2 and args[1] == 'marker') or (len(args) == 3 and args[1] == 'marker' and args[2] == 'list'):
+				self.print_markers()
+			elif 3 <= len(args) <= 4 and args[1] == 'marker' and args[2] == 'add':
+				self.add_marker(None if len(args) == 3 else args[3])
+			elif len(args) == 4 and args[1] == 'marker' and args[2] in ['del', 'delete']:
+				try:
+					index = int(args[3])
+				except ValueError:
+					self.chat('')
+				else:
+					self.delete_marker(index)
 			else:
 				self.chat(self.translation('UnknownCommand'))
 		except Exception:
