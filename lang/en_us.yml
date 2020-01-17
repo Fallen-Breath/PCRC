@@ -43,10 +43,12 @@ CommandMarkerListTitle: |
     Marker list:
 OnMarkerAdded: |
     Marker at {0} added
-OnMarkerdeleted: |
+OnMarkerDeleted: |
     Marker at {0} deleted
 UnknownCommand: |
     Unknown command! Type "!!PCRC" for help
+WrongArguments: |
+    Wrong Arguments!
 CommandHelp: |
     ----- Command List -----
     !!PCRC: show help

@@ -587,7 +587,8 @@ class Recorder():
 		else:
 			self.chat(self.translation('CommandMarkerListTitle'))
 			for i in range(len(self.markers)):
-				self.chat('{}. {}'.format(i + 1, utils.convert_millis(self.markers[i]['realTimestamp'])))
+				name = self.markers[i]['value']['name'] if 'name' in self.markers[i]['value'] else ''
+				self.chat('{}. {} {}'.format(i + 1, utils.convert_millis(self.markers[i]['realTimestamp']), name))
 
 	def add_marker(self, name=None):
 		if self.pos is None:
@@ -601,7 +602,7 @@ class Recorder():
 					'x': self.pos.x,
 					'y': self.pos.y,
 					'z': self.pos.z,
-					# seems that replay mod switch this two value, idk y
+					# seems that replay mod switches these two values, idk y
 					'yaw': self.pos.pitch,
 					'pitch': self.pos.yaw,
 					'roll': 0.0
@@ -660,9 +661,12 @@ class Recorder():
 				try:
 					index = int(args[3])
 				except ValueError:
-					self.chat('')
+					self.chat(self.translation('WrongArguments'))
 				else:
-					self.delete_marker(index)
+					if 1 <= index <= len(self.markers):
+						self.delete_marker(index)
+					else:
+						self.chat(self.translation('WrongArguments'))
 			else:
 				self.chat(self.translation('UnknownCommand'))
 		except Exception:

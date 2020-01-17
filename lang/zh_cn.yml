@@ -5,7 +5,7 @@ OnDisconnect: |
 RecordingContinue: |
     有玩家在附近活动，继续录制
 RecordingPause: |
-    所有玩家均已离开，暂停录制
+    附近玩家均已离开，暂停录制
 OnCreatingMCPRFile: |
     正在生成.mcpr文件
 OnUploadingMCPRFile: |
@@ -47,6 +47,8 @@ OnMarkerDeleted: |
     已删除位于{0}的标记事件
 UnknownCommand: |
     未知指令！输入“!!PCRC”以获取帮助
+WrongArguments: |
+    参数错误！
 CommandHelp: |
     ----- 命令列表 -----
     !!PCRC: 显示帮助信息
