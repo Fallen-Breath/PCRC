@@ -347,11 +347,13 @@ class Recorder():
 			self.logger.debug('{} packet ignore'.format(packet_name))
 
 		if self.isWorking() and self.file_size > utils.FileSizeLimit:
-			self.logger.log('tmcpr file size limit {}MB reached!'.format(utils.convert_file_size(utils.FileSizeLimit)))
+			self.logger.log('tmcpr file size limit {}MB reached! Restarting'.format(utils.convert_file_size(utils.FileSizeLimit)))
+			self.chat(self.translation('OnReachFileSizeLimit').format(utils.convert_file_size(utils.FileSizeLimit)))
 			self.restart()
 
-		if self.isWorking() and self.timeRecorded(t) > 1000 * 60 * 60 * 5:
-			self.logger.log('5h actual recording time reached!')
+		if self.isWorking() and self.timeRecorded(t) > utils.TimeLengthLimit:
+			self.logger.log('{} actual recording time reached!'.format(utils.convert_millis(utils.TimeLengthLimit)))
+			self.chat(self.translation('OnReachTimeLimit').format(utils.convert_millis(utils.TimeLengthLimit)))
 			self.restart()
 
 		if int(self.timePassed(t) / (60 * 1000)) != self.last_showinfo_time or self.packet_counter - self.last_showinfo_packetcounter >= 100000:
@@ -377,22 +379,23 @@ class Recorder():
 		if len(self.file_buffer) > utils.FileBufferSize:
 			self.flush()
 
-	def createReplayFile(self, do_disconnect):
+	def createReplayFile(self, restart):
 		if self.file_thread is not None:
 			return
-		self.file_thread = threading.Thread(target = self._createReplayFile, args=(do_disconnect, ))
+		self.file_thread = threading.Thread(target = self._createReplayFile, args=(restart, ))
 		self.file_thread.setDaemon(True)
 		self.flush()
 		self.file_thread.start()
+		self.file_thread.isAlive()
 
-	def _createReplayFile(self, do_disconnect):
+	def _createReplayFile(self, restart):
 		try:
-			self.__createReplayFile(do_disconnect)
+			self.__createReplayFile(restart)
 		finally:
 			self.file_thread = None
 			self.logger.log('Recorder stopped, ignore the BrokenPipeError error below XD')
 
-	def __createReplayFile(self, do_disconnect):
+	def __createReplayFile(self, restart):
 		logger = copy.deepcopy(self.logger)
 		logger.thread = 'File'
 
@@ -454,12 +457,18 @@ class Recorder():
 				logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
 				logger.error(traceback.format_exc())
 
-		if do_disconnect:
-			logger.log('File operations finished, disconnect now')
-			self.disconnect()
+		logger.log('File operations finished, disconnect now')
+		self.disconnect()
+		self.file_thread = None
+
+		if restart:
+			self.logger.log('---------------------------------------')
+			while not self.canStart():
+				time.sleep(0.1)
+			self.start()
 
 	def canStart(self):
-		return not self.isWorking() and self.file_thread is None
+		return not self.isWorking() and not self.isOnline() and self.file_thread is None
 
 	def finishedStopping(self):
 		return self.canStart()
@@ -467,6 +476,7 @@ class Recorder():
 	def start(self):
 		if not self.canStart():
 			return
+		self.logger.log('Starting recorder')
 		self.on_recording_start()
 		# start the bot
 		self.connect()
@@ -506,20 +516,17 @@ class Recorder():
 		if 'Time Update' in utils.BAD_PACKETS:
 			utils.BAD_PACKETS.remove('Time Update')
 
-	def stop(self):
-		if not self.isWorking():
+	def stop(self, restart=False):
+		if not self.isWorking() or not self.isOnline():
 			return
 		self.logger.log('Stopping recorder')
 		self.chat(self.translation('OnPCRCStopping'))
 		self.working = False
-		self.createReplayFile(True)
+		self.createReplayFile(restart)
 
 	def restart(self):
 		self.logger.log('Restarting recorder')
-		self.stop()
-		self.logger.log('---------------------------------------')
-		time.sleep(1)
-		self.start()
+		self.stop(True)
 
 	def _chat(self, text, prefix=''):
 		for line in text.splitlines():
@@ -647,6 +654,8 @@ class Recorder():
 					self.chat(self.translation('CommandPositionResultUnknown'))
 			elif len(args) == 2 and args[1] in ['stop', 'exit']:
 				self.stop()
+			elif len(args) == 2 and args[1] == 'restart':
+				self.restart()
 			elif len(args) == 2 and args[1] in ['url', 'urls']:
 				self.print_urls()
 			elif len(args) == 4 and args[1] == 'set':

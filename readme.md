@@ -99,6 +99,8 @@ Using normal in game chatting to trigger
 
 `!!PCRC stop`: stop PCRC
 
+`!!PCRC restart`: restart PCRC
+
 `!!PCRC url`: print all urls of recorded files
 
 `!!PCRC set`: print all settable option

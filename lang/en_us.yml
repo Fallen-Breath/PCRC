@@ -14,6 +14,10 @@ OnUploadedMCPRFile: |
     "{0}" url = {1}
 OnPCRCStopping: |
     PCRC stopping
+OnReachFileSizeLimit: |
+    File size limit {0}MB reached! Restarting PCRC
+OnReachTimeLimit: |
+    Recording time limit {0} reached! Restarting PCRC
 UrlNotFound: |
     No url found
 PrintUrls: |
@@ -57,6 +61,7 @@ CommandHelp: |
     !!PCRC pos: show position, might not be 100% accurate
     !!PCRC sepc: spectator teleport to the player
     !!PCRC stop: stop PCRC
+    !!PCRC restart: restart PCRC
     !!PCRC url: print all urls of recorded files
     !!PCRC set: print all settable option
     !!PCRC set <option> <value>: set the value of <option> to <value> which won't write to config file

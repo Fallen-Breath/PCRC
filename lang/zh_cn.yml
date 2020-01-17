@@ -14,6 +14,10 @@ OnUploadedMCPRFile: |
     "{0}" 的链接: {1}
 OnPCRCStopping: |
     PCRC 正在关闭
+OnReachFileSizeLimit: |
+    文件大小限制 {0}MB 已达到！正在重启 PCRC
+OnReachTimeLimit: |
+    录制时间限制 {0} 已达到！正在重启 PCRC
 UrlNotFound: |
     未找到任何链接
 PrintUrls: |
@@ -57,6 +61,7 @@ CommandHelp: |
     !!PCRC pos: 显示所处位置，不一定100%准确
     !!PCRC sepc: 旁观者传送至发送指令的玩家
     !!PCRC stop: 关闭PCRC
+    !!PCRC restart: 重启PCRC
     !!PCRC url: 输出所有已录制文件的网址
     !!PCRC set: 输出所有可设置的选项
     !!PCRC set <选项> <值>: 将<选项>设置为<值>，不会写入配置文件

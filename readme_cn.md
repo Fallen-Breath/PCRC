@@ -99,6 +99,8 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 `!!PCRC stop`: 关闭 PCRC
 
+`!!PCRC restart`: 重启 PCRC
+
 `!!PCRC url`: 输出所有已录制文件的网址
 
 `!!PCRC set`: 输出所有可设置的选项

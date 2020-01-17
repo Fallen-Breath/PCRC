@@ -391,6 +391,9 @@ class Connection(object):
                 self.reactor = PlayingStatusReactor(self)
             self._start_network_thread()
 
+    def check_connection(self):
+        return self._check_connection()
+
     def _check_connection(self):
         if self.networking_thread is not None and \
            not self.networking_thread.interrupt or \
@@ -555,7 +558,7 @@ class NetworkingThread(threading.Thread):
             finally:
                 with self.connection._write_lock:
                     self.connection.networking_thread = None
-        except Exception as e:
+        except Exception:
             self.logger.error(traceback.format_exc().splitlines()[-1])
             self.connection.recorder.stop()
 

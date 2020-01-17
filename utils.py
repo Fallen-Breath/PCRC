@@ -5,18 +5,8 @@ import time
 RecordingFileName = 'recording.tmcpr'
 LoggingFileName = 'PCRC.log'
 FileBufferSize = 10 * 1024 * 1024
-FileSizeLimit = 500 * 1014 * 1024
-CommandHelpMessage = '''----- Command List -----
-!!PCRC: show help
-!!PCRC status: show status
-!!PCRC here: emit a "!!here" command
-!!PCRC pos: show position, might not be 100% accurate
-!!PCRC sepc: spectator teleport to the player
-!!PCRC stop: stop PCRC
-!!PCRC url: print all urls of recorded files
-!!PCRC set: print all settable option
-!!PCRC set <option> <value>: set the value of <option> to <value> which won't write to config file
-'''
+FileSizeLimit = 512 * 1024 * 1024
+TimeLengthLimit = 5 * 60 * 60 * 1000
 
 
 def addFile(zip, fileName, str=None):
