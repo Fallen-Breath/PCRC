@@ -95,6 +95,7 @@ class Recorder():
 
 	def printConfig(self):
 		message = '------- Config --------\n'
+		message += f"Language = {self.config.get('language')}\n"
 		message += f"Online mode = {self.config.get('online_mode')}\n"
 		message += f"User name = {self.config.get('username')}\n"
 		message += f"Password = ******\n"
