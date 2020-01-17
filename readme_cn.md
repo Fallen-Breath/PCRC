@@ -33,7 +33,7 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 - 有多个选项可以设置以满足多种录制需求
 
 
-## Config
+## 配置文件
 
 配置文件为 `config.json`
 
@@ -93,11 +93,11 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 `!!PCRC here`: 发送一个“!!here”指令
 
-`!!PCRC pos`: 显示所处位置，不一定100%准确
+`!!PCRC pos`: 显示所处位置，不一定 100% 准确
 
 `!!PCRC sepc`: 旁观者传送至发送指令的玩家
 
-`!!PCRC stop`: 关闭PCRC
+`!!PCRC stop`: 关闭 PCRC
 
 `!!PCRC url`: 输出所有已录制文件的网址
 
