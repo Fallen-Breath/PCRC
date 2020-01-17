@@ -8,19 +8,20 @@ import traceback
 
 import utils
 from Logger import Logger
-from Recorder import Recorder
+from Recorder import Recorder, Config
 from pycraft.compat import input
 from pycraft.exceptions import YggdrasilError
 
 recorder = None
 logger = Logger(name='PCRC', file_name=utils.LoggingFileName)
-configFile = 'config.json'
+ConfigFile = 'config.json'
+TranslationFolder = 'lang/'
 
 def start():
-	global recorder, logger, configFile
+	global recorder, logger, ConfigFile
 	if recorder is None or recorder.canStart():
 		try:
-			recorder = Recorder(configFile)
+			recorder = Recorder(ConfigFile, TranslationFolder)
 		except YggdrasilError as e:
 			logger.error(e)
 			return
@@ -57,27 +58,17 @@ def main():
 				success = False
 				try:
 					cmd = text.split(' ')
-					target = cmd[1]
+					option = cmd[1]
 					value = cmd[2]
-					with open(configFile, 'r') as f:
-						js = json.load(f)
-					if target in js:
-						t = type(js[target])
-						print(t)
-						if t is str:
-							value = value
-						elif t is bool:
-							value = value in ['true', 'True', 'TRUE']
-						elif t is int:
-							value = int(value)
-						print(value)
-						js[target] = value
-						with open(configFile, 'w') as f:
-							json.dump(js, f, indent=4)
-						logger.log('Assign "{}" = "{}" now'.format(target, value))
-						success = True
+					config = Config(ConfigFile)
+					config.set_value(option, value)
+					config.write_to_file()
+					logger.log('Assign "{}" = "{}" now'.format(option, value))
+					if recorder is not None:
+						recorder.set_config(option, value)
+					success = True
 				except Exception:
-					pass
+					logger.err(traceback.format_exc())
 				if not success:
 					logger.log('Parameter error')
 		except (KeyboardInterrupt, SystemExit):
@@ -93,6 +84,7 @@ def main():
 		return
 	except Exception:
 		logger.error(traceback.format_exc())
+
 
 if __name__ == "__main__":
 	main()

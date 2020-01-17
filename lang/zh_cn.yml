@@ -1,0 +1,50 @@
+OnGameJoin: |
+    o/ 开始录制！
+OnDisconnect: |
+    o/ bye~
+RecordingContinue: |
+    有玩家在附近活动，继续录制
+RecordingPause: |
+    所有玩家均已离开，暂停录制，开始挂机
+OnCreatingMCPRFile: |
+    正在生成 .mcpr 文件
+OnUploadingMCPRFile: |
+    正在上传 .mcpr 文件
+OnUploadedMCPRFile: |
+    "{0}" 的链接：{1}
+OnPCRCStopping: |
+    PCRC 正在关闭
+UrlNotFound: |
+    未找到任何链接
+PrintUrls: |
+    共有 {0} 个已上传文件的链接
+IllegalOptionName: |
+    你不能修改选项 "{0}"！
+    使用“!!PCRC set”来查看可修改的选项
+OnOptionSet: |
+    正在将 <{0}> 设置为 <{1}>
+CommandStatusResult: |
+    工作中: {0}; 录制中: {1}
+    录制时长/开启时间: {2}/{3}
+    录制数据包数: {4}
+    缓存大小: {5}MB
+    文件大小: {6}MB
+CommandSpectateResult: |
+    正在附身至 {0}(uuid = {1})
+CommandPositionResult: |
+    我在 {0}
+CommandPositionResultUnknown: |
+    我不知道我在哪 QWQ
+CommandHelp: |
+    ----- 命令列表 -----
+    !!PCRC: 显示帮助信息
+    !!PCRC status: 显示状态
+    !!PCRC here: 发送一个“!!here”指令
+    !!PCRC pos: 显示所处位置，不一定 100% 准确
+    !!PCRC sepc: 旁观者传送至发送指令的玩家
+    !!PCRC stop: 关闭 PCRC
+    !!PCRC url: 输出所有已录制文件的网址
+    !!PCRC set: 输出所有可设置的选项
+    !!PCRC set <选项> <值>: 将 <选项> 设置为 <值>，不会写入配置文件
+UnknownCommand: |
+    未知指令！输入“!!PCRC”以获取帮助

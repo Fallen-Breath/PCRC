@@ -14,6 +14,8 @@ CommandHelpMessage = '''----- Command List -----
 !!PCRC sepc: spectator teleport to the player
 !!PCRC stop: stop PCRC
 !!PCRC url: print all urls of recorded files
+!!PCRC set: print all settable option
+!!PCRC set <option> <value>: set the value of <option> to <value> which won't write to config file
 '''
 
 

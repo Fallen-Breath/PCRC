@@ -1,0 +1,50 @@
+OnGameJoin: |
+    o/ start recording!
+OnDisconnect: |
+    o/ bye!
+RecordingContinue: |
+    Someone is nearby, continue recording now
+RecordingPause: |
+    Everyone left, pause recording now, go afk
+OnCreatingMCPRFile: |
+    Creating .mcpr file
+OnUploadingMCPRFile: |
+    Uploading .mcpr file
+OnUploadedMCPRFile: |
+    "{0}" url = {1}
+OnPCRCStopping: |
+    PCRC stopping
+UrlNotFound: |
+    No url found
+PrintUrls: |
+    There are {0} uploaded file urls:
+IllegalOptionName: |
+    You cannot change option "{0}"!
+    Use "!!PCRC set" to see settable options
+OnOptionSet: |
+    Setting <{0}> to <{1}>
+CommandStatusResult: |
+    Running: {0}; Recording: {1}
+    Time recorded/passed: {2}/{3}
+    Packet Recorded: {4}
+    Buffer size: {5}MB
+    File size: {6}MB
+CommandSpectateResult: |
+    Spectating to {0}(uuid = {1})
+CommandPositionResult: |
+    I'm at {0}
+CommandPositionResultUnknown: |
+    Idk where am I qwq
+CommandHelp: |
+    ----- Command List -----
+    !!PCRC: show help
+    !!PCRC status: show status
+    !!PCRC here: emit a "!!here" command
+    !!PCRC pos: show position, might not be 100% accurate
+    !!PCRC sepc: spectator teleport to the player
+    !!PCRC stop: stop PCRC
+    !!PCRC url: print all urls of recorded files
+    !!PCRC set: print all settable option
+    !!PCRC set <option> <value>: set the value of <option> to <value> which won't write to config file
+UnknownCommand: |
+    Unknown command! Type "!!PCRC" for help
