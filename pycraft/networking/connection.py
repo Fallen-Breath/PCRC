@@ -560,7 +560,8 @@ class NetworkingThread(threading.Thread):
                     self.connection.networking_thread = None
         except Exception:
             self.logger.error(traceback.format_exc().splitlines()[-1])
-            self.connection.recorder.stop()
+            if self.connection.recorder.isOnline():
+                self.connection.recorder.stop()
 
     def _run(self):
         while not self.interrupt:

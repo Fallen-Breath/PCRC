@@ -400,10 +400,11 @@ class Recorder():
 		logger.thread = 'File'
 
 		self.flush()
-		self.file_size = 0
 
-		if not self.isOnline():
-			logger.warn('PCRC is even not online, abort creating replay file')
+		if self.file_size < utils.MinimumLegalFileSize:
+			logger.log('Size of "{}" too small ({}MB < {}MB), abort creating replay file'.format(
+				utils.RecordingFileName, self.file_size, utils.MinimumLegalFileSize
+			))
 			return
 
 		if not os.path.isfile(utils.RecordingFileName):
@@ -414,7 +415,8 @@ class Recorder():
 		logger.log('Time recorded/passed: {}/{}'.format(utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed())))
 		file_name = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S') + '.mcpr'
 		logger.log('Creating "{}"'.format(file_name))
-		self.chat(self.translation('OnCreatingMCPRFile'))
+		if self.isOnline():
+			self.chat(self.translation('OnCreatingMCPRFile'))
 		zipf = zipfile.ZipFile(file_name, 'w', zipfile.ZIP_DEFLATED)
 
 		meta_data = {
@@ -445,14 +447,16 @@ class Recorder():
 		shutil.move(file_name, file_path)
 
 		if self.config.get('upload_file'):
-			self.chat(self.translation('OnUploadingMCPRFile'))
+			if self.isOnline():
+				self.chat(self.translation('OnUploadingMCPRFile'))
 			logger.log('Uploading "{}" to transfer.sh'.format(utils.RecordingFileName))
 			try:
 				ret, out = subprocess.getstatusoutput(
 					'curl --upload-file {} https://transfer.sh/{}'.format(file_path, file_name))
 				url = out.splitlines()[-1]
 				self.file_urls.append(url)
-				self.chat(self.translation('OnUploadedMCPRFile').format(file_name, url))
+				if self.isOnline():
+					self.chat(self.translation('OnUploadedMCPRFile').format(file_name, url))
 			except Exception as e:
 				logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
 				logger.error(traceback.format_exc())
@@ -462,7 +466,8 @@ class Recorder():
 		self.file_thread = None
 
 		if restart:
-			self.logger.log('---------------------------------------')
+			logger.log('---------------------------------------')
+			logger.log('Waiting for Recorder to be complete closed')
 			while not self.canStart():
 				time.sleep(0.1)
 			self.start()
@@ -517,7 +522,7 @@ class Recorder():
 			utils.BAD_PACKETS.remove('Time Update')
 
 	def stop(self, restart=False):
-		if not self.isWorking() or not self.isOnline():
+		if not self.isWorking():
 			return
 		self.logger.log('Stopping recorder')
 		self.chat(self.translation('OnPCRCStopping'))

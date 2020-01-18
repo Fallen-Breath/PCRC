@@ -7,6 +7,7 @@ LoggingFileName = 'PCRC.log'
 FileBufferSize = 10 * 1024 * 1024
 FileSizeLimit = 512 * 1024 * 1024
 TimeLengthLimit = 5 * 60 * 60 * 1000
+MinimumLegalFileSize = 1 * 1024 * 1024
 
 
 def addFile(zip, fileName, str=None):
