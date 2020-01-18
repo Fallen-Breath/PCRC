@@ -31,7 +31,7 @@ The requirements are also stored in `requirements.txt`
 - Can be hosted server side for 24/7 recording
 - It can be set to record only when the player is nearby
 - Multiple options can be set for custom recording
-
+- Restart after raw file size reaches 512MB or recording time reaches 5 hours to prevent oversize recording
 
 ## Config
 
@@ -63,7 +63,7 @@ The config file is `config.json`
 
 `upload_file` : If set to true, .mcpr file will be sent to [transfer.sh](transfer.sh) after finishing recording
 
-`auto_relogin` : If this option is enabled and the client gets disconnected, it will automatically reconnect after 3 seconds
+`auto_relogin` : If this option is enabled and the client gets disconnected, it will automatically try to reconnect
 
 `debug_mode` : Outputs debug info
 

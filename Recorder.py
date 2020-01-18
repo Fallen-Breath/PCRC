@@ -2,6 +2,7 @@
 import copy
 import os
 import shutil
+import socket
 import threading
 import time
 import json
@@ -137,12 +138,7 @@ class Recorder():
 		self.logger.log('Disconnected from the server, reason = {}'.format(packet.json_data))
 		self.online = False
 		if self.isWorking():
-			self.stop()
-			if self.config.get('auto_relogin'):
-				for i in range(3):
-					self.logger.log('Restart in {}s'.format(3 - i))
-					time.sleep(1)
-				self.start()
+			self.stop(self.config.get('auto_relogin'))
 
 	def onChatMessage(self, packet):
 		js = json.loads(packet.json_data)
@@ -182,7 +178,20 @@ class Recorder():
 		if self.isOnline():
 			self.logger.warn('Cannot connect when connected')
 			return
-		self.connection.connect()
+		success = False
+		try:
+			self.connection.connect()
+			success = True
+		except socket.gaierror:
+			self.logger.error('Fail to analyze server address "{}"'.format(self.config.get('address')))
+		except ConnectionRefusedError:
+			self.logger.error('Fail to connect to "{}:{}"'.format(self.config.get('address'), self.config.get('port')))
+		except Exception:
+			self.logger.error(traceback.format_exc())
+
+		if not success:
+			self.stop()
+		return success
 
 	def disconnect(self):
 		if not self.isOnline():
@@ -389,21 +398,30 @@ class Recorder():
 		self.file_thread.isAlive()
 
 	def _createReplayFile(self, restart):
-		try:
-			self.__createReplayFile(restart)
-		finally:
-			self.file_thread = None
-			self.logger.log('Recorder stopped, ignore the BrokenPipeError error below XD')
-
-	def __createReplayFile(self, restart):
 		logger = copy.deepcopy(self.logger)
 		logger.thread = 'File'
+		try:
+			self.__createReplayFile(logger, restart)
+		finally:
+			logger.log('File operations finished, disconnect now')
+			if self.isOnline():
+				self.disconnect()
+			self.file_thread = None
+			logger.log('PCRC stopped')
 
+			if restart:
+				logger.log('---------------------------------------')
+				logger.log('PCRC restarting')
+				while not self.canStart():
+					time.sleep(1)
+				self.start()
+
+	def __createReplayFile(self, logger, restart):
 		self.flush()
 
 		if self.file_size < utils.MinimumLegalFileSize:
 			logger.log('Size of "{}" too small ({}MB < {}MB), abort creating replay file'.format(
-				utils.RecordingFileName, self.file_size, utils.MinimumLegalFileSize
+				utils.RecordingFileName, utils.convert_file_size(self.file_size), utils.convert_file_size(utils.MinimumLegalFileSize)
 			))
 			return
 
@@ -461,17 +479,6 @@ class Recorder():
 				logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
 				logger.error(traceback.format_exc())
 
-		logger.log('File operations finished, disconnect now')
-		self.disconnect()
-		self.file_thread = None
-
-		if restart:
-			logger.log('---------------------------------------')
-			logger.log('Waiting for Recorder to be complete closed')
-			while not self.canStart():
-				time.sleep(0.1)
-			self.start()
-
 	def canStart(self):
 		return not self.isWorking() and not self.isOnline() and self.file_thread is None
 
@@ -481,10 +488,12 @@ class Recorder():
 	def start(self):
 		if not self.canStart():
 			return
-		self.logger.log('Starting recorder')
+		self.logger.log('Starting PCRC')
 		self.on_recording_start()
 		# start the bot
-		self.connect()
+		success = self.connect()
+		if not success:
+			return False
 		# version check
 		versionMap = {}
 		for i in pycraft.SUPPORTED_MINECRAFT_VERSIONS.items():
@@ -524,13 +533,13 @@ class Recorder():
 	def stop(self, restart=False):
 		if not self.isWorking():
 			return
-		self.logger.log('Stopping recorder')
-		self.chat(self.translation('OnPCRCStopping'))
+		self.logger.log('Stopping PCRC, restart = {}'.format(restart))
+		if self.isOnline():
+			self.chat(self.translation('OnPCRCStopping'))
 		self.working = False
 		self.createReplayFile(restart)
 
 	def restart(self):
-		self.logger.log('Restarting recorder')
 		self.stop(True)
 
 	def _chat(self, text, prefix=''):
@@ -577,6 +586,13 @@ class Recorder():
 			self._spectate(uuid)
 		else:
 			self.logger.warn('Cannot send respawn when disconnected')
+
+	def format_status(self, text):
+		return text.format(
+			self.isWorking(), self.isWorking() and not self.isAFKing(),
+			utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed()),
+			self.packet_counter, utils.convert_file_size(len(self.file_buffer)), utils.convert_file_size(self.file_size)
+		)
 
 	def print_urls(self):
 		if len(self.file_urls) == 0:
@@ -642,11 +658,7 @@ class Recorder():
 			if len(args) == 1:
 				self.chat(self.translation('CommandHelp'))
 			elif len(args) == 2 and args[1] == 'status':
-				self.chat(self.translation('CommandStatusResult').format(
-					self.isWorking(), self.isWorking() and not self.isAFKing(),
-					utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed()),
-					self.packet_counter, utils.convert_file_size(len(self.file_buffer)), utils.convert_file_size(self.file_size)
-				))
+				self.chat(self.format_status(self.translation('CommandStatusResult')))
 			elif len(args) == 2 and args[1] in ['spectate', 'spec'] and sender is not None and uuid is not None:
 				self.chat(self.translation('CommandSpectateResult').format(sender, uuid))
 				self.spectate(uuid)

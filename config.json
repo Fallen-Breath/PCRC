@@ -1,8 +1,8 @@
 {
     "language": "en_us",
     "online_mode": false,
-    "username": "test",
-    "password": "asd",
+    "username": "bot_PCRC",
+    "password": "secret",
     "address": "localhost",
     "port": 20000,
     "minimal_packets": true,
@@ -11,7 +11,7 @@
     "with_player_only": true,
     "remove_items": false,
     "remove_bats": true,
-    "upload_file": true,
-    "auto_relogin": false,
+    "upload_file": false,
+    "auto_relogin": true,
     "debug_mode": false
 }

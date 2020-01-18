@@ -24,13 +24,14 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 - future
 - PyYAML
 
-所需的模块也已储存在 `requirements.txt`中
+所需的模块也已储存在 `requirements.txt` 中
 
 ## 优势
 
 - 可以在托管在服务端上 24/7 录制
 - 可以设置为仅在玩家在附近时进行录制
 - 有多个选项可以设置以满足多种录制需求
+- 在原始录像文件大于 512MB 后或者录制时长大于 5 小时后自动重启以防止录像文件过长
 
 
 ## 配置文件
@@ -63,7 +64,7 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 `upload_file` : 是否将录制好的文件上传至 [transfer.sh](transfer.sh) 以便进行分享~~（国内用户还是关掉吧不然上传十年）~~
 
-`auto_relogin` : 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线 3 秒后尝试重连
+`auto_relogin` : 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
 
 `debug_mode` : 输出调试信息用
 

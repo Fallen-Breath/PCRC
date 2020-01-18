@@ -73,6 +73,14 @@ def main():
 					logger.err(traceback.format_exc())
 				if not success:
 					logger.log('Parameter error')
+			elif text == 'status':
+				if recorder is not None:
+					msg = 'Online: {}; '.format(recorder.isOnline())
+					msg += recorder.format_status(recorder.translations.translate('CommandStatusResult','en_us'))
+					for line in msg.splitlines():
+						logger.log(line)
+				else:
+					logger.log('Recorder is None')
 			else:
 				logger.log('Command not found!')
 		except (KeyboardInterrupt, SystemExit):
