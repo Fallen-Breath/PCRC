@@ -95,7 +95,7 @@ Using normal in game chatting to trigger
 
 `!!PCRC pos`: show position, might not be 100% accurate
 
-`!!PCRC sepc`: spectator teleport to the player
+`!!PCRC spec`: spectator teleport to the player
 
 `!!PCRC stop`: stop PCRC
 

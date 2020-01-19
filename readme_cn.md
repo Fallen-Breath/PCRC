@@ -96,7 +96,7 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 `!!PCRC pos`: 显示所处位置，不一定 100% 准确
 
-`!!PCRC sepc`: 旁观者传送至发送指令的玩家
+`!!PCRC spec`: 旁观者传送至发送指令的玩家
 
 `!!PCRC stop`: 关闭 PCRC
 

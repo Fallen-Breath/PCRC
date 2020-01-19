@@ -61,7 +61,7 @@ CommandHelp: |
     !!PCRC status: 显示状态
     !!PCRC here: 发送一个“!!here”指令
     !!PCRC pos: 显示所处位置，不一定100%准确
-    !!PCRC sepc: 旁观者传送至发送指令的玩家
+    !!PCRC spec: 旁观者传送至发送指令的玩家
     !!PCRC stop: 关闭PCRC
     !!PCRC restart: 重启PCRC
     !!PCRC url: 输出所有已录制文件的网址
