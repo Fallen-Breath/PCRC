@@ -411,9 +411,13 @@ class Recorder():
 
 			if restart:
 				logger.log('---------------------------------------')
-				logger.log('PCRC restarting')
-				while not self.canStart():
+				for i in range(3):
+					logger.log('PCRC restarting in {}s'.format(3 - i))
 					time.sleep(1)
+				if not self.canStart():
+					logger.log('Waiting for PCRC to be startable')
+					while not self.canStart():
+						time.sleep(0.1)
 				self.start()
 
 	def __createReplayFile(self, logger, restart):
@@ -431,7 +435,20 @@ class Recorder():
 
 		# Creating .mcpr zipfile based on timestamp
 		logger.log('Time recorded/passed: {}/{}'.format(utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed())))
-		file_name = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S') + '.mcpr'
+
+		# Deciding file name
+		if not os.path.exists(utils.RecordingStorageFolder):
+			os.makedirs(utils.RecordingStorageFolder)
+		file_name_raw = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S')
+		if self.file_name is not None:
+			file_name_raw = self.file_name
+		file_name = file_name_raw + '.mcpr'
+		counter = 2
+		while os.path.isfile(f'{utils.RecordingStorageFolder}{file_name}'):
+			file_name = f'{file_name_raw}_{counter}.mcpr'
+			counter += 1
+		logger.log('File name is set to "{}"'.format(file_name))
+
 		logger.log('Creating "{}"'.format(file_name))
 		if self.isOnline():
 			self.chat(self.translation('OnCreatingMCPRFile'))
@@ -458,10 +475,7 @@ class Recorder():
 		zipf.close()
 
 		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
-		folder = 'PCRC_recordings'
-		if not os.path.exists(folder):
-			os.makedirs(folder)
-		file_path = '{}/{}'.format(folder, file_name)
+		file_path = f'{utils.RecordingStorageFolder}{file_name}'
 		shutil.move(file_name, file_path)
 
 		if self.config.get('upload_file'):
@@ -480,10 +494,7 @@ class Recorder():
 				logger.error(traceback.format_exc())
 
 	def canStart(self):
-		return not self.isWorking() and not self.isOnline() and self.file_thread is None
-
-	def finishedStopping(self):
-		return self.canStart()
+		return not self.isWorking() and not self.isOnline() and self.file_thread is None and self.connection.running_networking_thread == 0
 
 	def start(self):
 		if not self.canStart():
@@ -525,6 +536,7 @@ class Recorder():
 		self.packet_counter = 0
 		self.last_showinfo_packetcounter = 0
 		self.file_thread = None
+		self.file_name = None
 		self.markers = []
 		self.pos = None
 		if 'Time Update' in utils.BAD_PACKETS:
@@ -650,6 +662,12 @@ class Recorder():
 		self.chat(self.translation('OnMarkerDeleted').format(utils.convert_millis(marker['realTimestamp'])))
 		self.logger.log('Marker deleted: {}, {} markers has been stored'.format(marker, len(self.markers)))
 
+	def set_file_name(self, new_name):
+		old_name = self.file_name
+		self.chat(self.translation('OnFileNameSet').format(new_name))
+		self.file_name = new_name
+		self.logger.log('File name is setting from {0} to {1}'.format(old_name, new_name))
+
 	def processCommand(self, command, sender, uuid):
 		try:
 			args = command.split(' ')  # !!PCRC <> <> <> <>
@@ -694,6 +712,8 @@ class Recorder():
 						self.delete_marker(index)
 					else:
 						self.chat(self.translation('WrongArguments'))
+			elif len(args) == 3 and args[1] == 'name':
+				self.set_file_name(args[2])
 			else:
 				self.chat(self.translation('UnknownCommand'))
 		except Exception:

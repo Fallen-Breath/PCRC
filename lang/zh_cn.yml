@@ -49,6 +49,8 @@ OnMarkerAdded: |
     已添加位于{0}的标记事件
 OnMarkerDeleted: |
     已删除位于{0}的标记事件
+OnFileNameSet:
+    已将文件名设为“{0}”
 UnknownCommand: |
     未知指令！输入“!!PCRC”以获取帮助
 WrongArguments: |
@@ -68,3 +70,4 @@ CommandHelp: |
     !!PCRC marker: 输出所有的标记事件
     !!PCRC marker add [<备注>]: 添加一个在当前时刻的标记事件，并将其命名为<备注>（可选）
     !!PCRC marker del <序号>: 删除序号为<序号>的标记事件
+    !!PCRC name <文件名>: 将录像文件的文件名设置为 <文件名>

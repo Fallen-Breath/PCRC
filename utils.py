@@ -3,6 +3,7 @@ import os
 import time
 
 RecordingFileName = 'recording.tmcpr'
+RecordingStorageFolder = 'PCRC_recordings/'
 LoggingFileName = 'PCRC.log'
 FileBufferSize = 10 * 1024 * 1024
 FileSizeLimit = 512 * 1024 * 1024

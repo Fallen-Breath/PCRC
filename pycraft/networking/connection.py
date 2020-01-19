@@ -119,6 +119,7 @@ class Connection(object):
         self.outgoing_packet_listeners = []
         self.early_outgoing_packet_listeners = []
         self._exception_handlers = []
+        self.running_networking_thread = 0
 
         def proto_version(version):
             if isinstance(version, str):
@@ -542,6 +543,7 @@ class NetworkingThread(threading.Thread):
         self.previous_thread = previous
 
     def run(self):
+        self.connection.running_networking_thread += 1
         try:
             try:
                 if self.previous_thread is not None:
@@ -563,6 +565,8 @@ class NetworkingThread(threading.Thread):
         except Exception:
             self.logger.error(traceback.format_exc().splitlines()[-1])
             self.connection.recorder.stop()
+        finally:
+            self.connection.running_networking_thread -= 1
 
     def _run(self):
         while not self.interrupt:
@@ -572,7 +576,7 @@ class NetworkingThread(threading.Thread):
                 try:
                     while not self.interrupt and self.connection._pop_packet():
                         num_packets += 1
-                        if num_packets >= 500:
+                        if num_packets >= 300:
                             break
                     exc_info = None
                 except IOError:
@@ -586,8 +590,8 @@ class NetworkingThread(threading.Thread):
                 else:
                     read_timeout = 0.05
 
-            # Read and react to as many as 1000 packets.
-            while num_packets < 1000 and not self.interrupt:
+            # Read and react to as many as 300 packets.
+            while num_packets < 300 and not self.interrupt:
                 packet = self.connection.reactor.read_packet(
                     self.connection.file_object, timeout=read_timeout)
                 if not packet:

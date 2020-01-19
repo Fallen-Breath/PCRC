@@ -49,6 +49,8 @@ OnMarkerAdded: |
     Marker at {0} added
 OnMarkerDeleted: |
     Marker at {0} deleted
+OnFileNameSet:
+    File name is set to "{0}"
 UnknownCommand: |
     Unknown command! Type "!!PCRC" for help
 WrongArguments: |
@@ -68,3 +70,4 @@ CommandHelp: |
     !!PCRC marker: print all markers
     !!PCRC marker add [<name>]: add a marker, and name it as <name> (optional)
     !!PCRC marker del <index>: delete the marker at index <index>
+    !!PCRC name <filename>: set recording file name to <filename>
