@@ -560,8 +560,6 @@ class NetworkingThread(threading.Thread):
             finally:
                 with self.connection._write_lock:
                     self.connection.networking_thread = None
-        except BrokenPipeError:
-            pass
         except Exception:
             self.logger.error(traceback.format_exc().splitlines()[-1])
             self.connection.recorder.stop()
