@@ -14,6 +14,6 @@
     "remove_bats": true,
     "upload_file": false,
     "auto_relogin": true,
-	"chat_spam_protect": true,
+    "chat_spam_protect": true,
     "debug_mode": false
 }
