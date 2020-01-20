@@ -10,6 +10,7 @@ import traceback
 import zipfile
 import datetime
 import subprocess
+from queue import Queue
 
 from Translation import Translation
 import utils
@@ -63,6 +64,8 @@ class Recorder():
 		self.working = False
 		self.online = False
 		self.file_thread = None
+		self.chat_thread = None
+		self.file_name = None
 		self.file_urls = []
 		self.logger = Logger(name='Recorder', file_name='PCRC.log', display_debug=self.config.get('debug_mode'))
 		self.printConfig()
@@ -98,7 +101,7 @@ class Recorder():
 		message = '------- Config --------\n'
 		message += f"Language = {self.config.get('language')}\n"
 		message += f"Online mode = {self.config.get('online_mode')}\n"
-		message += f"User name = {self.config.get('username')}\n"
+		message += f"User name = {self.config.get('username')[0]}*****\n"
 		message += f"Password = ******\n"
 		message += f"Server address = {self.config.get('address')}\n"
 		message += f"Server port = {self.config.get('port')}\n"
@@ -139,9 +142,11 @@ class Recorder():
 		self.online = False
 		if self.isWorking():
 			self.stop(self.config.get('auto_relogin'))
+		self.chat_thread.kill()
 
 	def onChatMessage(self, packet):
 		js = json.loads(packet.json_data)
+		self.logger.debug('Message json data = {}'.format(packet.json_data))
 		try:
 			translate = js['translate']
 			msg = js['with'][-1]
@@ -155,7 +160,8 @@ class Recorder():
 				self.processCommand(msg['text'], None, None)
 			elif translate == 'chat.type.text':  # chat
 				message += '<{}> {}'.format(name, msg)
-				uuid = js['with'][0]['hoverEvent']['value']['text'].split('"')[7]
+				text = js['with'][0]['hoverEvent']['value']['text']
+				uuid = text[text.find(',id:"'):].split('"')[1]
 				self.processCommand(msg, name, uuid)
 			elif translate == 'commands.message.display.incoming':  # tell
 				message += '<{}>(tell) {}'.format(name, msg['text'])
@@ -168,7 +174,6 @@ class Recorder():
 			self.logger.log(message, do_print=False)
 		except:
 			self.logger.debug(traceback.format_exc())
-			self.logger.debug('json data = {}'.format(js))
 			pass
 
 	def onPlayerPositionAndLook(self, packet):
@@ -250,6 +255,10 @@ class Recorder():
 			if flags == 0:
 				self.pos = PositionAndLook(x=player_x, y=player_y, z=player_z, yaw=player_yaw, pitch=player_pitch)
 				self.logger.log('Set self\'s position to {}'.format(self.pos))
+
+		# update chatSpamThresholdCount in chat thread
+		if packet_name == 'Time Update':
+			self.chat_thread.on_recieved_TimeUpdatePacket()
 
 		if packet_recorded is not None and (packet_name in utils.BAD_PACKETS or (self.config.get('minimal_packets') and packet_name in utils.USELESS_PACKETS)):
 			packet_recorded = None
@@ -395,7 +404,6 @@ class Recorder():
 		self.file_thread.setDaemon(True)
 		self.flush()
 		self.file_thread.start()
-		self.file_thread.isAlive()
 
 	def _createReplayFile(self, restart):
 		logger = copy.deepcopy(self.logger)
@@ -407,6 +415,7 @@ class Recorder():
 			if self.isOnline():
 				self.disconnect()
 			self.file_thread = None
+			self.chat_thread.kill()
 			logger.log('PCRC stopped')
 
 			if restart:
@@ -456,7 +465,7 @@ class Recorder():
 
 		meta_data = {
 			'singleplayer': False,
-			'serverName': 'SECRET SERVER',
+			'serverName': self.config.get('server_name'),
 			'duration': self.timeRecorded(),
 			'date': utils.getMilliTime(),
 			'mcversion': '1.14.4',
@@ -536,9 +545,12 @@ class Recorder():
 		self.packet_counter = 0
 		self.last_showinfo_packetcounter = 0
 		self.file_thread = None
-		self.file_name = None
 		self.markers = []
 		self.pos = None
+		if self.chat_thread is not None:
+			self.chat_thread.kill()
+		self.chat_thread = ChatThread(self)
+		self.chat_thread.start()
 		if 'Time Update' in utils.BAD_PACKETS:
 			utils.BAD_PACKETS.remove('Time Update')
 
@@ -556,10 +568,7 @@ class Recorder():
 
 	def _chat(self, text, prefix=''):
 		for line in text.splitlines():
-			packet = serverbound.play.ChatPacket()
-			packet.message = prefix + line
-			self.connection.write_packet(packet)
-			self.logger.log('sent chat message "{}" to the server'.format(line))
+			self.chat_thread.add_chat(prefix + line)
 
 	def chat(self, text):
 		if self.isOnline():
@@ -673,6 +682,7 @@ class Recorder():
 			args = command.split(' ')  # !!PCRC <> <> <> <>
 			if len(args) == 0 or args[0] != '!!PCRC' or sender == self.config.get('username'):
 				return
+			self.logger.log('Processing Command {} from {} {}'.format(args, sender, uuid))
 			if len(args) == 1:
 				self.chat(self.translation('CommandHelp'))
 			elif len(args) == 2 and args[1] == 'status':
@@ -687,7 +697,7 @@ class Recorder():
 					self.chat(self.translation('CommandPositionResult').format(utils.format_vector(self.pos)))
 				else:
 					self.chat(self.translation('CommandPositionResultUnknown'))
-			elif len(args) == 2 and args[1] in ['stop', 'exit']:
+			elif len(args) == 2 and args[1] in ['stop']:
 				self.stop()
 			elif len(args) == 2 and args[1] == 'restart':
 				self.restart()
@@ -719,3 +729,50 @@ class Recorder():
 		except Exception:
 			self.logger.error('Error when processing command "{}"'.format(command))
 			self.logger.error(traceback.format_exc())
+
+
+class ChatThread(threading.Thread):
+	def __init__(self, recorder):
+		super().__init__()
+		self.setDaemon(True)
+		self.recorder = recorder
+		self.message_queue = Queue()
+		self.logger = copy.deepcopy(recorder.logger)
+		self.logger.thread = 'Chat'
+		self.interrupt = False
+		self.chatSpamThresholdCount = 0
+
+	def add_chat(self, msg):
+		self.message_queue.put(msg)
+
+	def send_chat(self, msg):
+		packet = serverbound.play.ChatPacket()
+		packet.message = msg
+		self.recorder.connection.write_packet(packet)
+		self.logger.log('Sent chat message "{}" to the server'.format(msg))
+		self.chatSpamThresholdCount += 20
+
+	def clear_queue(self):
+		self.message_queue = Queue()
+
+	def kill(self):
+		self.interrupt = True
+		self.clear_queue()
+
+	def on_recieved_TimeUpdatePacket(self):
+		self.chatSpamThresholdCount -= 20  # 20 gt passed
+		if self.chatSpamThresholdCount < 0:
+			self.chatSpamThresholdCount = 0
+
+	def can_chat(self):
+		# vanilla threshold is 200 but I set it to 180 for safety
+		return not self.recorder.config.get('chat_spam_protect') or self.chatSpamThresholdCount + 20 < 180
+
+	def run(self):
+		self.logger.log('Chat thread started')
+		while not self.interrupt:
+			if self.can_chat():
+				if self.message_queue.qsize() > 0:
+					self.send_chat(self.message_queue.get())
+			time.sleep(0.001)
+		self.logger.log('Chat thread stopped')

@@ -588,8 +588,8 @@ class NetworkingThread(threading.Thread):
                 else:
                     read_timeout = 0.05
 
-            # Read and react to as many as 300 packets.
-            while num_packets < 300 and not self.interrupt:
+            # Read and react to as many as 500 packets.
+            while num_packets < 500 and not self.interrupt:
                 packet = self.connection.reactor.read_packet(
                     self.connection.file_object, timeout=read_timeout)
                 if not packet:

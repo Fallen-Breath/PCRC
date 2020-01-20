@@ -18,13 +18,15 @@ TranslationFolder = 'lang/'
 
 def start():
 	global recorder, logger, ConfigFile
-	if recorder is None or (not isWorking() and recorder.canStart()):
+	if recorder is None or recorder.canStart():
+		logger.log('Creating new PCRC recorder')
 		try:
 			recorder = Recorder(ConfigFile, TranslationFolder)
 		except YggdrasilError as e:
 			logger.error(e)
 			return
 		recorder.start()
+		logger.log('Recorder started')
 	else:
 		logger.warn('Recorder is running, ignore')
 
@@ -36,8 +38,9 @@ def stop():
 	global recorder, logger
 	if isWorking():
 		recorder.stop()
-		while not not recorder.canStart():
+		while not recorder.canStart():
 			time.sleep(0.1)
+		logger.log('Recorder stopped')
 	else:
 		logger.warn('Recorder is not running, ignore')
 

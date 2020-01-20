@@ -50,6 +50,8 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 `port` : Minecraft 服务器的端口
 
+`server_name`: replay 回放中心内显示的服务器名称
+
 `minimal_packets` : 在这个选项设为 `true` 时 PCRC会仅录制能能维持录制的最小数量的数据包。 可用于在录制超长时间延迟摄影时减小文件大小
 
 `daytime` : 将游戏时间设置为一个固定值并忽略之后所有的时间变化。将其设为 `-1` 以录制正常的昼夜循环
@@ -65,6 +67,8 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 `upload_file` : 是否将录制好的文件上传至 [transfer.sh](transfer.sh) 以便进行分享~~（国内用户还是关掉吧不然上传十年）~~
 
 `auto_relogin` : 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
+
+`chat_spam_protect`: 是否在必要时自动延迟发送聊天消息，以防止被因滥发消息而踢出游戏
 
 `debug_mode` : 输出调试信息用
 

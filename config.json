@@ -5,6 +5,7 @@
     "password": "secret",
     "address": "localhost",
     "port": 20000,
+    "server_name": "SECRET SERVER",
     "minimal_packets": true,
     "daytime": 6000,
     "weather": false,
@@ -13,5 +14,6 @@
     "remove_bats": true,
     "upload_file": false,
     "auto_relogin": true,
+	"chat_spam_protect": true,
     "debug_mode": false
 }
