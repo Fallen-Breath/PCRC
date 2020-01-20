@@ -1,5 +1,6 @@
 # coding: utf8
 import copy
+import heapq
 import os
 import shutil
 import socket
@@ -204,7 +205,8 @@ class Recorder():
 			return
 		if len(self.file_urls) > 0:
 			self.print_urls()
-		self.chat(self.translation('OnDisconnect'))
+		self.chat(self.translation('OnDisconnect'), priority=ChatThread.Priority.High)
+		self.chat_thread.flush_pending_chat(ChatThread.Priority.High)
 		self.connection.disconnect()
 		self.online = False
 
@@ -486,6 +488,8 @@ class Recorder():
 		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
 		file_path = f'{utils.RecordingStorageFolder}{file_name}'
 		shutil.move(file_name, file_path)
+		if self.isOnline():
+			self.chat(self.translation('OnCreatedMCPRFile').format(file_name), priority=ChatThread.Priority.High)
 
 		if self.config.get('upload_file'):
 			if self.isOnline():
@@ -497,7 +501,7 @@ class Recorder():
 				url = out.splitlines()[-1]
 				self.file_urls.append(url)
 				if self.isOnline():
-					self.chat(self.translation('OnUploadedMCPRFile').format(file_name, url))
+					self.chat(self.translation('OnUploadedMCPRFile').format(file_name, url), priority=ChatThread.Priority.High)
 			except Exception as e:
 				logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
 				logger.error(traceback.format_exc())
@@ -566,13 +570,16 @@ class Recorder():
 	def restart(self):
 		self.stop(True)
 
-	def _chat(self, text, prefix=''):
+	def _chat(self, text, prefix='', priority=None):
 		for line in text.splitlines():
-			self.chat_thread.add_chat(prefix + line)
+			if priority is None:
+				self.chat_thread.add_chat(prefix + line)
+			else:
+				self.chat_thread.add_chat(prefix + line, priority)
 
-	def chat(self, text):
+	def chat(self, text, priority=None):
 		if self.isOnline():
-			self._chat(text)
+			self._chat(text, priority=priority)
 		else:
 			self.logger.warn('Cannot chat when disconnected')
 
@@ -580,7 +587,7 @@ class Recorder():
 		if name is None:
 			return self.chat(text)
 		if self.isOnline():
-			self._chat(text, '/tell {} '.format(name))
+			self._chat(text, prefix='/tell {} '.format(name))
 		else:
 			self.logger.warn('Cannot /tell when disconnected')
 
@@ -612,7 +619,8 @@ class Recorder():
 		return text.format(
 			self.isWorking(), self.isWorking() and not self.isAFKing(),
 			utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed()),
-			self.packet_counter, utils.convert_file_size(len(self.file_buffer)), utils.convert_file_size(self.file_size)
+			self.packet_counter, utils.convert_file_size(len(self.file_buffer)), utils.convert_file_size(self.file_size),
+			self.file_name
 		)
 
 	def print_urls(self):
@@ -732,20 +740,38 @@ class Recorder():
 
 
 class ChatThread(threading.Thread):
+	class Priority:
+		Low = 1
+		Normal = 0
+		High = -1
+
+	class QueueData:
+		id_counter = 0
+
+		def __init__(self, priority, data):
+			self.priority = priority
+			self.data = data
+			self.id = ChatThread.QueueData.id_counter + 1
+			ChatThread.QueueData.id_counter += 1
+
+		def __lt__(self, other):
+			return self.priority < other.priority or (self.priority == other.priority and self.id < other.id)
+
 	def __init__(self, recorder):
 		super().__init__()
 		self.setDaemon(True)
 		self.recorder = recorder
-		self.message_queue = Queue()
+		self.clear_queue()
 		self.logger = copy.deepcopy(recorder.logger)
 		self.logger.thread = 'Chat'
 		self.interrupt = False
 		self.chatSpamThresholdCount = 0
 
-	def add_chat(self, msg):
-		self.message_queue.put(msg)
+	def add_chat(self, msg, prio=Priority.Normal):
+		heapq.heappush(self.message_queue, ChatThread.QueueData(prio, msg))
 
-	def send_chat(self, msg):
+	def send_chat(self, queue_data):
+		msg = queue_data.data
 		packet = serverbound.play.ChatPacket()
 		packet.message = msg
 		self.recorder.connection.write_packet(packet)
@@ -753,11 +779,16 @@ class ChatThread(threading.Thread):
 		self.chatSpamThresholdCount += 20
 
 	def clear_queue(self):
-		self.message_queue = Queue()
+		self.message_queue = []
 
 	def kill(self):
 		self.interrupt = True
 		self.clear_queue()
+
+	# instant send all chat with priority <= p
+	def flush_pending_chat(self, p=Priority.Low):
+		while len(self.message_queue) > 0 and self.message_queue[0].priority <= p:
+			self.send_chat(heapq.heappop(self.message_queue))
 
 	def on_recieved_TimeUpdatePacket(self):
 		self.chatSpamThresholdCount -= 20  # 20 gt passed
@@ -772,7 +803,7 @@ class ChatThread(threading.Thread):
 		self.logger.log('Chat thread started')
 		while not self.interrupt:
 			if self.can_chat():
-				if self.message_queue.qsize() > 0:
-					self.send_chat(self.message_queue.get())
+				if len(self.message_queue) > 0:
+					self.send_chat(heapq.heappop(self.message_queue))
 			time.sleep(0.001)
 		self.logger.log('Chat thread stopped')
