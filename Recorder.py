@@ -11,8 +11,8 @@ import traceback
 import zipfile
 import datetime
 import subprocess
-from queue import Queue
 
+from ReplayFile import ReplayFile
 from Translation import Translation
 import utils
 import pycraft
@@ -277,12 +277,13 @@ class Recorder():
 			packet_recorded.write_varint(packet_id)
 			packet_recorded.write_long(world_age)
 			packet_recorded.write_long(-self.config.get('daytime'))  # If negative sun will stop moving at the Math.abs of the time
+			packet_recorded.receive(packet_recorded.flush())
 			utils.BAD_PACKETS.append('Time Update')  # Ignore all further updates
 
 		# Remove weather if configured
 		if packet_recorded is not None and not self.config.get('weather') and packet_name == 'Change Game State':
 			reason = packet.read_ubyte()
-			if reason == 1 or reason == 2:
+			if reason in [1, 2, 7, 8]:
 				packet_recorded = None
 
 		if packet_recorded is not None and packet_name == 'Spawn Player':
@@ -352,7 +353,6 @@ class Recorder():
 				self.chat(msg)
 			self.last_no_player_movement = noPlayerMovement
 		self.last_t = t
-
 
 		# Recording
 		if self.isWorking() and packet_recorded is not None and not self.isAFKing():
@@ -463,27 +463,10 @@ class Recorder():
 		logger.log('Creating "{}"'.format(file_name))
 		if self.isOnline():
 			self.chat(self.translation('OnCreatingMCPRFile'))
-		zipf = zipfile.ZipFile(file_name, 'w', zipfile.ZIP_DEFLATED)
 
-		meta_data = {
-			'singleplayer': False,
-			'serverName': self.config.get('server_name'),
-			'duration': self.timeRecorded(),
-			'date': utils.getMilliTime(),
-			'mcversion': '1.14.4',
-			'fileFormat': 'MCPR',
-			'fileFormatVersion': '14',
-			'protocol': 498,
-			'generator': 'PCRC',
-			'selfId': -1,
-			'players': self.player_uuids
-		}
-		utils.addFile(zipf, 'markers.json', json.dumps(self.markers))
-		utils.addFile(zipf, 'mods.json', '{"requiredMods":[]}')
-		utils.addFile(zipf, 'metaData.json', json.dumps(meta_data))
-		utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), str(utils.crc32f(utils.RecordingFileName)))
-		utils.addFile(zipf, utils.RecordingFileName)
-		zipf.close()
+		meta_data = utils.get_meta_data(self.config.get('server_name'), self.timeRecorded(), utils.getMilliTime(), '1.14.4', self.player_uuids)
+		file = ReplayFile(file_name, utils.RecordingFileName, meta_data, markers=self.markers)
+		file.create()
 
 		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
 		file_path = f'{utils.RecordingStorageFolder}{file_name}'
