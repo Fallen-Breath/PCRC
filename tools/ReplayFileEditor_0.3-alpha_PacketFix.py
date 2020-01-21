@@ -8,7 +8,11 @@ import zipfile
 from collections import namedtuple
 import gc
 
-from SARC.packet import Packet as SARCPacket
+try:
+	from SARC.packet import Packet as SARCPacket
+except ImportError: # in tools/ folder
+	sys.path.append("../")
+	from SARC.packet import Packet as SARCPacket
 
 Data = namedtuple("Data",['time_stamp','packet_length','packet'])
 
