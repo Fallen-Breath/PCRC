@@ -2,6 +2,8 @@ import binascii
 import os
 import time
 
+
+Version = '0.5-alpha'
 RecordingFileName = 'recording.tmcpr'
 RecordingStorageFolder = 'PCRC_recordings/'
 LoggingFileName = 'PCRC.log'

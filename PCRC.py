@@ -16,6 +16,13 @@ logger = Logger(name='PCRC', file_name=utils.LoggingFileName)
 ConfigFile = 'config.json'
 TranslationFolder = 'lang/'
 
+
+def on_start_up():
+	global logger
+	logger.log('PCRC {} starting up'.format(utils.Version))
+	logger.log('PCRC is open source, u can find it here: https://github.com/Fallen-Breath/PCRC')
+	logger.log('PCRC is still in development, it may not work well')
+
 def start():
 	global recorder, logger, ConfigFile
 	if recorder is None or recorder.canStart():
@@ -119,4 +126,5 @@ def main():
 
 
 if __name__ == "__main__":
+	on_start_up()
 	main()
