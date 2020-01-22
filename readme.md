@@ -35,9 +35,15 @@ The requirements are also stored in `requirements.txt`
 
 ## Config
 
-The config file is `config.json`
+The config file is `config.json`. All settings can be changed in it. Those which are similar to ABC inside it are just comments, don't need to modify them
+
+### Base
 
 `language`: The language that the PCRC bot will speak in the game. Language file should be in folder `lang/`
+
+`debug_mode`: Whether outputs debug info or not
+
+## Account and Server
 
 `online_mode`: Use online mode to login or offline mode instead
 
@@ -51,6 +57,24 @@ The config file is `config.json`
 
 `server_name`: The server name showed in replay viewer
 
+## PCRC Control
+
+`file_size_limit_mb`: The limit of size of the `.tmcpr` file. Every time it is reached, PCRC will restart. Default: `512`
+
+`file_buffer_size_mb`: The limit of size of file buffer. Every time it is reached, PCRC will flush all content in the buffer into `.tmcpr` file. Default: `8`
+    
+`time_recorded_limit_hour`: The limit of actual recording time. Every time it is reached, PCRC will restart. Default: `12`
+    
+`delay_before_afk_second`: The time delay between every player leaving and PCRC pausing recording. Default: `15`
+
+`upload_file`: If set to true, .mcpr file will be sent to [transfer.sh](transfer.sh) after finishing recording
+
+`auto_relogin`: If this option is enabled and the client gets disconnected, it will automatically try to reconnect
+
+`chat_spam_protect`: Automatically delay between sending chat messages if necessary to prevent being kicked for spamming
+
+### PCRC Features
+
 `minimal_packets`: PCRC will only record the minimum needed packets for a proper recording when this option is turned on. This should be used to decrease the filesize of recordings while recording long term projects (timelapse)
 
 `daytime`: Sets the daytime once to the defined time in the recording and ignores all further changes from the server. If set to `-1` the normal day/night cycle is recorded
@@ -63,13 +87,6 @@ The config file is `config.json`
 
 `remove_bats`: If set to true, bats won't be recorded. This can potentially decrease filesize
 
-`upload_file`: If set to true, .mcpr file will be sent to [transfer.sh](transfer.sh) after finishing recording
-
-`auto_relogin`: If this option is enabled and the client gets disconnected, it will automatically try to reconnect
-
-`chat_spam_protect`: Automatically delay between sending chat messages if necessary to prevent being kicked for spamming
-
-`debug_mode`: Outputs debug info
 
 ## Command
 

@@ -50,6 +50,7 @@ def main():
 	while True:
 		try:
 			text = input()
+			logger.log('Processing command "{}"'.format(text))
 			if text == "start":
 				start()
 			elif text == "stop":
@@ -61,6 +62,13 @@ def main():
 				break
 			elif text.startswith('say '):
 				recorder.chat(text[4:])
+			elif text == 'set':
+				commands = Config(ConfigFile).data.keys()
+				good_cmds = []
+				for command in commands:
+					if not command.startswith('__'):
+						good_cmds.append(command)
+				logger.log('Available commands: {}'.format(good_cmds))
 			elif text.startswith('set '):
 				success = False
 				try:
@@ -68,9 +76,10 @@ def main():
 					option = cmd[1]
 					value = cmd[2]
 					config = Config(ConfigFile)
+					value = config.convert_to_option_type(option, value)
 					config.set_value(option, value)
 					config.write_to_file()
-					logger.log('Assign "{}" = "{}" now'.format(option, value))
+					logger.log('Assign "{}" = "{}" ({}) now'.format(option, value, config.get_option_type(option).__name__))
 					if recorder is not None:
 						recorder.set_config(option, value)
 					success = True
@@ -86,6 +95,10 @@ def main():
 						logger.log(line)
 				else:
 					logger.log('Recorder is None')
+			elif text == 'config':
+				messages = Config(ConfigFile).display().splitlines()
+				for message in messages:
+					logger.log(message)
 			else:
 				logger.log('Command not found!')
 		except (KeyboardInterrupt, SystemExit):

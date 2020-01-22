@@ -1,19 +1,30 @@
 {
+    "__1__": "-------- Base --------",
     "language": "en_us",
+    "debug_mode": false,
+
+    "__2__": "-------- Account and Server --------",
     "online_mode": false,
     "username": "bot_PCRC",
     "password": "secret",
     "address": "localhost",
     "port": 20000,
     "server_name": "SECRET SERVER",
+
+    "__3__": "-------- PCRC Control --------",
+    "file_size_limit_mb": 512,
+    "file_buffer_size_mb": 8,
+    "time_recorded_limit_hour": 12,
+    "delay_before_afk_second": 15,
+    "upload_file": false,
+    "auto_relogin": true,
+    "chat_spam_protect": true,
+
+    "__4__": "-------- PCRC Features --------",
     "minimal_packets": true,
     "daytime": 4000,
     "weather": false,
     "with_player_only": true,
     "remove_items": false,
-    "remove_bats": true,
-    "upload_file": false,
-    "auto_relogin": true,
-    "chat_spam_protect": true,
-    "debug_mode": false
+    "remove_bats": true
 }

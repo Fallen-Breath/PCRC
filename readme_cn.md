@@ -36,41 +36,57 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 ## 配置文件
 
-配置文件为 `config.json`
+配置文件为 `config.json`，所有设置均可在其中更改。其中名为如 `__1__` 的为分隔符，无需修改
 
-`language` : PCRC 机器人使用的语言。语言文件需放置于 `lang/`
+### Base 基本设置
 
-`online_mode` : 是否使用正版登录
+`language`: PCRC 机器人使用的语言。语言文件需放置于 `lang/`
 
-`username` : 用于盗版登录的玩家id，或者是用于正版登录的 Minecraft 账号的邮箱
+`debug_mode`: 是否输出调试信息
 
-`password` : 用于正版登录时的 Minecraft 账号的密码
+### 账号与服务器
 
-`address` : Minecraft 服务器的 IP 地址
+`online_mode`: 是否使用正版登录
 
-`port` : Minecraft 服务器的端口
+`username`: 用于盗版登录的玩家id，或者是用于正版登录的 Minecraft 账号的邮箱
+
+`password`: 用于正版登录时的 Minecraft 账号的密码
+
+`address`: Minecraft 服务器的 IP 地址
+
+`port`: Minecraft 服务器的端口
 
 `server_name`: replay 回放中心内显示的服务器名称
 
-`minimal_packets` : 在这个选项设为 `true` 时 PCRC会仅录制能能维持录制的最小数量的数据包。 可用于在录制超长时间延迟摄影时减小文件大小
+### PCRC 设置
 
-`daytime` : 将游戏时间设置为一个固定值并忽略之后所有的时间变化。将其设为 `-1` 以录制正常的昼夜循环
+`file_size_limit_mb`: `.tmcpr` 文件的大小限制。每当达到这个限制时 PCRC 将会重启，单位: MB。默认值: `512`
 
-`weather` : 是否录制天气
+`file_buffer_size_mb`: 文件缓冲区的大小限制。每当达到这个限制时 PCRC 将会将缓冲区的内容输出至 `.tmcpr` 文件，单位: MB。默认值: `8`
+    
+`time_recorded_limit_hour`: 录制时长的限制。每当达到这个限制时 PCRC 将会重启，单位: 小时。默认值: `12`
+    
+`delay_before_afk_second`:  所有人都离开与暂停录制间的延迟，单位: 秒。默认值: `15`
 
-`with_player_only` : 是否只当玩家在附近时才进行录制
+`upload_file`: 是否将录制好的文件上传至 [transfer.sh](transfer.sh) 以便进行分享~~（国内用户还是关掉吧不然上传十年）~~
 
-`remove_items` : 是否忽略掉落物
-
-`remove_bats` : 是否忽略蝙蝠
-
-`upload_file` : 是否将录制好的文件上传至 [transfer.sh](transfer.sh) 以便进行分享~~（国内用户还是关掉吧不然上传十年）~~
-
-`auto_relogin` : 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
+`auto_relogin`: 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
 
 `chat_spam_protect`: 是否在必要时自动延迟发送聊天消息，以防止被因滥发消息而踢出游戏
 
-`debug_mode` : 输出调试信息用
+### PCRC 特性
+
+`minimal_packets`: 在这个选项设为 `true` 时 PCRC会仅录制能能维持录制的最小数量的数据包。 可用于在录制超长时间延迟摄影时减小文件大小
+
+`daytime`: 将游戏时间设置为一个固定值并忽略之后所有的时间变化。将其设为 `-1` 以录制正常的昼夜循环
+
+`weather`: 是否录制天气
+
+`with_player_only`: 是否只当玩家在附近时才进行录制
+
+`remove_items`: 是否忽略掉落物
+
+`remove_bats`: 是否忽略蝙蝠
 
 ## 指令
 

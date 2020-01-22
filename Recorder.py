@@ -8,7 +8,6 @@ import threading
 import time
 import json
 import traceback
-import zipfile
 import datetime
 import subprocess
 
@@ -25,36 +24,77 @@ from pycraft.networking.types import PositionAndLook
 
 
 class Config():
-	SettableOptions = ['language', 'minimal_packets', 'daytime', 'weather', 'with_player_only', 'remove_items', 'remove_bats']
+	SettableOptions = ['language', 'server_name', 'minimal_packets', 'daytime', 'weather', 'with_player_only', 'remove_items', 'remove_bats']
 	def __init__(self, file_name):
 		self.file_name = file_name
 		with open(file_name) as f:
 			self.data = json.load(f)
 
+	def get_option_type(self, option):
+		return type(self.data[option])
+
+	def convert_to_option_type(self, option, value):
+		t = self.get_option_type(option)
+		if t == bool:
+			value = value in ['True', 'true', 'TRUE', True] or (type(value) is int and value != 0)
+		else:
+			value = t(value)
+		return value
+
 	def set_value(self, option, value, forced=False):
 		if not forced:
-			t = type(self.data[option])
-			if t is str:
-				value = value
-			elif t is bool:
-				value = value in ['true', 'True', 'TRUE']
-			elif t is int:
-				value = int(value)
-			elif t is float:
-				value = float(value)
+			value = self.convert_to_option_type(option, value)
 		self.data[option] = value
+		return
 
 	def write_to_file(self, file_name=None):
 		if file_name is None:
 			file_name = self.file_name
+		text = json.dumps(self.data, indent=4)
+		for key in self.data.keys():
+			if len(key) == 5 and key[0] == key[1] == key[3] == key[4] == '_' and key != '__1__':
+				p = text.find('    "{}"'.format(key))
+				text = text[:p] + '\n' + text[p:]
 		with open(file_name, 'w') as f:
-			json.dump(self.data, f, indent=4)
+			f.write(text)
 
 	def get(self, option):
 		if option in self.data:
 			return self.data[option]
 		else:
 			return None
+
+	def display(self):
+		def secret(text):
+			return  '******' if len(text) <= 4 else '{}***{}'.format(text[0:2], text[-1])
+		messages = []
+		messages.append('================ Config ================')
+		messages.append('-------- Base --------')
+		messages.append(f"Language = {self.get('language')}")
+		messages.append(f"Debug mode = {self.get('debug_mode')}")
+		messages.append('-------- Account and Server --------')
+		messages.append(f"Online mode = {self.get('online_mode')}")
+		messages.append(f"User name = {secret(self.get('username'))}")
+		messages.append(f"Password = ******")
+		messages.append(f"Server address = {secret(self.get('address'))}")
+		messages.append(f"Server port = {self.get('port')}")
+		messages.append(f"Server name = {self.get('server_name')}")
+		messages.append('-------- PCRC Control --------')
+		messages.append(f"File size limit = {self.get('file_size_limit_mb')}MB")
+		messages.append(f"File buffer size = {self.get('file_buffer_size_mb')}MB")
+		messages.append(f"Time recorded limit = {self.get('time_recorded_limit_hour')}h")
+		messages.append(f"Upload file to transfer.sh = {self.get('upload_file')}")
+		messages.append(f"Auto relogin = {self.get('auto_relogin')}")
+		messages.append(f"Chat spam protect = {self.get('chat_spam_protect')}")
+		messages.append('-------- PCRC Features --------')
+		messages.append(f"Minimal packets mode = {self.get('minimal_packets')}")
+		messages.append(f"Daytime set to = {self.get('daytime')}")
+		messages.append(f"Weather switch = {self.get('weather')}")
+		messages.append(f"Record with player only = {self.get('with_player_only')}")
+		messages.append(f"Remove items = {self.get('remove_items')}")
+		messages.append(f"Remove bats = {self.get('remove_bats')}")
+		messages.append('========================================')
+		return '\n'.join(messages)
 
 class Recorder():
 	socket_id = None
@@ -69,7 +109,7 @@ class Recorder():
 		self.file_name = None
 		self.file_urls = []
 		self.logger = Logger(name='Recorder', file_name='PCRC.log', display_debug=self.config.get('debug_mode'))
-		self.printConfig()
+		self.print_config()
 
 		if not self.config.get('online_mode'):
 			self.logger.log("Login in offline mode")
@@ -98,26 +138,10 @@ class Recorder():
 	def translation(self, text):
 		return self.translations.translate(text, self.config.get('language'))
 
-	def printConfig(self):
-		message = '------- Config --------\n'
-		message += f"Language = {self.config.get('language')}\n"
-		message += f"Online mode = {self.config.get('online_mode')}\n"
-		message += f"User name = {self.config.get('username')[0]}*****\n"
-		message += f"Password = ******\n"
-		message += f"Server address = {self.config.get('address')}\n"
-		message += f"Server port = {self.config.get('port')}\n"
-		message += f"Minimal packets mode = {self.config.get('minimal_packets')}\n"
-		message += f"Daytime set to = {self.config.get('daytime')}\n"
-		message += f"Weather switch = {self.config.get('weather')}\n"
-		message += f"Record with player only = {self.config.get('with_player_only')}\n"
-		message += f"Remove items = {self.config.get('remove_items')}\n"
-		message += f"Remove bats = {self.config.get('remove_bats')}\n"
-		message += f"Upload file to transfer.sh = {self.config.get('upload_file')}\n"
-		message += f"Auto relogin = {self.config.get('auto_relogin')}\n"
-		message += f"Debug mode = {self.config.get('debug_mode')}\n"
-		message += '----------------------'
-		for line in message.splitlines():
-			self.logger.log(line)
+	def print_config(self):
+		messages = self.config.display().splitlines()
+		for message in messages:
+			self.logger.log(message)
 
 	def isOnline(self):
 		return self.online
@@ -218,7 +242,7 @@ class Recorder():
 	def noPlayerMovement(self, t=None):
 		if t is None:
 			t = utils.getMilliTime()
-		return t - self.last_player_movement >= 10 * 1000
+		return t - self.last_player_movement >= self.config.get('delay_before_afk_second') * 1000
 
 	def isAFKing(self):
 		return self.noPlayerMovement() and self.config.get('with_player_only')
@@ -232,6 +256,15 @@ class Recorder():
 		if t is None:
 			t = utils.getMilliTime()
 		return self.timePassed(t) - self.afk_time
+	
+	def file_size_limit(self):
+		return self.config.get('file_size_limit_mb') * utils.BytePerMB
+	
+	def file_buffer_size(self):
+		return self.config.get('file_buffer_size_mb') * utils.BytePerMB
+	
+	def time_recorded_limit(self):
+		return self.config.get('time_recorded_limit_hour') * utils.MilliSecondPerHour
 
 	def processPacketData(self, packet_raw):
 		if not self.isWorking():
@@ -366,21 +399,25 @@ class Recorder():
 		else:
 			self.logger.debug('{} packet ignore'.format(packet_name))
 
-		if self.isWorking() and self.file_size > utils.FileSizeLimit:
-			self.logger.log('tmcpr file size limit {}MB reached! Restarting'.format(utils.convert_file_size(utils.FileSizeLimit)))
-			self.chat(self.translation('OnReachFileSizeLimit').format(utils.convert_file_size(utils.FileSizeLimit)))
+		if self.isWorking() and self.file_size > self.file_size_limit():
+			self.logger.log('tmcpr file size limit {}MB reached! Restarting'.format(utils.convert_file_size(self.file_size_limit())))
+			self.chat(self.translation('OnReachFileSizeLimit').format(utils.convert_file_size(self.file_size_limit())))
 			self.restart()
 
-		if self.isWorking() and self.timeRecorded(t) > utils.TimeLengthLimit:
-			self.logger.log('{} actual recording time reached!'.format(utils.convert_millis(utils.TimeLengthLimit)))
-			self.chat(self.translation('OnReachTimeLimit').format(utils.convert_millis(utils.TimeLengthLimit)))
+		if self.isWorking() and self.timeRecorded(t) > self.time_recorded_limit():
+			self.logger.log('{} actual recording time reached!'.format(utils.convert_millis(self.time_recorded_limit())))
+			self.chat(self.translation('OnReachTimeLimit').format(utils.convert_millis(self.time_recorded_limit())))
 			self.restart()
 
-		if int(self.timePassed(t) / (60 * 1000)) != self.last_showinfo_time or self.packet_counter - self.last_showinfo_packetcounter >= 100000:
-			self.last_showinfo_time = int(self.timePassed(t) / (60 * 1000))
+		def get_showinfo_time():
+			return int(self.timePassed(t) / (5 * 60 * 1000))
+
+		# Log information in console
+		if get_showinfo_time()!= self.last_showinfo_time or self.packet_counter - self.last_showinfo_packetcounter >= 100000:
+			self.last_showinfo_time = get_showinfo_time()
 			self.last_showinfo_packetcounter = self.packet_counter
-			self.logger.log('Passed: {}; Recorded: {}, {} packets '.format(
-				utils.convert_millis(self.timePassed(t)), utils.convert_millis(self.timeRecorded(t)), self.packet_counter)
+			self.logger.log('Recorded/Passed: {}/{}; Packet count: {}'.format(
+				utils.convert_millis(self.timeRecorded(t)), utils.convert_millis(self.timePassed(t)), self.packet_counter)
 			)
 
 	def flush(self):
@@ -396,7 +433,7 @@ class Recorder():
 
 	def write(self, data):
 		self.file_buffer += data
-		if len(self.file_buffer) > utils.FileBufferSize:
+		if len(self.file_buffer) > self.file_buffer_size():
 			self.flush()
 
 	def createReplayFile(self, restart):
