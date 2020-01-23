@@ -384,6 +384,7 @@ class Connection(object):
                     login_start_packet.name = self.username
                 self.write_packet(login_start_packet)
                 self.reactor = LoginReactor(self)
+                self.recorder.on_protocol_version_decided(self.allowed_proto_versions.copy().pop())
             else:
                 # Determine the server's protocol version by first performing a
                 # status query.
@@ -738,6 +739,7 @@ class LoginReactor(PacketReactor):
 
         elif packet.packet_name == "login success":
             self.connection.reactor = PlayingReactor(self.connection)
+            self.connection.recorder.start_recording()
 
         elif packet.packet_name == "set compression":
             self.connection.options.compression_threshold = packet.threshold

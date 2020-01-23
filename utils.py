@@ -1,7 +1,7 @@
 import binascii
 import os
 import time
-
+import pycraft
 
 Version = '0.5-alpha'
 RecordingFileName = 'recording.tmcpr'
@@ -9,7 +9,12 @@ RecordingStorageFolder = 'PCRC_recordings/'
 LoggingFileName = 'PCRC.log'
 MilliSecondPerHour = 60 * 60 * 1000
 BytePerMB = 1024 * 1024
-MinimumLegalFileSize = 1 * BytePerMB
+MinimumLegalFileSize = 1024
+
+Map_VersionToProtocol = pycraft.SUPPORTED_MINECRAFT_VERSIONS
+Map_ProtocolToVersion = {}
+for item in Map_VersionToProtocol.items():
+	Map_ProtocolToVersion[item[1]] = item[0]
 
 
 def addFile(zip, fileName, fileData=None, arcname=None):
@@ -30,7 +35,15 @@ def crc32f(fn):
 		return crc32(f.read())
 
 
-def get_meta_data(server_name, duration, date, mcversion, player_uuids):
+def get_meta_data(server_name, duration, date, mcversion, protocol, player_uuids):
+	map_fileFormatVersion = {
+		'1.12': '6',
+		'1.12.2': '9',
+		'1.14.4': '14'
+	}
+	if player_uuids is None:
+		player_uuids = []
+	fileFormatVersion = map_fileFormatVersion[mcversion]
 	meta_data = {
 		'singleplayer': False,
 		'serverName': server_name,
@@ -38,8 +51,8 @@ def get_meta_data(server_name, duration, date, mcversion, player_uuids):
 		'date': date,
 		'mcversion': mcversion,
 		'fileFormat': 'MCPR',
-		'fileFormatVersion': '14',
-		'protocol': 498,
+		'fileFormatVersion': fileFormatVersion,
+		'protocol': protocol,
 		'generator': 'PCRC',
 		'selfId': -1,
 		'players': player_uuids

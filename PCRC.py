@@ -25,15 +25,15 @@ def on_start_up():
 
 def start():
 	global recorder, logger, ConfigFile
-	if recorder is None or recorder.canStart():
+	if recorder is None or recorder.is_stopped():
 		logger.log('Creating new PCRC recorder')
 		try:
 			recorder = Recorder(ConfigFile, TranslationFolder)
 		except YggdrasilError as e:
 			logger.error(e)
 			return
-		recorder.start()
-		logger.log('Recorder started')
+		ret = recorder.start()
+		logger.log('Recorder started, success = {}'.format(ret))
 	else:
 		logger.warn('Recorder is running, ignore')
 
@@ -45,7 +45,7 @@ def stop():
 	global recorder, logger
 	if isWorking():
 		recorder.stop()
-		while not recorder.canStart():
+		while not recorder.is_stopped():
 			time.sleep(0.1)
 		logger.log('Recorder stopped')
 	else:
