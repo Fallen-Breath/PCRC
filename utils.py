@@ -3,7 +3,7 @@ import os
 import time
 import pycraft
 
-Version = '0.5-alpha'
+Version = '0.6-alpha'
 RecordingFileName = 'recording.tmcpr'
 RecordingStorageFolder = 'PCRC_recordings/'
 LoggingFileName = 'PCRC.log'

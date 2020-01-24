@@ -540,31 +540,25 @@ class NetworkingThread(threading.Thread):
         self.connection = connection
         self.name = "Networking Thread"
         self.daemon = True
-        self.logger = Logger.Logger(name='Connection', thread='Networking', file_name='PCRC.log')
         self.previous_thread = previous
 
     def run(self):
         self.connection.running_networking_thread += 1
         try:
-            try:
-                if self.previous_thread is not None:
-                    if self.previous_thread.is_alive():
-                        self.previous_thread.join()
-                    with self.connection._write_lock:
-                        self.connection.networking_thread = self
-                        self.connection.new_networking_thread = None
-                self._run()
-                self.connection._handle_exit()
-            except Exception as e:
-                self.interrupt = True
-                self.connection._handle_exception(e, sys.exc_info())
-            finally:
+            if self.previous_thread is not None:
+                if self.previous_thread.is_alive():
+                    self.previous_thread.join()
                 with self.connection._write_lock:
-                    self.connection.networking_thread = None
-        except Exception:
-            self.logger.error(traceback.format_exc().splitlines()[-1])
-            self.connection.recorder.stop()
+                    self.connection.networking_thread = self
+                    self.connection.new_networking_thread = None
+            self._run()
+            self.connection._handle_exit()
+        except Exception as e:
+            self.interrupt = True
+            self.connection._handle_exception(e, sys.exc_info())
         finally:
+            with self.connection._write_lock:
+                self.connection.networking_thread = None
             self.connection.running_networking_thread -= 1
 
     def _run(self):

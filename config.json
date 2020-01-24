@@ -8,7 +8,7 @@
     "username": "bot_PCRC",
     "password": "secret",
     "address": "localhost",
-    "port": 20000,
+    "port": 25551,
     "server_name": "SECRET SERVER",
 
     "__3__": "-------- PCRC Control --------",
