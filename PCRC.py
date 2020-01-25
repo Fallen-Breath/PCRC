@@ -116,7 +116,7 @@ def main():
 		if isWorking():
 			logger.log('Stopping recorder before exit')
 			stop()
-			while not recorder.canStart():
+			while not recorder.is_stopped():
 				time.sleep(0.01)
 	except (KeyboardInterrupt, SystemExit):
 		logger.log('Forced to stop')

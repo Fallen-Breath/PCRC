@@ -11,8 +11,6 @@ An Minecraft client that can record a replay file (*.mcpr) which can be recogniz
 
 Great thanks to [SARC](https://github.com/Robitobi01/SARC) for the replay logic stuffs and [pyCraft](https://github.com/ammaraskar/pyCraft) for the minecraft client stuffs
 
-**Supports 1.14.4 server only** tho with a bit modification it works in any version as long as pyCraft supports that
-
 ## Environment
 
 Python version should be python3 and at least it works on Python 3.6 and Python 3.8
@@ -25,6 +23,10 @@ Python version should be python3 and at least it works on Python 3.6 and Python 
 - PyYAML
 
 The requirements are also stored in `requirements.txt`
+
+### Minecraft server
+
+PCRC currently supports connecting `1.12`, `1.12.2` and `1.14.4` vanilla Minecraft server
 
 ## Advantage
 
@@ -83,9 +85,11 @@ The config file is `config.json`. All settings can be changed in it. Those which
 
 `with_player_only`: If set to true, PCRC only record packets if there are players nearby
 
-`remove_items`: If set to true, all dropped items wont be recorded. This can potentially decrease filesize
+`remove_items`: If set to true, all dropped items wont be recorded
 
-`remove_bats`: If set to true, bats won't be recorded. This can potentially decrease filesize
+`remove_bats`: If set to true, bats won't be recorded
+
+`remove_phantoms`: If set to true, phantoms won't be recorded
 
 
 ## Command

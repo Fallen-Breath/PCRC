@@ -11,8 +11,6 @@ PCRC
 
 非常感谢 [SARC](https://github.com/Robitobi01/SARC) 提供了 replay 相关的逻辑处理部分与 [pyCraft](https://github.com/ammaraskar/pyCraft) 提供了 Minecraft 客户端相关的东西
 
-**仅支持 1.14.4 的服务器**，虽然只要改一改，就能让它支持任何 pyCraft 支持的版本
-
 ## 环境要求
 
 Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能运行
@@ -25,6 +23,10 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 - PyYAML
 
 所需的模块也已储存在 `requirements.txt` 中
+
+### Minecraft 服务器
+
+PCRC 目前支持连接 `1.12`、`1.12.2` 以及 `1.14.4` 的原版 Minecraft 服务端
 
 ## 优势
 
@@ -84,9 +86,11 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 `with_player_only`: 是否只当玩家在附近时才进行录制
 
-`remove_items`: 是否忽略掉落物
+`remove_items`: 是否不录制掉落物
 
-`remove_bats`: 是否忽略蝙蝠
+`remove_bats`: 是否不录制蝙蝠
+
+`remove_phantoms`: 是否不录制幻翼
 
 ## 指令
 

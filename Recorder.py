@@ -157,7 +157,7 @@ class Recorder:
 		return self.working
 
 	def onConnectionException(self, exc, exc_info):
-		self.logger.error('Exception caught in network thread: {}'.format(exc))
+		self.logger.error('Exception in network thread: {}'.format(exc))
 		self.logger.debug(traceback.format_exc())
 		self.stop()
 
@@ -209,6 +209,7 @@ class Recorder:
 				message = packet.json_data
 			self.logger.log(message, do_print=False)
 		except:
+			self.logger.debug('Cannot resolve chat json data: {}'.format(packet.json_data))
 			self.logger.debug(traceback.format_exc())
 			pass
 
@@ -299,14 +300,20 @@ class Recorder:
 		self.last_t = t
 
 		# Recording
-		if self.isWorking() and packet_recorded is not None and (not self.isAFKing() or packet_name in utils.IMPORTANT_PACKETS):
-			bytes_recorded = packet_recorded.read(packet_recorded.remaining())
-			data = self.timeRecorded().to_bytes(4, byteorder='big', signed=True)
-			data += len(bytes_recorded).to_bytes(4, byteorder='big', signed=True)
-			data += bytes_recorded
-			self.write(data)
-			self.logger.debug('{} packet recorded'.format(packet_name))
-			self.packet_counter += 1
+		if self.isWorking() and packet_recorded is not None:
+			if not self.isAFKing() or packet_name in utils.IMPORTANT_PACKETS:
+				bytes_recorded = packet_recorded.read(packet_recorded.remaining())
+				data = self.timeRecorded().to_bytes(4, byteorder='big', signed=True)
+				data += len(bytes_recorded).to_bytes(4, byteorder='big', signed=True)
+				data += bytes_recorded
+				self.write(data)
+				self.packet_counter += 1
+				if self.isAFKing() and packet_name in utils.IMPORTANT_PACKETS:
+					self.logger.debug('PCRC is afking but {} is an important packet so PCRC recorded it'.format(packet_name))
+				else:
+					self.logger.debug('{} packet recorded'.format(packet_name))
+			else:
+				self.logger.debug('{} packet ignore due to being afk'.format(packet_name))
 		else:
 			self.logger.debug('{} packet ignore'.format(packet_name))
 			pass
@@ -789,7 +796,7 @@ class PacketProcessor:
 			try:
 				packet_id, packet_name = self.analyze(packet)
 			except:
-				pass
+				self.logger.error('Fail to analyze packet information')
 			else:
 				self.logger.error('Packet id = {}; Packet name = {}'.format(packet_id, packet_name))
 			raise
@@ -801,6 +808,7 @@ class PacketProcessor:
 				packet_result = None
 			return packet_result
 
+		# update PCRC's position
 		def processPlayerPositionAndLook(packet_result):
 			if packet_name == 'Player Position And Look (clientbound)':
 				player_x = packet.read_double()
@@ -814,6 +822,7 @@ class PacketProcessor:
 					self.logger.log('Set self\'s position to {}'.format(self.pos))
 			return packet_result
 
+		# world time control
 		def processTimeUpdate(packet_result):
 			if packet_result is not None and 0 <= self.recorder.config.get('daytime') < 24000 and packet_name == 'Time Update':
 				self.logger.log('Set daytime to: ' + str(self.recorder.config.get('daytime')))
@@ -836,6 +845,7 @@ class PacketProcessor:
 					packet_result = None
 			return packet_result
 
+		# add player id for afk detector and uuid for recording
 		def processSpawnPlayer(packet_result):
 			if packet_result is not None and packet_name == 'Spawn Player':
 				entity_id = packet.read_varint()
@@ -849,30 +859,38 @@ class PacketProcessor:
 				self.recorder.updatePlayerMovement()
 			return packet_result
 
+		# check if the spawned is in black list
 		def processSpawnEntity(packet_result):
 			EntityTypeItem = {
+				'1.12': 2,
 				'1.12.2': 2,
 				'1.14.4': 34
 			}
 			EntityTypeBat = {
+				'1.12': 65,
 				'1.12.2': 65,
 				'1.14.4': 3
 			}
+			EntityTypePhantom = {
+				'1.12': -1,
+				'1.12.2': -1,
+				'1.14.4': 97
+			}
 			# Keep track of spawned items and their ids
-			if (packet_result is not None and
-					(self.recorder.config.get('remove_items') or self.recorder.config.get('remove_bats')) and
-					(packet_name == 'Spawn Object' or packet_name == 'Spawn Mob')):
+			if packet_result is not None and (packet_name == 'Spawn Object' or packet_name == 'Spawn Mob'):
 				entity_id = packet.read_varint()
 				entity_uuid = packet.read_uuid()
 				entity_type = packet.read_byte()
+				self.logger.debug('{} with id {} and type {}'.format(packet_name, entity_id, entity_type))
 				entity_name = None
 				if self.recorder.config.get('remove_items') and packet_name == 'Spawn Object' and entity_type == EntityTypeItem[self.recorder.mc_version]:
 					entity_name = 'Item'
-				if self.recorder.config.get('remove_bats') and packet_name == 'Spawn Mob' and entity_type ==  EntityTypeBat[self.recorder.mc_version]:
+				if self.recorder.config.get('remove_bats') and packet_name == 'Spawn Mob' and entity_type == EntityTypeBat[self.recorder.mc_version]:
 					entity_name = 'Bat'
+				if self.recorder.config.get('remove_phantoms') and packet_name == 'Spawn Mob' and entity_type == EntityTypePhantom[self.recorder.mc_version]:
+					entity_name = 'Phantom'
 				if entity_name is not None:
-					self.logger.debug(
-						'{} spawned but ignore and added to blocked id list, id = {}'.format(entity_name, entity_id))
+					self.logger.debug('{} spawned but ignore and added to blocked id list, id = {}'.format(entity_name, entity_id))
 					self.blocked_entity_ids.append(entity_id)
 					packet_result = None
 			return packet_result
@@ -892,8 +910,8 @@ class PacketProcessor:
 						self.logger.debug('Player destroyed, removed from player id list, id = {}'.format(entity_id))
 			return packet_result
 
+		# Remove item pickup animation packet
 		def processCollectItem(packet_result):
-			# Remove item pickup animation packet
 			if packet_result is not None and self.recorder.config.get(
 					'remove_items') and packet_name == 'Collect Item':
 				collected_entity_id = packet.read_varint()
@@ -904,8 +922,8 @@ class PacketProcessor:
 				packet_result = None
 			return packet_result
 
+		# Detecting player activity to continue recording and remove items or bats
 		def processEntityPackets(packet_result):
-			# Detecting player activity to continue recording and remove items or bats
 			if packet_name in utils.ENTITY_PACKETS:
 				entity_id = packet.read_varint()
 				if entity_id in self.player_ids:
@@ -922,13 +940,14 @@ class PacketProcessor:
 		# update chatSpamThresholdCount in chat thread
 		if packet_name == 'Time Update':
 			self.recorder.chat_thread.on_recieved_TimeUpdatePacket()
+
+		# process packet
 		packet_recorded = filterBadPacket(packet_recorded)
 		packet_recorded = processPlayerPositionAndLook(packet_recorded)
 		packet_recorded = processTimeUpdate(packet_recorded)
 		packet_recorded = processChangeGameState(packet_recorded)
 		packet_recorded = processSpawnPlayer(packet_recorded)
 		packet_recorded = processSpawnEntity(packet_recorded)
-
 		packet_recorded = processDestroyEntities(packet_recorded)
 		packet_recorded = processCollectItem(packet_recorded)
 		packet_recorded = processEntityPackets(packet_recorded)
