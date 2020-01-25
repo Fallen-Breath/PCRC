@@ -49,6 +49,7 @@ def read_tmcpr(file_name):
 	print('Packet count =', len(datas))
 
 def save_file():
+	print('Saving File')
 	global datas
 	with open(WorkingDirectory + 'recording.tmcpr', 'wb') as f:
 		for data in datas:
@@ -151,7 +152,6 @@ def fix_missing_player():
 		packet = SARCPacket()
 		packet.receive(data.packet)
 		packet_id = packet.read_varint()
-		packet_new = SARCPacket
 		bad = False
 		if packet_id == PlayerInfoId:
 			action = packet.read_varint()
@@ -165,7 +165,7 @@ def fix_missing_player():
 
 
 print('A script to fix some bugs in recording file recorded by PCRC in old versions')
-print('It can be optimize a lot but I\'m too lazy xd. whatever it works')
+print('It can be optimize a lot but I\'m too lazy xd. Whatever it works, but it may consume a lots of RAM')
 print('Only works for 1.14.4 recording file')
 with open('..\protocol.json', 'r') as f:
 	protocolMap = json.load(f)[str(498)]['Clientbound']
@@ -174,7 +174,7 @@ if len(sys.argv) >= 2:
 	input_file_name = sys.argv[1]
 while True:
 	if input_file_name is None:
-		input_file_name = input('Input .mcpr file name: ')
+		input_file_name = input('Input .mcpr file name (Example: "My_Recording.mcpr"): ')
 	if os.path.isfile(input_file_name):
 		break
 	else:
@@ -212,6 +212,8 @@ while True:
 	else:
 		print('Command effect:', msg)
 	if cmd == '0':
+		save_file()
+		shutil.rmtree(WorkingDirectory)
 		break
 	elif cmd == '1':
 		do_set_daytime = input('Set daytime? (0: no; 1: yes) = ') == '1'
@@ -228,6 +230,4 @@ while True:
 		fix_missing_player()
 	else:
 		print('Unknown command')
-save_file()
-shutil.rmtree(WorkingDirectory)
 input('press enter to exit')
