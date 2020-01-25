@@ -10,5 +10,4 @@ PCRC_recordings
 dist
 build
 PCRC.spec
-tools/ReplayFileEditor.py
 tools/__RFETMP__

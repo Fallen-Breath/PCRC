@@ -73,6 +73,10 @@ def format_vector(vec, f='.2f'):
 	return '({}, {}, {})'.format(format(vec.x, f), format(vec.y, f), format(vec.z, f))
 
 
+IMPORTANT_PACKETS = [
+	'Player Info'
+]
+
 # from SARC
 
 # Useless Packet Handling

@@ -262,8 +262,6 @@ class Recorder:
 		return t - self.start_time
 
 	def timeRecorded(self, t=None):
-		if t is None:
-			t = utils.getMilliTime()
 		return self.timePassed(t) - self.afk_time
 
 	def file_size_limit(self):
@@ -301,16 +299,17 @@ class Recorder:
 		self.last_t = t
 
 		# Recording
-		if self.isWorking() and packet_recorded is not None and not self.isAFKing():
-			bytes = packet_recorded.read(packet_recorded.remaining())
-			data = int(t - self.start_time).to_bytes(4, byteorder='big', signed=True)
-			data += len(bytes).to_bytes(4, byteorder='big', signed=True)
-			data += bytes
+		if self.isWorking() and packet_recorded is not None and (not self.isAFKing() or packet_name in utils.IMPORTANT_PACKETS):
+			bytes_recorded = packet_recorded.read(packet_recorded.remaining())
+			data = self.timeRecorded().to_bytes(4, byteorder='big', signed=True)
+			data += len(bytes_recorded).to_bytes(4, byteorder='big', signed=True)
+			data += bytes_recorded
 			self.write(data)
 			self.logger.debug('{} packet recorded'.format(packet_name))
 			self.packet_counter += 1
 		else:
 			self.logger.debug('{} packet ignore'.format(packet_name))
+			pass
 
 		if self.isWorking() and self.file_size > self.file_size_limit():
 			self.logger.log('tmcpr file size limit {}MB reached! Restarting'.format(utils.convert_file_size(self.file_size_limit())))
@@ -530,6 +529,7 @@ class Recorder:
 			else:
 				self.chat_thread.add_chat(prefix + line, priority)
 
+
 	def chat(self, text, priority=None):
 		if self.isOnline():
 			self._chat(text, priority=priority)
@@ -721,6 +721,7 @@ class ChatThread(threading.Thread):
 		self.chatSpamThresholdCount = 0
 
 	def add_chat(self, msg, prio=Priority.Normal):
+		self.logger.debug('Added chat "{}" with priority {} to queue'.format(msg, prio))
 		heapq.heappush(self.message_queue, ChatThread.QueueData(prio, msg))
 
 	def send_chat(self, queue_data):
