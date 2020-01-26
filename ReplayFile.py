@@ -32,6 +32,6 @@ class ReplayFile:
 		utils.addFile(zipf, 'markers.json', fileData=json.dumps(self.markers))
 		utils.addFile(zipf, 'mods.json', fileData=json.dumps({"requiredMods": self.mods}))
 		utils.addFile(zipf, 'metaData.json', fileData=json.dumps(self.meta_data))
-		utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), fileData=str(utils.crc32f(self.tmcpr_name)))
+		utils.addFile(zipf, '{}.crc32'.format(utils.RecordingFileName), fileData=str(utils.crc32_file(self.tmcpr_name)))
 		utils.addFile(zipf, self.tmcpr_name, arcname=utils.RecordingFileName)
 		zipf.close()

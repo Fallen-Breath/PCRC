@@ -1,6 +1,7 @@
-import binascii
 import os
 import time
+import zlib
+
 import pycraft
 
 Version = '0.6-alpha'
@@ -26,13 +27,18 @@ def addFile(zip, fileName, fileData=None, arcname=None):
 	os.remove(fileName)
 
 
-def crc32(v):
-	return binascii.crc32(v) & 0xffffffff
-
-
-def crc32f(fn):
+def crc32_file(fn):
+	BUFFER_SIZE = 2 ** 20
+	crc = 0
 	with open(fn, 'rb') as f:
-		return crc32(f.read())
+		while True:
+			buffer = f.read(BUFFER_SIZE)
+			if len(buffer) == 0:
+				break
+			crc = zlib.crc32(buffer, crc)
+	if crc < 0:
+		crc += 2 ** 32
+	return crc & 0xfffffff
 
 
 def get_meta_data(server_name, duration, date, mcversion, protocol, player_uuids):

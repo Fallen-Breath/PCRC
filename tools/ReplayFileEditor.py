@@ -58,7 +58,7 @@ def save_file():
 			f.write(data.packet)
 	print('Update recording.mcpr finished')
 	with open(WorkingDirectory + 'recording.tmcpr.crc32', 'w') as f:
-		f.write(str(utils.crc32f(WorkingDirectory + 'recording.tmcpr')))
+		f.write(str(utils.crc32_file(WorkingDirectory + 'recording.tmcpr')))
 	print('Update recording.tmcpr.crc32 finished')
 	global input_file_name
 	output_file_name = 'FIX_' + input_file_name
