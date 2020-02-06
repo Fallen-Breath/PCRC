@@ -591,8 +591,8 @@ class Recorder:
 			for url in self.file_urls:
 				self.chat(url)
 
-	def set_config(self, option, value):
-		if option not in Config.SettableOptions:
+	def set_config(self, option, value, forced=False):
+		if not forced and option not in Config.SettableOptions:
 			self.chat(self.translation('IllegalOptionName').format(option))
 			return
 		self.chat(self.translation('OnOptionSet').format(option, value))
@@ -818,8 +818,8 @@ class PacketProcessor:
 				player_pitch = packet.read_float()
 				flags = packet.read_byte()
 				if flags == 0:
-					self.pos = PositionAndLook(x=player_x, y=player_y, z=player_z, yaw=player_yaw, pitch=player_pitch)
-					self.logger.log('Set self\'s position to {}'.format(self.pos))
+					self.recorder.pos = PositionAndLook(x=player_x, y=player_y, z=player_z, yaw=player_yaw, pitch=player_pitch)
+					self.logger.log('Set self\'s position to {}'.format(self.recorder.pos))
 			return packet_result
 
 		# world time control

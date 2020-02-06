@@ -88,7 +88,7 @@ def main():
 					config.write_to_file()
 					logger.log('Assign "{}" = "{}" ({}) now'.format(option, value, config.get_option_type(option).__name__))
 					if recorder is not None:
-						recorder.set_config(option, value)
+						recorder.set_config(option, value, forced=True)
 					success = True
 				except Exception:
 					logger.err(traceback.format_exc())

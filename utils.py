@@ -36,8 +36,6 @@ def crc32_file(fn):
 			if len(buffer) == 0:
 				break
 			crc = zlib.crc32(buffer, crc)
-	if crc < 0:
-		crc += 2 ** 32
 	return crc & 0xfffffff
 
 
