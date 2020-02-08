@@ -91,7 +91,7 @@ def main():
 						recorder.set_config(option, value, forced=True)
 					success = True
 				except Exception:
-					logger.err(traceback.format_exc())
+					logger.error(traceback.format_exc())
 				if not success:
 					logger.log('Parameter error')
 			elif text == 'status':
