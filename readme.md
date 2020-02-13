@@ -34,6 +34,16 @@ PCRC currently supports connecting `1.12`, `1.12.2` and `1.14.4` vanilla Minecra
 - It can be set to record only when the player is nearby
 - Multiple options can be set for custom recording
 - Restart after raw file size reaches 512MB or recording time reaches 5 hours to prevent oversize recording
+- Since the virtual player (bot) doesn't move, the recording file will not include unnecessary packets related to chunk loading, which can significantly reduce recording file size
+
+## Usage
+
+1. Download and unzip the latest PCRC in [Release](https://github.com/Fallen-Breath/PCRC/releases) page
+2. Fill in the `config.json` file on demand
+3. Run `PCRC.py` or `PCRC.exe`
+4. Input `start` in the console to start PCRC
+5. (**Recommand**) Set the gamemode of the PCRC bot to spectator
+6. Use console or chat in game to control PCRC
 
 ## Config
 
@@ -120,7 +130,7 @@ Using normal in game chatting to trigger
 
 `!!PCRC pos`: show position, might not be 100% accurate
 
-`!!PCRC spec`: spectator teleport to the player
+`!!PCRC spec`: use the teleport ability in spectator mode to teleport to the player who sent this command
 
 `!!PCRC stop`: stop PCRC
 
@@ -133,3 +143,8 @@ Using normal in game chatting to trigger
 `!!PCRC set <option> <value>`: set the value of `<option>` to `<value>` which won't write to config file
 
 `!!PCRC name <filename>`: set recording file name to `<filename>`
+
+## Notes
+
+- There's not any code for processing game content in PCRC so if you want to move the PCRC bot you can only use teleport command like `!!PCRC spec` or `/tp`. You can not use stuffs like piston to move the bot otherwise some wired behaviors like the bot become invisible may occur
+- The file size that PCRC shows when recording is the size of `.tmcpr` file, the uncompressed raw packet file size. It's not the size of the final recording file `.mcpr`. The final file size is about 10% to 40% of the original packet file size, depending on the situation
