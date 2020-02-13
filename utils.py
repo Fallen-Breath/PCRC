@@ -29,7 +29,7 @@ def addFile(zip, fileName, fileData=None, arcname=None):
 
 
 def crc32_file(fn):
-	BUFFER_SIZE = 2 ** 20
+	BUFFER_SIZE = BytePerMB
 	crc = 0
 	with open(fn, 'rb') as f:
 		while True:
@@ -37,7 +37,7 @@ def crc32_file(fn):
 			if len(buffer) == 0:
 				break
 			crc = zlib.crc32(buffer, crc)
-	return crc & 0xfffffff
+	return crc & 0xffffffff
 
 
 def get_meta_data(server_name, duration, date, mcversion, protocol, player_uuids):
