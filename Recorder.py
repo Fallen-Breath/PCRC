@@ -106,6 +106,7 @@ class Recorder:
 		self.online = False
 		self.file_thread = None
 		self.chat_thread = None
+		self.file_buffer = bytearray()
 		self.file_name = None
 		self.file_urls = []
 		self.mc_version = None
@@ -159,7 +160,7 @@ class Recorder:
 	def onConnectionException(self, exc, exc_info):
 		self.logger.error('Exception in network thread: {}'.format(exc))
 		self.logger.debug(traceback.format_exc())
-		self.stop()
+		self.stop(restart=self.config.get('auto_relogin'))
 
 	def onPacketSent(self, packet):
 		self.logger.debug('<- {}'.format(packet.data))
@@ -177,7 +178,7 @@ class Recorder:
 		self.logger.log('PCRC disconnected from the server, reason = {}'.format(packet.json_data))
 		self.online = False
 		if self.isWorking():
-			self.stop(self.config.get('auto_relogin'))
+			self.stop(restart=self.config.get('auto_relogin'))
 		self.chat_thread.kill()
 
 	def onChatMessage(self, packet):
@@ -231,8 +232,6 @@ class Recorder:
 		except Exception:
 			self.logger.error(traceback.format_exc())
 
-		if not success:
-			self.stop()
 		return success
 
 	def disconnect(self):
@@ -319,8 +318,8 @@ class Recorder:
 			pass
 
 		if self.isWorking() and self.file_size > self.file_size_limit():
-			self.logger.log('tmcpr file size limit {}MB reached! Restarting'.format(utils.convert_file_size(self.file_size_limit())))
-			self.chat(self.translation('OnReachFileSizeLimit').format(utils.convert_file_size(self.file_size_limit())))
+			self.logger.log('tmcpr file size limit {}MB reached! Restarting'.format(utils.convert_file_size_MB(self.file_size_limit())))
+			self.chat(self.translation('OnReachFileSizeLimit').format(utils.convert_file_size_MB(self.file_size_limit())))
 			self.restart()
 
 		if self.isWorking() and self.timeRecorded(t) > self.time_recorded_limit():
@@ -346,7 +345,7 @@ class Recorder:
 			replay_recording.write(self.file_buffer)
 		self.file_size += len(self.file_buffer)
 		self.logger.log('Flushing {} bytes to "{}" file, file size = {}MB now'.format(
-			len(self.file_buffer), utils.RecordingFileName, utils.convert_file_size(self.file_size)
+			len(self.file_buffer), utils.RecordingFileName, utils.convert_file_size_MB(self.file_size)
 		))
 		self.file_buffer = bytearray()
 
@@ -365,8 +364,8 @@ class Recorder:
 			return
 		self.logger.log('Starting PCRC')
 		success = self.connect()
-		if success == False:
-			self.stop()
+		if not success:
+			self.stop(restart=self.config.get('auto_relogin'))
 		return success
 
 	# called when pycraft connection switch to PlayingReactor
@@ -410,9 +409,6 @@ class Recorder:
 			utils.BAD_PACKETS.remove('Time Update')
 
 	def stop(self, restart=False):
-		if not self.isWorking():
-			self.connection.disconnect()
-			return False
 		self.logger.log('Stopping PCRC, restart = {}'.format(restart))
 		if self.isOnline():
 			self.chat(self.translation('OnPCRCStopping'))
@@ -421,14 +417,13 @@ class Recorder:
 		return True
 
 	def restart(self):
-		self.stop(True)
+		self.stop(restart=True)
 
 	def createReplayFile(self, restart):
 		if self.file_thread is not None:
 			return
-		self.file_thread = threading.Thread(target = self._createReplayFile, args=(restart, ))
+		self.file_thread = threading.Thread(target=self._createReplayFile, args=(restart, ))
 		self.file_thread.setDaemon(True)
-		self.flush()
 		self.file_thread.start()
 
 	def _createReplayFile(self, restart):
@@ -447,9 +442,10 @@ class Recorder:
 			return
 
 		if self.file_size < utils.MinimumLegalFileSize:
-			logger.warn('Size of "{}" too small ({}MB < {}MB)'.format(
-				utils.RecordingFileName, utils.convert_file_size(self.file_size), utils.convert_file_size(utils.MinimumLegalFileSize)
+			logger.warn('Size of "{}" too small ({}KB < {}KB), abort creating replay file'.format(
+				utils.RecordingFileName, utils.convert_file_size_KB(self.file_size), utils.convert_file_size_KB(utils.MinimumLegalFileSize)
 			))
+			return
 
 		if not os.path.isfile(utils.RecordingFileName):
 			logger.warn('"{}" file not found, abort creating replay file'.format(utils.RecordingFileName))
@@ -486,7 +482,7 @@ class Recorder:
 		file = ReplayFile(file_name, utils.RecordingFileName, meta_data, markers=self.markers)
 		file.create()
 
-		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size(os.path.getsize(file_name))))
+		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size_MB(os.path.getsize(file_name))))
 		file_path = f'{utils.RecordingStorageFolder}{file_name}'
 		shutil.move(file_name, file_path)
 		if self.isOnline():
@@ -513,7 +509,8 @@ class Recorder:
 		self.file_thread = None
 		self.mc_version = None
 		self.mc_protocol = None
-		self.chat_thread.kill()
+		if self.chat_thread is not None:
+			self.chat_thread.kill()
 		logger.log('PCRC stopped')
 
 		if restart:
@@ -579,7 +576,7 @@ class Recorder:
 		return text.format(
 			self.isWorking(), self.isWorking() and not self.isAFKing(),
 			utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed()),
-			self.packet_counter, utils.convert_file_size(len(self.file_buffer)), utils.convert_file_size(self.file_size),
+			self.packet_counter, utils.convert_file_size_MB(len(self.file_buffer)), utils.convert_file_size_MB(self.file_size),
 			self.file_name
 		)
 

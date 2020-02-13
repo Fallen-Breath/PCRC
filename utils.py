@@ -4,13 +4,14 @@ import zlib
 
 import pycraft
 
-Version = '0.6-alpha'
+Version = '0.7-alpha'
 RecordingFileName = 'recording.tmcpr'
 RecordingStorageFolder = 'PCRC_recordings/'
 LoggingFileName = 'PCRC.log'
 MilliSecondPerHour = 60 * 60 * 1000
-BytePerMB = 1024 * 1024
-MinimumLegalFileSize = 1024
+BytePerKB = 1024
+BytePerMB = BytePerKB * 1024
+MinimumLegalFileSize = 10 * BytePerKB
 
 Map_VersionToProtocol = pycraft.SUPPORTED_MINECRAFT_VERSIONS
 Map_ProtocolToVersion = {}
@@ -65,8 +66,13 @@ def get_meta_data(server_name, duration, date, mcversion, protocol, player_uuids
 
 
 # convert file size to MB
-def convert_file_size(file_size):
+def convert_file_size_MB(file_size):
 	return format(file_size / 1024 / 1024, '.2f')
+
+
+# convert file size to KB
+def convert_file_size_KB(file_size):
+	return format(file_size / 1024, '.2f')
 
 
 def getMilliTime():
