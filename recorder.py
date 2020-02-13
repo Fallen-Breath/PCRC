@@ -11,10 +11,11 @@ import traceback
 import datetime
 import subprocess
 
-from ReplayFile import ReplayFile
-from Translation import Translation
+import config
+from replay_file import ReplayFile
+from translation import Translation
 import utils
-from Logger import Logger
+from logger import Logger
 from pycraft import authentication
 from pycraft.networking.connection import Connection
 from pycraft.networking.packets import Packet as PycraftPacket, clientbound, serverbound
@@ -22,88 +23,15 @@ from SARC.packet import Packet as SARCPacket
 from pycraft.networking.types import PositionAndLook
 
 
-class Config:
-	SettableOptions = ['language', 'server_name', 'minimal_packets', 'daytime', 'weather', 'with_player_only', 'remove_items', 'remove_bats']
-	def __init__(self, file_name):
-		self.file_name = file_name
-		with open(file_name) as f:
-			self.data = json.load(f)
-
-	def get_option_type(self, option):
-		return type(self.data[option])
-
-	def convert_to_option_type(self, option, value):
-		t = self.get_option_type(option)
-		if t == bool:
-			value = value in ['True', 'true', 'TRUE', True] or (type(value) is int and value != 0)
-		else:
-			value = t(value)
-		return value
-
-	def set_value(self, option, value, forced=False):
-		if not forced:
-			value = self.convert_to_option_type(option, value)
-		self.data[option] = value
-		return
-
-	def write_to_file(self, file_name=None):
-		if file_name is None:
-			file_name = self.file_name
-		text = json.dumps(self.data, indent=4)
-		for key in self.data.keys():
-			if len(key) == 5 and key[0] == key[1] == key[3] == key[4] == '_' and key != '__1__':
-				p = text.find('    "{}"'.format(key))
-				text = text[:p] + '\n' + text[p:]
-		with open(file_name, 'w') as f:
-			f.write(text)
-
-	def get(self, option):
-		if option in self.data:
-			return self.data[option]
-		else:
-			return None
-
-	def display(self):
-		def secret(text):
-			return  '******' if len(text) <= 4 else '{}***{}'.format(text[0:2], text[-1])
-		messages = []
-		messages.append('================ Config ================')
-		messages.append('-------- Base --------')
-		messages.append(f"Language = {self.get('language')}")
-		messages.append(f"Debug mode = {self.get('debug_mode')}")
-		messages.append('-------- Account and Server --------')
-		messages.append(f"Online mode = {self.get('online_mode')}")
-		messages.append(f"User name = {secret(self.get('username'))}")
-		messages.append(f"Password = ******")
-		messages.append(f"Server address = {self.get('address')}")
-		messages.append(f"Server port = {self.get('port')}")
-		messages.append(f"Server name = {self.get('server_name')}")
-		messages.append('-------- PCRC Control --------')
-		messages.append(f"File size limit = {self.get('file_size_limit_mb')}MB")
-		messages.append(f"File buffer size = {self.get('file_buffer_size_mb')}MB")
-		messages.append(f"Time recorded limit = {self.get('time_recorded_limit_hour')}h")
-		messages.append(f"Upload file to transfer.sh = {self.get('upload_file')}")
-		messages.append(f"Auto relogin = {self.get('auto_relogin')}")
-		messages.append(f"Chat spam protect = {self.get('chat_spam_protect')}")
-		messages.append('-------- PCRC Features --------')
-		messages.append(f"Minimal packets mode = {self.get('minimal_packets')}")
-		messages.append(f"Daytime set to = {self.get('daytime')}")
-		messages.append(f"Weather switch = {self.get('weather')}")
-		messages.append(f"Record with player only = {self.get('with_player_only')}")
-		messages.append(f"Remove items = {self.get('remove_items')}")
-		messages.append(f"Remove bats = {self.get('remove_bats')}")
-		messages.append('========================================')
-		return '\n'.join(messages)
-
-
 class Recorder:
 	socket_id = None
 
 	def __init__(self, config_file, translation_folder):
-		self.config = Config(config_file)
+		self.config = config.Config(config_file)
 		self.translations = Translation(translation_folder)
 		self.working = False
 		self.online = False
+		self.stop_by_user = False  # set to true once PCRC is stopped by user; reset to false when PCRC starts
 		self.file_thread = None
 		self.chat_thread = None
 		self.file_buffer = bytearray()
@@ -111,7 +39,7 @@ class Recorder:
 		self.file_urls = []
 		self.mc_version = None
 		self.mc_protocol = None
-		self.logger = Logger(name='Recorder', file_name='PCRC.log', display_debug=self.config.get('debug_mode'))
+		self.logger = Logger(name='Recorder', display_debug=self.config.get('debug_mode'))
 		self.print_config()
 
 		allowed_versions = ['1.12', '1.12.2', '1.14.4']
@@ -140,9 +68,6 @@ class Recorder:
 		self.protocolMap = {}
 		self.logger.log('init finish')
 
-	def __del__(self):
-		self.stop()
-
 	def translation(self, text):
 		return self.translations.translate(text, self.config.get('language'))
 
@@ -160,7 +85,11 @@ class Recorder:
 	def onConnectionException(self, exc, exc_info):
 		self.logger.error('Exception in network thread: {}'.format(exc))
 		self.logger.debug(traceback.format_exc())
-		self.stop(restart=self.config.get('auto_relogin'))
+		if not self.stop_by_user:
+			self.logger.error('Stopping the recorder since PCRC has not been stopped by user')
+			self.stop(restart=self.config.get('auto_relogin'))
+		else:
+			self.logger.log('Don''t panic, that''s Works As Intended')
 
 	def onPacketSent(self, packet):
 		self.logger.debug('<- {}'.format(packet.data))
@@ -170,7 +99,7 @@ class Recorder:
 		self.processPacketData(packet)
 
 	def onGameJoin(self, packet):
-		self.logger.log('PCRC joined to the server')
+		self.logger.log('PCRC bot joined the server')
 		self.online = True
 		self.chat(self.translation('OnGameJoin'))
 
@@ -300,7 +229,7 @@ class Recorder:
 
 		# Recording
 		if self.isWorking() and packet_recorded is not None:
-			if not self.isAFKing() or packet_name in utils.IMPORTANT_PACKETS:
+			if not self.isAFKing() or packet_name in utils.IMPORTANT_PACKETS or self.config.get('record_packets_when_afk'):
 				bytes_recorded = packet_recorded.read(packet_recorded.remaining())
 				data = self.timeRecorded().to_bytes(4, byteorder='big', signed=True)
 				data += len(bytes_recorded).to_bytes(4, byteorder='big', signed=True)
@@ -317,7 +246,7 @@ class Recorder:
 			self.logger.debug('{} packet ignore'.format(packet_name))
 			pass
 
-		if self.isWorking() and self.file_size > self.file_size_limit():
+		if self.isWorking() and self.replay_file.size() > self.file_size_limit():
 			self.logger.log('tmcpr file size limit {}MB reached! Restarting'.format(utils.convert_file_size_MB(self.file_size_limit())))
 			self.chat(self.translation('OnReachFileSizeLimit').format(utils.convert_file_size_MB(self.file_size_limit())))
 			self.restart()
@@ -341,11 +270,9 @@ class Recorder:
 	def flush(self):
 		if len(self.file_buffer) == 0:
 			return
-		with open(utils.RecordingFileName, 'ab+') as replay_recording:
-			replay_recording.write(self.file_buffer)
-		self.file_size += len(self.file_buffer)
-		self.logger.log('Flushing {} bytes to "{}" file, file size = {}MB now'.format(
-			len(self.file_buffer), utils.RecordingFileName, utils.convert_file_size_MB(self.file_size)
+		self.replay_file.write(self.file_buffer)
+		self.logger.log('Flushing {} bytes to "recording.tmcpr" file, file size = {}MB now'.format(
+			len(self.file_buffer), utils.convert_file_size_MB(self.replay_file.size())
 		))
 		self.file_buffer = bytearray()
 
@@ -363,6 +290,7 @@ class Recorder:
 		if not self.is_stopped():
 			return
 		self.logger.log('Starting PCRC')
+		self.stop_by_user = False
 		success = self.connect()
 		if not success:
 			self.stop(restart=self.config.get('auto_relogin'))
@@ -386,7 +314,6 @@ class Recorder:
 	# initializing stuffs
 	def on_recording_start(self):
 		self.working = True
-		open(utils.RecordingFileName, 'w').close()
 		self.start_time = utils.getMilliTime()
 		self.last_player_movement = self.start_time
 		self.afk_time = 0
@@ -394,12 +321,11 @@ class Recorder:
 		self.last_no_player_movement = False
 		self.player_uuids = []
 		self.file_buffer = bytearray()
-		self.file_size = 0
 		self.last_showinfo_time = 0
 		self.packet_counter = 0
 		self.last_showinfo_packetcounter = 0
 		self.file_thread = None
-		self.markers = []
+		self.replay_file = ReplayFile(path=utils.RecordingFilePath)
 		self.pos = None
 		if self.chat_thread is not None:
 			self.chat_thread.kill()
@@ -408,16 +334,15 @@ class Recorder:
 		if 'Time Update' in utils.BAD_PACKETS:
 			utils.BAD_PACKETS.remove('Time Update')
 
-	def stop(self, restart=False):
-		self.logger.log('Stopping PCRC, restart = {}'.format(restart))
+	def stop(self, restart=False, by_user=False):
+		self.logger.log('Stopping PCRC, restart = {}, by_user = {}'.format(restart, by_user))
 		if self.isOnline():
 			self.chat(self.translation('OnPCRCStopping'))
+		if by_user:
+			self.stop_by_user = True
 		self.working = False
 		self.createReplayFile(restart)
 		return True
-
-	def restart(self):
-		self.stop(restart=True)
 
 	def createReplayFile(self, restart):
 		if self.file_thread is not None:
@@ -430,25 +355,24 @@ class Recorder:
 		logger = copy.deepcopy(self.logger)
 		logger.thread = 'File'
 		try:
-			self.__createReplayFile(logger, restart)
+			self.__createReplayFile(logger)
+		except AttributeError:
+			logger.log('Recorder has not started up, aborted creating replay file')
+			logger.debug(traceback.format_exc())
 		finally:
 			self.on_final_stop(logger, restart)
 
-	def __createReplayFile(self, logger, restart):
+	def __createReplayFile(self, logger):
 		self.flush()
 
 		if self.mc_version is None or self.mc_protocol is None:
 			logger.log('Not connected to the server yet, abort creating replay recording file')
 			return
 
-		if self.file_size < utils.MinimumLegalFileSize:
-			logger.warn('Size of "{}" too small ({}KB < {}KB), abort creating replay file'.format(
-				utils.RecordingFileName, utils.convert_file_size_KB(self.file_size), utils.convert_file_size_KB(utils.MinimumLegalFileSize)
+		if self.replay_file.size() < utils.MinimumLegalFileSize:
+			logger.warn('Size of "recording.tmcpr" too small ({}KB < {}KB), abort creating replay file'.format(
+				utils.convert_file_size_KB(self.replay_file.size()), utils.convert_file_size_KB(utils.MinimumLegalFileSize)
 			))
-			return
-
-		if not os.path.isfile(utils.RecordingFileName):
-			logger.warn('"{}" file not found, abort creating replay file'.format(utils.RecordingFileName))
 			return
 
 		# Creating .mcpr zipfile based on timestamp
@@ -471,7 +395,7 @@ class Recorder:
 		if self.isOnline():
 			self.chat(self.translation('OnCreatingMCPRFile'))
 
-		meta_data = utils.get_meta_data(
+		self.replay_file.meta_data = utils.get_meta_data(
 			server_name=self.config.get('server_name'),
 			duration=self.timeRecorded(),
 			date=utils.getMilliTime(),
@@ -479,8 +403,7 @@ class Recorder:
 			protocol=self.mc_protocol,
 			player_uuids=self.player_uuids
 		)
-		file = ReplayFile(file_name, utils.RecordingFileName, meta_data, markers=self.markers)
-		file.create()
+		self.replay_file.create(file_name)
 
 		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size_MB(os.path.getsize(file_name))))
 		file_path = f'{utils.RecordingStorageFolder}{file_name}'
@@ -491,7 +414,7 @@ class Recorder:
 		if self.config.get('upload_file'):
 			if self.isOnline():
 				self.chat(self.translation('OnUploadingMCPRFile'))
-			logger.log('Uploading "{}" to transfer.sh'.format(utils.RecordingFileName))
+			logger.log('Uploading "{}" to transfer.sh'.format(file_name))
 			try:
 				ret, out = subprocess.getstatusoutput(
 					'curl --upload-file {} https://transfer.sh/{}'.format(file_path, file_name))
@@ -499,13 +422,20 @@ class Recorder:
 				self.file_urls.append(url)
 				if self.isOnline():
 					self.chat(self.translation('OnUploadedMCPRFile').format(file_name, url), priority=ChatThread.Priority.High)
-			except Exception as e:
-				logger.error('Fail to upload "{}" to transfer.sh'.format(utils.RecordingFileName))
+			except Exception:
+				logger.error('Fail to upload "{}" to transfer.sh'.format(file_name))
 				logger.error(traceback.format_exc())
 
 	def on_final_stop(self, logger, restart):
 		logger.log('File operations finished, disconnect now')
-		self.disconnect()
+		try:
+			self.disconnect()
+		except Exception as e:
+			logger.warn('Fail to disconnect: {}'.format(e))
+			try:
+				self.connection.disconnect(immediate=True)
+			except Exception as e:
+				logger.warn('Fail to immediately disconnect: {}'.format(e))
 		self.file_thread = None
 		self.mc_version = None
 		self.mc_protocol = None
@@ -576,7 +506,7 @@ class Recorder:
 		return text.format(
 			self.isWorking(), self.isWorking() and not self.isAFKing(),
 			utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed()),
-			self.packet_counter, utils.convert_file_size_MB(len(self.file_buffer)), utils.convert_file_size_MB(self.file_size),
+			self.packet_counter, utils.convert_file_size_MB(len(self.file_buffer)), utils.convert_file_size_MB(self.replay_file.size()),
 			self.file_name
 		)
 
@@ -589,7 +519,7 @@ class Recorder:
 				self.chat(url)
 
 	def set_config(self, option, value, forced=False):
-		if not forced and option not in Config.SettableOptions:
+		if not forced and option not in config.SettableOptions:
 			self.chat(self.translation('IllegalOptionName').format(option))
 			return
 		self.chat(self.translation('OnOptionSet').format(option, value))
@@ -610,31 +540,14 @@ class Recorder:
 			self.logger.warn('Fail to add marker, position unknown!')
 			return
 		time_stamp = self.timeRecorded()
-		marker = {
-			'realTimestamp': time_stamp,
-			'value': {
-				'position': {
-					'x': self.pos.x,
-					'y': self.pos.y,
-					'z': self.pos.z,
-					# seems that replay mod switches these two values, idk y
-					'yaw': self.pos.pitch,
-					'pitch': self.pos.yaw,
-					'roll': 0.0
-				}
-			}
-		}
-		if name is not None:
-			marker['value']['name'] = name
-		self.markers.append(marker)
+		marker = self.replay_file.add_marker(self.timeRecorded(), self.pos, name)
 		self.chat(self.translation('OnMarkerAdded').format(utils.convert_millis(time_stamp)))
-		self.logger.log('Marker added: {}, {} markers has been stored'.format(marker, len(self.markers)))
+		self.logger.log('Marker added: {}, {} markers has been stored'.format(marker, len(self.replay_file.markers)))
 
 	def delete_marker(self, index):
-		index -= 1
-		marker = self.markers.pop(index)
+		marker = self.replay_file.markers.pop(index - 1)
 		self.chat(self.translation('OnMarkerDeleted').format(utils.convert_millis(marker['realTimestamp'])))
-		self.logger.log('Marker deleted: {}, {} markers has been stored'.format(marker, len(self.markers)))
+		self.logger.log('Marker deleted: {}, {} markers has been stored'.format(marker, len(self.replay_file.markers)))
 
 	def set_file_name(self, new_name):
 		old_name = self.file_name
@@ -663,16 +576,16 @@ class Recorder:
 				else:
 					self.chat(self.translation('CommandPositionResultUnknown'))
 			elif len(args) == 2 and args[1] in ['stop']:
-				self.stop()
+				self.stop(by_user=True)
 			elif len(args) == 2 and args[1] == 'restart':
-				self.restart()
+				self.stop(restart=True, by_user=True)
 			elif len(args) == 2 and args[1] in ['url', 'urls']:
 				self.print_urls()
 			elif len(args) == 4 and args[1] == 'set':
 				self.set_config(args[2], args[3])
 			elif len(args) == 2 and args[1] == 'set':
 				self.chat(self.translation('CommandSetListTitle'))
-				self.chat(', '.join(Config.SettableOptions))
+				self.chat(', '.join(config.SettableOptions))
 			elif (len(args) == 2 and args[1] == 'marker') or (len(args) == 3 and args[1] == 'marker' and args[2] == 'list'):
 				self.print_markers()
 			elif 3 <= len(args) <= 4 and args[1] == 'marker' and args[2] == 'add':

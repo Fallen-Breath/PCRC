@@ -3,11 +3,17 @@ import traceback
 
 
 class Logger:
-	def __init__(self, name=None, thread=None, file_name=None, display_debug=False):
+	DefaultFileName = 'PCRC.log'
+
+	def __init__(self, name=None, thread=None, file_name=DefaultFileName, display_debug=False):
 		self.name = name
 		self.thread = thread
 		self.file_name = file_name
 		self.display_debug = display_debug
+
+	@staticmethod
+	def set_default_file_name(fn):
+		Logger.DefaultFileName = fn
 
 	def _log(self, msg, log_type, do_print):
 		if not isinstance(msg, str):

@@ -55,7 +55,7 @@ The config file is `config.json`. All settings can be changed in it. Those which
 
 `debug_mode`: Whether outputs debug info or not
 
-## Account and Server
+### Account and Server
 
 `online_mode`: Use online mode to login or offline mode instead
 
@@ -69,7 +69,7 @@ The config file is `config.json`. All settings can be changed in it. Those which
 
 `server_name`: The server name showed in replay viewer
 
-## PCRC Control
+### PCRC Control
 
 `file_size_limit_mb`: The limit of size of the `.tmcpr` file. Every time it is reached, PCRC will restart. Default: `512`
 
@@ -78,6 +78,8 @@ The config file is `config.json`. All settings can be changed in it. Those which
 `time_recorded_limit_hour`: The limit of actual recording time. Every time it is reached, PCRC will restart. Default: `12`
     
 `delay_before_afk_second`: The time delay between every player leaving and PCRC pausing recording. Default: `15`
+
+`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording
 
 `upload_file`: If set to true, .mcpr file will be sent to [transfer.sh](transfer.sh) after finishing recording
 

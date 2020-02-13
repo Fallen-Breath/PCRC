@@ -5,9 +5,8 @@ import zlib
 import pycraft
 
 Version = '0.7-alpha'
-RecordingFileName = 'recording.tmcpr'
+RecordingFilePath = 'temp_recording/'
 RecordingStorageFolder = 'PCRC_recordings/'
-LoggingFileName = 'PCRC.log'
 MilliSecondPerHour = 60 * 60 * 1000
 BytePerKB = 1024
 BytePerMB = BytePerKB * 1024

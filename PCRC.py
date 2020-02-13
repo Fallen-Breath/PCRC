@@ -6,13 +6,14 @@ import time
 import traceback
 
 import utils
-from Logger import Logger
-from Recorder import Recorder, Config
+from logger import Logger
+from recorder import Recorder
+from config import Config
 from pycraft.compat import input
 from pycraft.exceptions import YggdrasilError
 
 recorder = None
-logger = Logger(name='PCRC', file_name=utils.LoggingFileName)
+logger = Logger(name='PCRC')
 ConfigFile = 'config.json'
 TranslationFolder = 'lang/'
 
@@ -44,7 +45,7 @@ def isWorking():
 def stop():
 	global recorder, logger
 	if isWorking():
-		recorder.stop()
+		recorder.stop(by_user=True)
 		while not recorder.is_stopped():
 			time.sleep(0.1)
 		logger.log('Recorder stopped')
@@ -123,6 +124,8 @@ def main():
 		return
 	except Exception:
 		logger.error(traceback.format_exc())
+
+	logger.log('Exited')
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ import re
 
 from future.utils import raise_
 
-import Logger
+import logger
 from .types import VarInt
 from .packets import clientbound, serverbound
 from . import packets
