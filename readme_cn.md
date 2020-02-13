@@ -79,7 +79,7 @@ PCRC 目前支持连接 `1.12`、`1.12.2` 以及 `1.14.4` 的原版 Minecraft �
     
 `delay_before_afk_second`:  所有人都离开与暂停录制间的延迟，单位: 秒。默认值: `15`
 
-`record_packets_when_afk`: 若设为 `false`，PCRC 将会在暂停录制时忽略几乎所有到来的数据包
+`record_packets_when_afk`: 若设为 `false`，PCRC 将会在暂停录制时忽略几乎所有到来的数据包（SARC 的行为）
 
 `upload_file`: 是否将录制好的文件上传至 [transfer.sh](transfer.sh) 以便进行分享~~（国内用户还是关掉吧不然上传十年）~~
 

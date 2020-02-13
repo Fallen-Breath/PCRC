@@ -89,7 +89,7 @@ class Recorder:
 			self.logger.error('Stopping the recorder since PCRC has not been stopped by user')
 			self.stop(restart=self.config.get('auto_relogin'))
 		else:
-			self.logger.log('Don''t panic, that''s Works As Intended')
+			self.logger.log("Don't panic, that's Works As Intended")
 
 	def onPacketSent(self, packet):
 		self.logger.debug('<- {}'.format(packet.data))

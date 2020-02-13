@@ -79,7 +79,7 @@ The config file is `config.json`. All settings can be changed in it. Those which
     
 `delay_before_afk_second`: The time delay between every player leaving and PCRC pausing recording. Default: `15`
 
-`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording
+`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording (SARC's behavior)
 
 `upload_file`: If set to true, .mcpr file will be sent to [transfer.sh](transfer.sh) after finishing recording
 
