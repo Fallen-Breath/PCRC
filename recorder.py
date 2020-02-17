@@ -42,11 +42,10 @@ class Recorder:
 		self.logger = Logger(name='Recorder', display_debug=self.config.get('debug_mode'))
 		self.print_config()
 
-		allowed_versions = ['1.12', '1.12.2', '1.14.4']
 		if not self.config.get('online_mode'):
 			self.logger.log("Login in offline mode")
 			self.connection = Connection(self.config.get('address'), self.config.get('port'), username=self.config.get('username'),
-				recorder=self, allowed_versions=allowed_versions, handle_exception=self.onConnectionException
+				recorder=self, allowed_versions=utils.ALLOWED_VERSIONS, handle_exception=self.onConnectionException
 			)
 		else:
 			self.logger.log("Login in online mode")
@@ -55,7 +54,7 @@ class Recorder:
 			self.logger.log("Logged in as %s" % auth_token.profile.name)
 			self.config.set_value('username', auth_token.profile.name)
 			self.connection = Connection(self.config.get('address'), self.config.get('port'),
-				auth_token=auth_token, recorder=self, allowed_versions=allowed_versions, handle_exception=self.onConnectionException
+				auth_token=auth_token, recorder=self, allowed_versions=utils.ALLOWED_VERSIONS, handle_exception=self.onConnectionException
 			)
 
 		self.connection.register_packet_listener(self.onPacketReceived, PycraftPacket)

@@ -4,7 +4,7 @@ import zlib
 
 import pycraft
 
-Version = '0.7-alpha'
+Version = '0.7.2-alpha'
 RecordingFilePath = 'temp_recording/'
 RecordingStorageFolder = 'PCRC_recordings/'
 MilliSecondPerHour = 60 * 60 * 1000
@@ -12,6 +12,7 @@ BytePerKB = 1024
 BytePerMB = BytePerKB * 1024
 MinimumLegalFileSize = 10 * BytePerKB
 
+ALLOWED_VERSIONS = ['1.12', '1.12.2', '1.14.4']
 Map_VersionToProtocol = pycraft.SUPPORTED_MINECRAFT_VERSIONS
 Map_ProtocolToVersion = {}
 for item in Map_VersionToProtocol.items():
