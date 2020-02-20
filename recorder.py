@@ -115,6 +115,8 @@ class Recorder:
 		try:
 			translate = js['translate']
 			msg = js['with'][-1]
+			if type(msg) is dict:
+				msg = msg['text']  # 1.15.2 server
 			message = '({}) '.format(packet.field_string('position'))
 			try:
 				name = js['with'][0]['insertion']
@@ -125,7 +127,10 @@ class Recorder:
 				self.processCommand(msg['text'], None, None)
 			elif translate == 'chat.type.text':  # chat
 				message += '<{}> {}'.format(name, msg)
-				text = js['with'][0]['hoverEvent']['value']['text']
+				try:
+					text = js['with'][0]['hoverEvent']['value']['text']
+				except TypeError:  # 1.15.2 server
+					text = js['with'][0]['hoverEvent']['value'][0]['text']
 				uuid = text[text.find(',id:"'):].split('"')[1]
 				self.processCommand(msg, name, uuid)
 			elif translate == 'commands.message.display.incoming':  # tell
@@ -343,6 +348,9 @@ class Recorder:
 		self.createReplayFile(restart)
 		return True
 
+	def restart(self, by_user=False):
+		self.stop(restart=True, by_user=by_user)
+
 	def createReplayFile(self, restart):
 		if self.file_thread is not None:
 			return
@@ -526,13 +534,13 @@ class Recorder:
 		self.logger.log('Option <{}> set to <{}>'.format(option, value))
 
 	def print_markers(self):
-		if len(self.markers) == 0:
+		if len(self.replay_file.markers) == 0:
 			self.chat(self.translation('MarkerNotFound'))
 		else:
 			self.chat(self.translation('CommandMarkerListTitle'))
-			for i in range(len(self.markers)):
-				name = self.markers[i]['value']['name'] if 'name' in self.markers[i]['value'] else ''
-				self.chat('{}. {} {}'.format(i + 1, utils.convert_millis(self.markers[i]['realTimestamp']), name))
+			for i in range(len(self.replay_file.markers)):
+				name = self.replay_file.markers[i]['value']['name'] if 'name' in self.replay_file.markers[i]['value'] else ''
+				self.chat('{}. {} {}'.format(i + 1, utils.convert_millis(self.replay_file.markers[i]['realTimestamp']), name))
 
 	def add_marker(self, name=None):
 		if self.pos is None:
@@ -577,7 +585,7 @@ class Recorder:
 			elif len(args) == 2 and args[1] in ['stop']:
 				self.stop(by_user=True)
 			elif len(args) == 2 and args[1] == 'restart':
-				self.stop(restart=True, by_user=True)
+				self.restart(True)
 			elif len(args) == 2 and args[1] in ['url', 'urls']:
 				self.print_urls()
 			elif len(args) == 4 and args[1] == 'set':
@@ -595,7 +603,7 @@ class Recorder:
 				except ValueError:
 					self.chat(self.translation('WrongArguments'))
 				else:
-					if 1 <= index <= len(self.markers):
+					if 1 <= index <= len(self.replay_file.markers):
 						self.delete_marker(index)
 					else:
 						self.chat(self.translation('WrongArguments'))
