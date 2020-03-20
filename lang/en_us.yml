@@ -26,7 +26,7 @@ PrintUrls: |
     There are {0} uploaded file urls:
 IllegalOptionName: |
     You cannot change option "{0}"!
-    Use "!!PCRC set" to see settable options
+    Use "{1} set" to see settable options
 OnOptionSet: |
     Setting <{0}> to <{1}>
 CommandStatusResult: |
@@ -54,22 +54,22 @@ OnMarkerDeleted: |
 OnFileNameSet:
     File name is set to "{0}"
 UnknownCommand: |
-    Unknown command! Type "!!PCRC" for help
+    Unknown command! Type "{0}" for help
 WrongArguments: |
     Wrong Arguments!
 CommandHelp: |
     ----- Command List -----
-    !!PCRC: show help
-    !!PCRC status: show status
-    !!PCRC here: emit a "!!here" command
-    !!PCRC pos: show position, might not be 100% accurate
-    !!PCRC spec: spectator teleport to the player
-    !!PCRC stop: stop PCRC
-    !!PCRC restart: restart PCRC
-    !!PCRC url: print all urls of recorded files
-    !!PCRC set: print all settable option
-    !!PCRC set <option> <value>: set the value of <option> to <value> which won't write to config file
-    !!PCRC marker: print all markers
-    !!PCRC marker add [<name>]: add a marker, and name it as <name> (optional)
-    !!PCRC marker del <index>: delete the marker at index <index>
-    !!PCRC name <filename>: set recording file name to <filename>
+    {0}: show help
+    {0} status: show status
+    {0} here: emit a "!!here" command
+    {0} pos: show position, might not be 100% accurate
+    {0} spec: spectator teleport to the player
+    {0} stop: stop PCRC
+    {0} restart: restart PCRC
+    {0} url: print all urls of recorded files
+    {0} set: print all settable option
+    {0} set <option> <value>: set the value of <option> to <value> which won't write to config file
+    {0} marker: print all markers
+    {0} marker add [<name>]: add a marker, and name it as <name> (optional)
+    {0} marker del <index>: delete the marker at index <index>
+    {0} name <filename>: set recording file name to <filename>

@@ -19,15 +19,6 @@ for item in Map_VersionToProtocol.items():
 	Map_ProtocolToVersion[item[1]] = item[0]
 
 
-def addFile(zip, fileName, fileData=None, arcname=None):
-	if fileData is not None:
-		with open(fileName, 'w') as f:
-			f.write(fileData)
-	zip.write(fileName, arcname=arcname)
-	time.sleep(0.01)
-	os.remove(fileName)
-
-
 def crc32_file(fn):
 	BUFFER_SIZE = BytePerMB
 	crc = 0

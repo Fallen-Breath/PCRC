@@ -75,10 +75,10 @@ class Recorder:
 		for message in messages:
 			self.logger.log(message)
 
-	def isOnline(self):
+	def is_online(self):
 		return self.online
 
-	def isWorking(self):
+	def is_working(self):
 		return self.working
 
 	def onConnectionException(self, exc, exc_info):
@@ -105,7 +105,7 @@ class Recorder:
 	def onDisconnect(self, packet):
 		self.logger.log('PCRC disconnected from the server, reason = {}'.format(packet.json_data))
 		self.online = False
-		if self.isWorking():
+		if self.is_working():
 			self.stop(restart=self.config.get('auto_relogin'))
 		self.chat_thread.kill()
 
@@ -151,7 +151,7 @@ class Recorder:
 		self.updatePlayerMovement()
 
 	def connect(self):
-		if self.isOnline():
+		if self.is_online():
 			self.logger.warn('Cannot connect when connected')
 			return
 		success = False
@@ -168,7 +168,7 @@ class Recorder:
 		return success
 
 	def disconnect(self):
-		if self.isOnline():
+		if self.is_online():
 			if len(self.file_urls) > 0:
 				self.print_urls()
 			self.chat(self.translation('OnDisconnect'), priority=ChatThread.Priority.High)
@@ -207,7 +207,7 @@ class Recorder:
 		return self.config.get('time_recorded_limit_hour') * utils.MilliSecondPerHour
 
 	def processPacketData(self, packet_raw):
-		if not self.isWorking():
+		if not self.is_working():
 			return
 		bytes = packet_raw.data
 		if bytes[0] == 0x00:
@@ -232,7 +232,7 @@ class Recorder:
 		self.last_t = t
 
 		# Recording
-		if self.isWorking() and packet_recorded is not None:
+		if self.is_working() and packet_recorded is not None:
 			if not self.isAFKing() or packet_name in utils.IMPORTANT_PACKETS or self.config.get('record_packets_when_afk'):
 				bytes_recorded = packet_recorded.read(packet_recorded.remaining())
 				data = self.timeRecorded().to_bytes(4, byteorder='big', signed=True)
@@ -250,12 +250,12 @@ class Recorder:
 			self.logger.debug('{} packet ignore'.format(packet_name))
 			pass
 
-		if self.isWorking() and self.replay_file.size() > self.file_size_limit():
+		if self.is_working() and self.replay_file.size() > self.file_size_limit():
 			self.logger.log('tmcpr file size limit {}MB reached! Restarting'.format(utils.convert_file_size_MB(self.file_size_limit())))
 			self.chat(self.translation('OnReachFileSizeLimit').format(utils.convert_file_size_MB(self.file_size_limit())))
 			self.restart()
 
-		if self.isWorking() and self.timeRecorded(t) > self.time_recorded_limit():
+		if self.is_working() and self.timeRecorded(t) > self.time_recorded_limit():
 			self.logger.log('{} actual recording time reached!'.format(utils.convert_millis(self.time_recorded_limit())))
 			self.chat(self.translation('OnReachTimeLimit').format(utils.convert_millis(self.time_recorded_limit())))
 			self.restart()
@@ -288,7 +288,7 @@ class Recorder:
 	# Start & Stop stuffs
 
 	def is_stopped(self):
-		return not self.isWorking() and not self.isOnline() and self.file_thread is None and self.connection.running_networking_thread == 0
+		return not self.is_working() and not self.is_online() and self.file_thread is None and self.connection.running_networking_thread == 0
 
 	def start(self):
 		if not self.is_stopped():
@@ -340,7 +340,7 @@ class Recorder:
 
 	def stop(self, restart=False, by_user=False):
 		self.logger.log('Stopping PCRC, restart = {}, by_user = {}'.format(restart, by_user))
-		if self.isOnline():
+		if self.is_online():
 			self.chat(self.translation('OnPCRCStopping'))
 		if by_user:
 			self.stop_by_user = True
@@ -399,27 +399,27 @@ class Recorder:
 		logger.log('File name is set to "{}"'.format(file_name))
 
 		logger.log('Creating "{}"'.format(file_name))
-		if self.isOnline():
+		if self.is_online():
 			self.chat(self.translation('OnCreatingMCPRFile'))
 
-		self.replay_file.meta_data = utils.get_meta_data(
+		self.replay_file.set_meta_data(utils.get_meta_data(
 			server_name=self.config.get('server_name'),
 			duration=self.timeRecorded(),
 			date=utils.getMilliTime(),
 			mcversion=self.mc_version,
 			protocol=self.mc_protocol,
 			player_uuids=self.player_uuids
-		)
+		))
 		self.replay_file.create(file_name)
 
 		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size_MB(os.path.getsize(file_name))))
 		file_path = f'{utils.RecordingStorageFolder}{file_name}'
 		shutil.move(file_name, file_path)
-		if self.isOnline():
+		if self.is_online():
 			self.chat(self.translation('OnCreatedMCPRFile').format(file_name), priority=ChatThread.Priority.High)
 
 		if self.config.get('upload_file'):
-			if self.isOnline():
+			if self.is_online():
 				self.chat(self.translation('OnUploadingMCPRFile'))
 			logger.log('Uploading "{}" to transfer.sh'.format(file_name))
 			try:
@@ -427,7 +427,7 @@ class Recorder:
 					'curl --upload-file {} https://transfer.sh/{}'.format(file_path, file_name))
 				url = out.splitlines()[-1]
 				self.file_urls.append(url)
-				if self.isOnline():
+				if self.is_online():
 					self.chat(self.translation('OnUploadedMCPRFile').format(file_name, url), priority=ChatThread.Priority.High)
 			except Exception:
 				logger.error('Fail to upload "{}" to transfer.sh'.format(file_name))
@@ -472,7 +472,7 @@ class Recorder:
 
 
 	def chat(self, text, priority=None):
-		if self.isOnline():
+		if self.is_online():
 			self._chat(text, priority=priority)
 		else:
 			self.logger.warn('Cannot chat when disconnected')
@@ -480,7 +480,7 @@ class Recorder:
 	def tell(self, name, text):
 		if name is None:
 			return self.chat(text)
-		if self.isOnline():
+		if self.is_online():
 			self._chat(text, prefix='/tell {} '.format(name))
 		else:
 			self.logger.warn('Cannot /tell when disconnected')
@@ -492,7 +492,7 @@ class Recorder:
 		self.logger.log('sent respawn packet to the server')
 
 	def respawn(self):
-		if self.isOnline():
+		if self.is_online():
 			self._respawn()
 		else:
 			self.logger.warn('Cannot respawn when disconnected')
@@ -504,14 +504,14 @@ class Recorder:
 		self.logger.log('try spectate to entity(uuid = {})'.format(uuid))
 
 	def spectate(self, uuid):
-		if self.isOnline():
+		if self.is_online():
 			self._spectate(uuid)
 		else:
 			self.logger.warn('Cannot send respawn when disconnected')
 
 	def format_status(self, text):
 		return text.format(
-			self.isWorking(), self.isWorking() and not self.isAFKing(),
+			self.is_working(), self.is_working() and not self.isAFKing(),
 			utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed()),
 			self.packet_counter, utils.convert_file_size_MB(len(self.file_buffer)), utils.convert_file_size_MB(self.replay_file.size()),
 			self.file_name
@@ -527,7 +527,7 @@ class Recorder:
 
 	def set_config(self, option, value, forced=False):
 		if not forced and option not in config.SettableOptions:
-			self.chat(self.translation('IllegalOptionName').format(option))
+			self.chat(self.translation('IllegalOptionName').format(option, self.config.get('command_prefix')))
 			return
 		self.chat(self.translation('OnOptionSet').format(option, value))
 		self.config.set_value(option, value)
@@ -552,7 +552,7 @@ class Recorder:
 		self.logger.log('Marker added: {}, {} markers has been stored'.format(marker, len(self.replay_file.markers)))
 
 	def delete_marker(self, index):
-		marker = self.replay_file.markers.pop(index - 1)
+		marker = self.replay_file.pop_marker(index - 1)
 		self.chat(self.translation('OnMarkerDeleted').format(utils.convert_millis(marker['realTimestamp'])))
 		self.logger.log('Marker deleted: {}, {} markers has been stored'.format(marker, len(self.replay_file.markers)))
 
@@ -565,11 +565,11 @@ class Recorder:
 	def processCommand(self, command, sender, uuid):
 		try:
 			args = command.split(' ')  # !!PCRC <> <> <> <>
-			if len(args) == 0 or args[0] != '!!PCRC' or sender == self.config.get('username'):
+			if len(args) == 0 or args[0] != self.config.get('command_prefix') or sender == self.config.get('username'):
 				return
 			self.logger.log('Processing Command {} from {} {}'.format(args, sender, uuid))
 			if len(args) == 1:
-				self.chat(self.translation('CommandHelp'))
+				self.chat(self.translation('CommandHelp').format(self.config.get('command_prefix')))
 			elif len(args) == 2 and args[1] == 'status':
 				self.chat(self.format_status(self.translation('CommandStatusResult')))
 			elif len(args) == 2 and args[1] in ['spectate', 'spec'] and sender is not None and uuid is not None:
@@ -610,7 +610,7 @@ class Recorder:
 			elif len(args) == 3 and args[1] == 'name':
 				self.set_file_name(args[2])
 			else:
-				self.chat(self.translation('UnknownCommand'))
+				self.chat(self.translation('UnknownCommand').format(self.config.get('command_prefix')))
 		except Exception:
 			self.logger.error('Error when processing command "{}"'.format(command))
 			self.logger.error(traceback.format_exc())

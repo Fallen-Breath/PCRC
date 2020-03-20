@@ -24,6 +24,7 @@ DefaultOption = json.loads('''
 	"upload_file": false,
 	"auto_relogin": true,
 	"chat_spam_protect": true,
+	"command_prefix": "!!PCRC",
 
 	"__4__": "-------- PCRC Features --------",
 	"minimal_packets": true,

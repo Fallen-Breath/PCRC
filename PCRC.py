@@ -24,6 +24,7 @@ def on_start_up():
 	logger.log('PCRC is open source, u can find it here: https://github.com/Fallen-Breath/PCRC')
 	logger.log('PCRC is still in development, it may not work well')
 
+
 def start():
 	global recorder, logger, ConfigFile
 	if recorder is None or recorder.is_stopped():
@@ -38,13 +39,15 @@ def start():
 	else:
 		logger.warn('Recorder is running, ignore')
 
-def isWorking():
+
+def is_working():
 	global recorder
-	return recorder is not None and recorder.isWorking()
+	return recorder is not None and recorder.is_working()
+
 
 def stop():
 	global recorder, logger
-	if isWorking():
+	if is_working():
 		recorder.stop(by_user=True)
 		while not recorder.is_stopped():
 			time.sleep(0.1)
@@ -87,7 +90,8 @@ def main():
 					value = config.convert_to_option_type(option, value)
 					config.set_value(option, value)
 					config.write_to_file()
-					logger.log('Assign "{}" = "{}" ({}) now'.format(option, value, config.get_option_type(option).__name__))
+					logger.log(
+						'Assign "{}" = "{}" ({}) now'.format(option, value, config.get_option_type(option).__name__))
 					if recorder is not None:
 						recorder.set_config(option, value, forced=True)
 					success = True
@@ -97,8 +101,8 @@ def main():
 					logger.log('Parameter error')
 			elif text == 'status':
 				if recorder is not None:
-					msg = 'Online: {}; '.format(recorder.isOnline())
-					msg += recorder.format_status(recorder.translations.translate('CommandStatusResult','en_us'))
+					msg = 'Online: {}; '.format(recorder.is_online())
+					msg += recorder.format_status(recorder.translations.translate('CommandStatusResult', 'en_us'))
 					for line in msg.splitlines():
 						logger.log(line)
 				else:
@@ -114,7 +118,7 @@ def main():
 		except Exception:
 			logger.error(traceback.format_exc())
 	try:
-		if isWorking():
+		if is_working():
 			logger.log('Stopping recorder before exit')
 			stop()
 			while not recorder.is_stopped():
