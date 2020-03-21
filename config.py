@@ -16,7 +16,7 @@ DefaultOption = json.loads('''
 	"server_name": "SECRET SERVER",
 
 	"__3__": "-------- PCRC Control --------",
-	"file_size_limit_mb": 512,
+	"file_size_limit_mb": 2048,
 	"file_buffer_size_mb": 8,
 	"time_recorded_limit_hour": 12,
 	"delay_before_afk_second": 15,
