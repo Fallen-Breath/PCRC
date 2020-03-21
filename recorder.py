@@ -35,6 +35,7 @@ class Recorder:
 		self.file_thread = None
 		self.chat_thread = None
 		self.file_buffer = bytearray()
+		self.replay_file = None
 		self.file_name = None
 		self.file_urls = []
 		self.mc_version = None
@@ -376,6 +377,10 @@ class Recorder:
 			logger.log('Not connected to the server yet, abort creating replay recording file')
 			return
 
+		if self.replay_file is None:
+			logger.log('Recording has not started yet, abort creating replay recording file')
+			return
+
 		if self.replay_file.size() < utils.MinimumLegalFileSize:
 			logger.warn('Size of "recording.tmcpr" too small ({}KB < {}KB), abort creating replay file'.format(
 				utils.convert_file_size_KB(self.replay_file.size()), utils.convert_file_size_KB(utils.MinimumLegalFileSize)
@@ -446,6 +451,7 @@ class Recorder:
 		self.file_thread = None
 		self.mc_version = None
 		self.mc_protocol = None
+		self.replay_file = None
 		if self.chat_thread is not None:
 			self.chat_thread.kill()
 		logger.log('PCRC stopped')
