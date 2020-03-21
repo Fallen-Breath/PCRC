@@ -124,8 +124,8 @@ class Recorder:
 			except:
 				name = None
 			if translate == 'chat.type.announcement':  # from server
-				message += '[Server] {}'.format(msg['text'])
-				self.processCommand(msg['text'], None, None)
+				message += '[Server] {}'.format(msg)
+				self.processCommand(msg, None, None)
 			elif translate == 'chat.type.text':  # chat
 				message += '<{}> {}'.format(name, msg)
 				try:
