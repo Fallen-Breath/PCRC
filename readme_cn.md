@@ -71,7 +71,7 @@ PCRC 目前支持连接 `1.12`、`1.12.2` 以及 `1.14.4` 的原版 Minecraft �
 
 ### PCRC 设置
 
-`file_size_limit_mb`: `.tmcpr` 文件的大小限制。每当达到这个限制时 PCRC 将会重启，单位: MB。默认值: `512`
+`file_size_limit_mb`: `.tmcpr` 文件的大小限制。每当达到这个限制时 PCRC 将会重启，单位: MB。默认值: `2048`
 
 `file_buffer_size_mb`: 文件缓冲区的大小限制。每当达到这个限制时 PCRC 将会将缓冲区的内容输出至 `.tmcpr` 文件，单位: MB。默认值: `8`
     
@@ -86,6 +86,8 @@ PCRC 目前支持连接 `1.12`、`1.12.2` 以及 `1.14.4` 的原版 Minecraft �
 `auto_relogin`: 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
 
 `chat_spam_protect`: 是否在必要时自动延迟发送聊天消息，以防止被因滥发消息而踢出游戏
+
+`command_prefix`: 任何以 `command_prefix` 开头的聊天信息将会被认为是控制 PCRC 的指令。默认值: `!!PCRC`
 
 ### PCRC 特性
 

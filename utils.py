@@ -4,7 +4,7 @@ import zlib
 
 import pycraft
 
-Version = '0.7.2-alpha'
+Version = '0.8.0-alpha'
 RecordingFilePath = 'temp_recording/'
 RecordingStorageFolder = 'PCRC_recordings/'
 MilliSecondPerHour = 60 * 60 * 1000

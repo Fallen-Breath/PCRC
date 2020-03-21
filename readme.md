@@ -71,7 +71,7 @@ The config file is `config.json`. All settings can be changed in it. Those which
 
 ### PCRC Control
 
-`file_size_limit_mb`: The limit of size of the `.tmcpr` file. Every time it is reached, PCRC will restart. Default: `512`
+`file_size_limit_mb`: The limit of size of the `.tmcpr` file. Every time it is reached, PCRC will restart. Default: `2048`
 
 `file_buffer_size_mb`: The limit of size of file buffer. Every time it is reached, PCRC will flush all content in the buffer into `.tmcpr` file. Default: `8`
     
@@ -86,6 +86,8 @@ The config file is `config.json`. All settings can be changed in it. Those which
 `auto_relogin`: If this option is enabled and the client gets disconnected, it will automatically try to reconnect
 
 `chat_spam_protect`: Automatically delay between sending chat messages if necessary to prevent being kicked for spamming
+
+`command_prefix`: Any chat message starts with `command_prefix` will be recognize as a command to control PCRC. Default: `!!PCRC`
 
 ### PCRC Features
 
