@@ -125,12 +125,31 @@ USELESS_PACKETS = [
 ]
 
 ENTITY_PACKETS = [
+	# 1.12+
 	'Entity',
 	'Entity Relative Move',
 	'Entity Look And Relative Move',
 	'Entity Look',
 	'Entity Teleport'
+	'Entity Status',
+	'Remove Entity Effect',
+	'Entity Head Look',
+	'Entity Metadata',
+	'Entity Velocity',
+	'Entity Equipment',
+	'Entity Teleport',
+	'Entity Properties',
+	'Entity Effect',
+
+	# 1.14+
+	'Entity Sound Effect',
+	'Entity Movement',
+	'Entity Rotation',
+	'Entity Position and Rotation',
+	'Entity Position',
+	'Entity Animation (clientbound)',
 ]
+
 
 
 # Returns a string like h:m for given millis

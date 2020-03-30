@@ -108,6 +108,8 @@ The config file is `config.json`. All settings can be changed in it. Those which
 
 ## Command
 
+Command prefix `!!PCRC` can be customized in the config file
+
 ### Console Command
 
 `start`: start PCRC and start recording
@@ -121,6 +123,8 @@ The config file is `config.json`. All settings can be changed in it. Those which
 `say <text>`: send text `<text>` to the server as a chat message
 
 `set <option> <value>` set option to value of PCRC and in the config file
+
+`!!PCRC <command> [<arguments>]` the same function as using in-game command
 
 ### In Game Command
 

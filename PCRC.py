@@ -111,6 +111,11 @@ def main():
 				messages = Config(ConfigFile).display().splitlines()
 				for message in messages:
 					logger.log(message)
+			elif text.startswith(recorder.config.get('command_prefix')):
+				if recorder is not None:
+					recorder.processCommand(text, None, None)
+				else:
+					logger.log('Recorder is None')
 			else:
 				logger.log('Command not found!')
 		except (KeyboardInterrupt, SystemExit):
