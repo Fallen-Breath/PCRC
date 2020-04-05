@@ -22,8 +22,8 @@ else:
 
 recorder = None
 logger = Logger(name='PCRC')
-ConfigFile = utils.ROOT_PATH + 'config.json'
-TranslationFolder = utils.ROOT_PATH + 'lang/'
+ConfigFile = utils.get_path('config.json')
+TranslationFolder = utils.get_path('lang/')
 
 
 def on_start_up():

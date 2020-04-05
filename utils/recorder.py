@@ -314,7 +314,7 @@ class Recorder:
 		self.mc_version = utils.Map_ProtocolToVersion[protocol_version]
 		self.logger.log('Connecting using protocol version {}, mc version = {}'.format(self.mc_protocol, self.mc_version))
 		# as a MCDR plugin
-		with open(utils.ROOT_PATH + 'protocol.json', 'r') as f:
+		with open(utils.get_path('protocol.json'), 'r') as f:
 			self.protocolMap = json.load(f)[str(protocol_version)]['Clientbound']
 
 	# initializing stuffs

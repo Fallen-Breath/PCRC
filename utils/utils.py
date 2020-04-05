@@ -1,28 +1,32 @@
 import os
-import sys
 import time
 import zlib
 
 from . import pycraft
 
 Version = '0.9.0-alpha'
-print(sys.argv[0])
-print(os.getcwd())
-print(__file__)
-ROOT_PATH = os.path.join(os.path.dirname(os.path.join(os.path.dirname(sys.argv[0]), __file__)), '..')
-ROOT_PATH = os.path.join(os.path.abspath(ROOT_PATH), '')
-RecordingFilePath = 'temp_recording/'
-RecordingStorageFolder = 'PCRC_recordings/'
+ROOT_PATH = [
+	os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', ''),  # I'm in ./utils/ folder so ../ might be the path
+	'./',
+]
 MilliSecondPerHour = 60 * 60 * 1000
 BytePerKB = 1024
 BytePerMB = BytePerKB * 1024
 MinimumLegalFileSize = 10 * BytePerKB
-
+RecordingFilePath = 'temp_recording/'
+RecordingStorageFolder = 'PCRC_recordings/'
 ALLOWED_VERSIONS = ['1.12', '1.12.2', '1.14.4']
 Map_VersionToProtocol = pycraft.SUPPORTED_MINECRAFT_VERSIONS
 Map_ProtocolToVersion = {}
 for item in Map_VersionToProtocol.items():
 	Map_ProtocolToVersion[item[1]] = item[0]
+
+
+def get_path(file):
+	for path in ROOT_PATH:
+		p = os.path.join(path, file)
+		if os.path.isdir(p) or os.path.isfile(p):
+			return p
 
 
 def crc32_file(fn):
