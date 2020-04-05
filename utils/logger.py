@@ -1,15 +1,18 @@
+import os
 import time
 import traceback
 
 
 class Logger:
-	DefaultFileName = 'PCRC.log'
+	DefaultFileName = './log/PCRC.log'
 
 	def __init__(self, name=None, thread=None, file_name=DefaultFileName, display_debug=False):
 		self.name = name
 		self.thread = thread
 		self.file_name = file_name
 		self.display_debug = display_debug
+		if not os.path.isdir(os.path.dirname(file_name)):
+			os.makedirs(os.path.dirname(file_name))
 
 	@staticmethod
 	def set_default_file_name(fn):
