@@ -6,6 +6,9 @@ import zlib
 from . import pycraft
 
 Version = '0.9.0-alpha'
+print(sys.argv[0])
+print(os.getcwd())
+print(__file__)
 ROOT_PATH = os.path.join(os.path.dirname(os.path.join(os.path.dirname(sys.argv[0]), __file__)), '..')
 ROOT_PATH = os.path.join(os.path.abspath(ROOT_PATH), '')
 RecordingFilePath = 'temp_recording/'
