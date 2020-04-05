@@ -5,17 +5,25 @@ from __future__ import print_function
 import time
 import traceback
 
-import utils
-from logger import Logger
-from recorder import Recorder
-from config import Config
-from pycraft.compat import input
-from pycraft.exceptions import YggdrasilError
+if __name__ == '__main__':
+	from utils import utils
+	from utils.logger import Logger
+	from utils.recorder import Recorder
+	from utils.config import Config
+	from utils.pycraft.compat import input
+	from utils.pycraft.exceptions import YggdrasilError
+else:
+	from .utils import utils
+	from .utils.logger import Logger
+	from .utils.recorder import Recorder
+	from .utils.config import Config
+	from .utils.pycraft.compat import input
+	from .utils.pycraft.exceptions import YggdrasilError
 
 recorder = None
 logger = Logger(name='PCRC')
-ConfigFile = 'config.json'
-TranslationFolder = 'lang/'
+ConfigFile = utils.ROOT_PATH + 'config.json'
+TranslationFolder = utils.ROOT_PATH + 'lang/'
 
 
 def on_start_up():
@@ -43,6 +51,11 @@ def start():
 def is_working():
 	global recorder
 	return recorder is not None and recorder.is_working()
+
+
+def is_stopped():
+	global recorder
+	return recorder is None or recorder.is_stopped()
 
 
 def stop():
@@ -111,11 +124,6 @@ def main():
 				messages = Config(ConfigFile).display().splitlines()
 				for message in messages:
 					logger.log(message)
-			elif text.startswith(recorder.config.get('command_prefix')):
-				if recorder is not None:
-					recorder.processCommand(text, None, None)
-				else:
-					logger.log('Recorder is None')
 			else:
 				logger.log('Command not found!')
 		except (KeyboardInterrupt, SystemExit):
@@ -126,8 +134,10 @@ def main():
 		if is_working():
 			logger.log('Stopping recorder before exit')
 			stop()
+		else:
+			logger.log('Waiting for recorder to stop before exit')
 			while not recorder.is_stopped():
-				time.sleep(0.01)
+				time.sleep(0.1)
 	except (KeyboardInterrupt, SystemExit):
 		logger.log('Forced to stop')
 		return
