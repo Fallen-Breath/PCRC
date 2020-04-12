@@ -33,7 +33,14 @@ DefaultOption = json.loads('''
 	"with_player_only": true,
 	"remove_items": false,
 	"remove_bats": true,
-	"remove_phantoms": true
+	"remove_phantoms": true,
+
+    "__5__": "-------- PCRC Whitelist --------",
+    "enabled": false,
+    "whitelist": [
+    	"Fallen_Breath",
+    	"Steve"
+    ]
 }
 ''')
 
@@ -130,4 +137,7 @@ class Config:
 		messages.append(f"Remove items = {self.get('remove_items')}")
 		messages.append(f"Remove bats = {self.get('remove_bats')}")
 		messages.append('========================================')
+		messages.append('-------- Whitelist --------')
+		messages.append(f"Whitelist = {self.get('enabled')}")
+		messages.append(f"Whitelist player(s) = {self.get('whitelist')}")
 		return '\n'.join(messages)
