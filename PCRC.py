@@ -86,6 +86,49 @@ def main():
 				break
 			elif text.startswith('say '):
 				recorder.chat(text[4:])
+			elif text.startswith('wl') or text.startswith('whitelist'):
+				try:
+					config = Config(ConfigFile)
+					whitelist = recorder.config.get('whitelist')
+					wl_isenabled = recorder.config.get('enabled')
+					cmd = text.split(' ')
+				except AttributeError:
+					logger.log('Plz start recording before using this command!')
+				except Exception:
+					logger.error(traceback.format_exc())
+				else:
+					if len(cmd) == 1:
+						logger.log('whitelist add|del|on|off')
+					if len(cmd) == 3 and cmd[1] == 'add':
+						whitelist.append(cmd[2])
+						config.set_value('whitelist', whitelist)
+						config.write_to_file()
+						logger.log('Added {} to whitelist.'.format(cmd[2]))
+						if(wl_isenabled == False):
+							logger.log('Plz note that whitelist is not enabled now.')
+					elif len(cmd) == 3 and cmd[1] == 'del':
+						try:
+							whitelist.remove(cmd[2])
+							config.set_value('whitelist', whitelist)
+							config.write_to_file()
+						except ValueError:
+							logger.log('Player {} is not in the whitelist!'.format(cmd[2]))
+						else:
+							logger.log('Deleted {} from the whitelist.'.format(cmd[2]))
+					elif len(cmd) == 2 and cmd[1] == 'on':
+						config.set_value('enabled', 'True')
+						config.write_to_file()
+						logger.log('PCRC Whitelist Enabled.')
+						logger.warn('You may need to restart PCRC to apply these changes.')
+					elif len(cmd) == 2 and cmd[1] == 'off':
+						config.set_value('enabled', 'False')
+						config.write_to_file()
+						logger.log('PCRC Whitelist Disabled.')
+						logger.warn('You may need to restart PCRC to apply these changes.')
+					elif len(cmd) == 2 and cmd[1] == 'status':
+						logger.log('Status: {}'.format(wl_isenabled))
+						logger.log('White list: {}'.format(whitelist))
+
 			elif text == 'set':
 				commands = Config(ConfigFile).data.keys()
 				good_cmds = []
@@ -98,7 +141,6 @@ def main():
 				try:
 					cmd = text.split(' ')
 					option = cmd[1]
-					value = cmd[2]
 					config = Config(ConfigFile)
 					value = config.convert_to_option_type(option, value)
 					config.set_value(option, value)
@@ -106,7 +148,7 @@ def main():
 					logger.log(
 						'Assign "{}" = "{}" ({}) now'.format(option, value, config.get_option_type(option).__name__))
 					if recorder is not None:
-						recorder.set_config(option, value, forced=True)
+						config.set_value(option, value, forced=True)
 					success = True
 				except Exception:
 					logger.error(traceback.format_exc())
