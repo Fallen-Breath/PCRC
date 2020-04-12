@@ -575,9 +575,9 @@ class Recorder:
 			whitelist = self.config.get('whitelist')
 			wl_isenabled = self.config.get('enabled')
 			args = command.split(' ')  # !!PCRC <> <> <> <>
+			self.logger.log('Processing Command {} from {} {}'.format(args, sender, uuid))
 			if len(args) == 0 or args[0] != self.config.get('command_prefix') or sender == self.config.get('username'):
 				return
-			self.logger.log('Processing Command {} from {} {}'.format(args, sender, uuid))
 			elif wl_isenabled == True and sender not in whitelist:
 				self.chat(self.translation('PermissionDenied'))
 				return
