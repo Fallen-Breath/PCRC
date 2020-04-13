@@ -105,6 +105,11 @@ The config file is `config.json`. All settings can be changed in it. Those which
 
 `remove_phantoms`: If set to true, phantoms won't be recorded
 
+### PCRC Whitelist
+
+`enabled`: Whether to enable whitelist
+
+`whitelist`: Whitelist player list
 
 ## Command
 
@@ -123,6 +128,12 @@ Command prefix `!!PCRC` can be customized in the config file
 `say <text>`: send text `<text>` to the server as a chat message
 
 `set <option> <value>` set option to value of PCRC and in the config file
+
+`whitelist <on|off>` Switch the whitelist switch
+
+`whitelist <add|del> [<player>]` Add or delete a player to(from) the whitelist
+
+`whitelist <status>` To view the status of the whitelist and the whitelisted player(s)
 
 `!!PCRC <command> [<arguments>]` the same function as using in-game command
 
