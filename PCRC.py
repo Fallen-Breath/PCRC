@@ -165,7 +165,7 @@ def main():
 				else:
 					logger.log('Command not found!')
 			else:
-				print("", end="")
+				print("Please enter the command!")
 		except (KeyboardInterrupt, SystemExit):
 			break
 		except Exception:
