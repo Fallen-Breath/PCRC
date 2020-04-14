@@ -163,9 +163,9 @@ def main():
 					for message in messages:
 						logger.log(message)
 				else:
-					logger.log('Command not found!')
+					logger.error('Command not found!')
 			else:
-				print("Please enter the command!")
+				logger.error("Please enter the command!")
 		except (KeyboardInterrupt, SystemExit):
 			break
 		except Exception:
