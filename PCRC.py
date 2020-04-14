@@ -113,11 +113,9 @@ def main():
 							else:
 								logger.log('Deleted {} from the whitelist.'.format(cmd[2]))
 						elif len(cmd) == 2 and cmd[1] == 'on':
-							recorder.config.set_value('enabled', 'True')
 							config.set_value('enabled', 'True')
 							logger.log('PCRC Whitelist Enabled.')
 						elif len(cmd) == 2 and cmd[1] == 'off':
-							recorder.config.set_value('enabled', 'False')
 							config.set_value('enabled', 'False')
 							logger.log('PCRC Whitelist Disabled.')
 						elif len(cmd) == 2 and cmd[1] == 'status':
