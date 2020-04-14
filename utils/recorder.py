@@ -22,6 +22,7 @@ from .SARC.packet import Packet as SARCPacket
 from .pycraft.networking.types import PositionAndLook
 
 
+
 class Recorder:
 	socket_id = None
 
@@ -571,11 +572,16 @@ class Recorder:
 
 	def processCommand(self, command, sender, uuid):
 		try:
+			whitelist = self.config.get('whitelist')
+			wl_isenabled = self.config.get('enabled')
 			args = command.split(' ')  # !!PCRC <> <> <> <>
+			self.logger.log('Processing Command {} from {} {}'.format(args, sender, uuid))
 			if len(args) == 0 or args[0] != self.config.get('command_prefix') or sender == self.config.get('username'):
 				return
-			self.logger.log('Processing Command {} from {} {}'.format(args, sender, uuid))
-			if len(args) == 1:
+			elif wl_isenabled == True and sender not in whitelist:
+				self.chat(self.translation('PermissionDenied'))
+				return
+			elif len(args) == 1:
 				self.chat(self.translation('CommandHelp').format(self.config.get('command_prefix')))
 			elif len(args) == 2 and args[1] == 'status':
 				self.chat(self.format_status(self.translation('CommandStatusResult')))

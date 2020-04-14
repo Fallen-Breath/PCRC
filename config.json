@@ -8,7 +8,7 @@
     "username": "bot_PCRC",
     "password": "secret",
     "address": "localhost",
-    "port": 20000,
+    "port": 25565,
     "server_name": "SECRET SERVER",
 
     "__3__": "-------- PCRC Control --------",
@@ -29,5 +29,12 @@
     "with_player_only": true,
     "remove_items": false,
     "remove_bats": true,
-    "remove_phantoms": true
+    "remove_phantoms": true,
+
+    "__5__": "-------- PCRC Whitelist --------",
+    "enabled": true,
+    "whitelist": [
+        "Fallen_Breath",
+        "Steve"
+    ]
 }
