@@ -74,100 +74,98 @@ def main():
 	while True:
 		try:
 			text = input()
-			logger.log('Processing command "{}"'.format(text))
-			if text == "start":
-				start()
-			elif text == "stop":
-				stop()
-			elif text == "restart":
-				stop()
-				start()
-			elif text == 'exit':
-				break
-			elif text.startswith('say '):
-				recorder.chat(text[4:])
-			elif text.startswith('wl') or text.startswith('whitelist'):
-				try:
-					config = Config(ConfigFile)
-					whitelist = recorder.config.get('whitelist')
-					wl_isenabled = recorder.config.get('enabled')
-					cmd = text.split(' ')
-				except AttributeError:
-					logger.log('Plz start recording before using this command!')
-				except Exception:
-					logger.error(traceback.format_exc())
-				else:
-					if len(cmd) == 1:
-						logger.log('whitelist add|del|on|off')
-					if len(cmd) == 3 and cmd[1] == 'add':
-						whitelist.append(cmd[2])
-						config.set_value('whitelist', whitelist)
-						config.write_to_file()
-						logger.log('Added {} to whitelist.'.format(cmd[2]))
-						if(wl_isenabled == False):
-							logger.log('Plz note that whitelist is not enabled now.')
-					elif len(cmd) == 3 and cmd[1] == 'del':
-						try:
-							whitelist.remove(cmd[2])
+			if(text != ''):
+				logger.log('Processing command "{}"'.format(text))
+				if text == "start":
+					start()
+				elif text == "stop":
+					stop()
+				elif text == "restart":
+					stop()
+					start()
+				elif text == 'exit':
+					break
+				elif text.startswith('say '):
+					recorder.chat(text[4:])
+				elif text.startswith('wl') or text.startswith('whitelist'):
+					try:
+						config = recorder.config if recorder is not None else Config(ConfigFile)
+						whitelist = config.get('whitelist')
+						wl_isenabled = config.get('enabled')
+						cmd = text.split(' ')
+					except Exception:
+						logger.error(traceback.format_exc())
+					else:
+						if len(cmd) == 1:
+							logger.log('whitelist add|del|on|off|status')
+						if len(cmd) == 3 and cmd[1] == 'add':
+							whitelist.append(cmd[2])
 							config.set_value('whitelist', whitelist)
-							config.write_to_file()
-						except ValueError:
-							logger.log('Player {} is not in the whitelist!'.format(cmd[2]))
-						else:
-							logger.log('Deleted {} from the whitelist.'.format(cmd[2]))
-					elif len(cmd) == 2 and cmd[1] == 'on':
-						recorder.config.set_value('enabled', 'True')
-						config.set_value('enabled', 'True')
+							logger.log('Added {} to whitelist.'.format(cmd[2]))
+							if(wl_isenabled == False):
+								logger.log('Plz note that whitelist is not enabled now.')
+						elif len(cmd) == 3 and cmd[1] == 'del':
+							try:
+								whitelist.remove(cmd[2])
+								config.set_value('whitelist', whitelist)
+							except ValueError:
+								logger.log('Player {} is not in the whitelist!'.format(cmd[2]))
+							else:
+								logger.log('Deleted {} from the whitelist.'.format(cmd[2]))
+						elif len(cmd) == 2 and cmd[1] == 'on':
+							recorder.config.set_value('enabled', 'True')
+							config.set_value('enabled', 'True')
+							logger.log('PCRC Whitelist Enabled.')
+						elif len(cmd) == 2 and cmd[1] == 'off':
+							recorder.config.set_value('enabled', 'False')
+							config.set_value('enabled', 'False')
+							logger.log('PCRC Whitelist Disabled.')
+						elif len(cmd) == 2 and cmd[1] == 'status':
+							logger.log('Status: {}'.format(wl_isenabled))
+							logger.log('White list: {}'.format(whitelist))
 						config.write_to_file()
-						logger.log('PCRC Whitelist Enabled.')
-					elif len(cmd) == 2 and cmd[1] == 'off':
-						recorder.config.set_value('enabled', 'False')
-						config.set_value('enabled', 'False')
-						config.write_to_file()
-						logger.log('PCRC Whitelist Disabled.')
-					elif len(cmd) == 2 and cmd[1] == 'status':
-						logger.log('Status: {}'.format(wl_isenabled))
-						logger.log('White list: {}'.format(whitelist))
 
-			elif text == 'set':
-				commands = Config(ConfigFile).data.keys()
-				good_cmds = []
-				for command in commands:
-					if not command.startswith('__'):
-						good_cmds.append(command)
-				logger.log('Available commands: {}'.format(good_cmds))
-			elif text.startswith('set '):
-				success = False
-				try:
-					cmd = text.split(' ')
-					option = cmd[1]
-					config = Config(ConfigFile)
-					value = config.convert_to_option_type(option, value)
-					config.set_value(option, value)
-					config.write_to_file()
-					logger.log(
-						'Assign "{}" = "{}" ({}) now'.format(option, value, config.get_option_type(option).__name__))
+				elif text == 'set':
+					commands = Config(ConfigFile).data.keys()
+					good_cmds = []
+					for command in commands:
+						if not command.startswith('__'):
+							good_cmds.append(command)
+					logger.log('Available commands: {}'.format(good_cmds))
+				elif text.startswith('set '):
+					success = False
+					try:
+						cmd = text.split(' ')
+						option = cmd[1]
+						config = Config(ConfigFile)
+						value = config.convert_to_option_type(option, value)
+						config.set_value(option, value)
+						config.write_to_file()
+						logger.log(
+							'Assign "{}" = "{}" ({}) now'.format(option, value, config.get_option_type(option).__name__))
+						if recorder is not None:
+							config.set_value(option, value, forced=True)
+						success = True
+					except Exception:
+						logger.error(traceback.format_exc())
+					if not success:
+						logger.log('Parameter error')
+				elif text == 'status':
 					if recorder is not None:
-						config.set_value(option, value, forced=True)
-					success = True
-				except Exception:
-					logger.error(traceback.format_exc())
-				if not success:
-					logger.log('Parameter error')
-			elif text == 'status':
-				if recorder is not None:
-					msg = 'Online: {}; '.format(recorder.is_online())
-					msg += recorder.format_status(recorder.translations.translate('CommandStatusResult', 'en_us'))
-					for line in msg.splitlines():
-						logger.log(line)
+						msg = 'Online: {}; '.format(recorder.is_online())
+						msg += recorder.format_status(recorder.translations.translate('CommandStatusResult', 'en_us'))
+						for line in msg.splitlines():
+							logger.log(line)
+					else:
+						logger.log('Recorder is None')
+				elif text == 'config':
+					messages = Config(ConfigFile).display().splitlines()
+					for message in messages:
+						logger.log(message)
 				else:
-					logger.log('Recorder is None')
-			elif text == 'config':
-				messages = Config(ConfigFile).display().splitlines()
-				for message in messages:
-					logger.log(message)
+					logger.log('Command not found!')
 			else:
-				logger.log('Command not found!')
+				print("", end="")
 		except (KeyboardInterrupt, SystemExit):
 			break
 		except Exception:
