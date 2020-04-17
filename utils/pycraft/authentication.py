@@ -11,6 +11,34 @@ CONTENT_TYPE = "application/json"
 HEADERS = {"content-type": CONTENT_TYPE}
 
 
+class YggdrasilServer(object):
+    def __init__(self, url):
+        if not url == None:
+            self.url = _get_yggdrasil_url(url)
+
+    def request_auth_server(self, endpoint, data):
+        return _make_request(self.url + "/authserver", endpoint, data)
+
+    def request_session_server(self, endpoint, data):
+        return _make_request(self.url + "/sessionserver/session/minecraft", endpoint, data)
+
+
+def _get_yggdrasil_url(url):
+    # TODO impl ALI
+    return url
+
+
+class MojangServer(YggdrasilServer):
+    def __init__(self):
+        super().__init__(None)
+
+    def request_auth_server(self, endpoint, data):
+        return _make_request(AUTH_SERVER, endpoint, data)
+
+    def request_session_server(self, endpoint, data):
+        return _make_request(SESSION_SERVER, endpoint, data)
+
+
 class Profile(object):
     """
     Container class for a MineCraft Selected profile.
@@ -48,7 +76,7 @@ class AuthenticationToken(object):
     AGENT_NAME = "Minecraft"
     AGENT_VERSION = 1
 
-    def __init__(self, username=None, access_token=None, client_token=None):
+    def __init__(self, username=None, access_token=None, client_token=None, yggdrasil_server=MojangServer()):
         """
         Constructs an `AuthenticationToken` based on `access_token` and
         `client_token`.
@@ -63,6 +91,7 @@ class AuthenticationToken(object):
         self.username = username
         self.access_token = access_token
         self.client_token = client_token
+        self.yggdrasil_server = yggdrasil_server
         self.profile = Profile()
 
     @property
@@ -119,7 +148,8 @@ class AuthenticationToken(object):
             # is `None` generate a `client_token` using uuid4
             payload["clientToken"] = self.client_token or uuid.uuid4().hex
 
-        res = _make_request(AUTH_SERVER, "authenticate", payload)
+        res = self.yggdrasil_server.request_auth_server(
+            "authenticate", payload)
 
         _raise_from_response(res)
 
@@ -154,9 +184,9 @@ class AuthenticationToken(object):
         if self.client_token is None:
             raise ValueError("'client_token' is not set!")
 
-        res = _make_request(AUTH_SERVER,
-                            "refresh", {"accessToken": self.access_token,
-                                        "clientToken": self.client_token})
+        res = self.yggdrasil_server.request_auth_server("refresh",
+                                                        {"accessToken": self.access_token,
+                                                         "clientToken": self.client_token})
 
         _raise_from_response(res)
 
@@ -186,8 +216,8 @@ class AuthenticationToken(object):
         if self.access_token is None:
             raise ValueError("'access_token' not set!")
 
-        res = _make_request(AUTH_SERVER, "validate",
-                            {"accessToken": self.access_token})
+        res = self.yggdrasil_server.request_auth_server("validate",
+                                                        {"accessToken": self.access_token})
 
         # Validate returns 204 to indicate success
         # http://wiki.vg/Authentication#Response_3
@@ -195,7 +225,7 @@ class AuthenticationToken(object):
             return True
 
     @staticmethod
-    def sign_out(username, password):
+    def sign_out(username, password, yggdrasil_server=MojangServer()):
         """
         Invalidates `access_token`s using an account's
         `username` and `password`.
@@ -211,8 +241,8 @@ class AuthenticationToken(object):
         Raises:
             pycraft.exceptions.YggdrasilError
         """
-        res = _make_request(AUTH_SERVER, "signout",
-                            {"username": username, "password": password})
+        res = yggdrasil_server.request_auth_server("signout",
+                                                   {"username": username, "password": password})
 
         if _raise_from_response(res) is None:
             return True
@@ -228,9 +258,9 @@ class AuthenticationToken(object):
         Raises:
             :class:`pycraft.exceptions.YggdrasilError`
         """
-        res = _make_request(AUTH_SERVER, "invalidate",
-                            {"accessToken": self.access_token,
-                             "clientToken": self.client_token})
+        res = self.yggdrasil_server.request_auth_server("invalidate",
+                                                        {"accessToken": self.access_token,
+                                                         "clientToken": self.client_token})
 
         if res.status_code != 204:
             _raise_from_response(res)
@@ -255,10 +285,10 @@ class AuthenticationToken(object):
             err = "AuthenticationToken hasn't been authenticated yet!"
             raise YggdrasilError(err)
 
-        res = _make_request(SESSION_SERVER, "join",
-                            {"accessToken": self.access_token,
-                             "selectedProfile": self.profile.to_dict(),
-                             "serverId": server_id})
+        res = self.yggdrasil_server.request_session_server("join",
+                                                           {"accessToken": self.access_token,
+                                                            "selectedProfile": self.profile.id_, #this is a hidden bug in pyCraft
+                                                            "serverId": server_id})
 
         if res.status_code != 204:
             _raise_from_response(res)
