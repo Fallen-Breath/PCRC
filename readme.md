@@ -26,7 +26,12 @@ The requirements are also stored in `requirements.txt`
 
 ### Minecraft server
 
-PCRC currently supports connecting `1.12`, `1.12.2` and `1.14.4` vanilla Minecraft server
+PCRC currently supports connecting to vanilla Minecraft server. Supports versions:
+
+- 1.12
+- 1.12.2
+- 1.14.4
+- 1.15.2
 
 ## Advantage
 
@@ -69,6 +74,8 @@ The config file is `config.json`. All settings can be changed in it. Those which
 
 `server_name`: The server name showed in replay viewer
 
+`initial_version`: The preferred Minecraft version that used to connect to bungeecord like server
+
 ### PCRC Control
 
 `file_size_limit_mb`: The limit of size of the `.tmcpr` file. Every time it is reached, PCRC will restart. Default: `2048`
@@ -80,8 +87,6 @@ The config file is `config.json`. All settings can be changed in it. Those which
 `delay_before_afk_second`: The time delay between every player leaving and PCRC pausing recording. Default: `15`
 
 `record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording (SARC's behavior)
-
-`upload_file`: If set to true, .mcpr file will be sent to [transfer.sh](transfer.sh) after finishing recording
 
 `auto_relogin`: If this option is enabled and the client gets disconnected, it will automatically try to reconnect
 
@@ -154,8 +159,6 @@ Using normal in game chatting to trigger
 `!!PCRC stop`: stop PCRC
 
 `!!PCRC restart`: restart PCRC
-
-`!!PCRC url`: print all urls of recorded files
 
 `!!PCRC set`: print all settable option
 

@@ -367,7 +367,9 @@ class Connection(object):
             # It is important that this is set correctly even when connecting
             # in status mode, as some servers, e.g. SpigotMC with the
             # ProtocolSupport plugin, use it to determine the correct response.
-            self.context.protocol_version = max(self.allowed_proto_versions)
+
+            # PCRC modified the value to default_proto_version
+            self.context.protocol_version = self.default_proto_version
 
             self.spawned = False
             self._connect()

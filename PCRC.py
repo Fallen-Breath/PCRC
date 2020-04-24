@@ -1,19 +1,17 @@
 # coding: utf8
 
-from __future__ import print_function
-
 import time
 import traceback
 
 if __name__ == '__main__':
-	from utils import utils
+	from utils import utils, constant
 	from utils.logger import Logger
 	from utils.recorder import Recorder
 	from utils.config import Config
 	from utils.pycraft.compat import input
 	from utils.pycraft.exceptions import YggdrasilError
 else:
-	from .utils import utils
+	from .utils import utils, constant
 	from .utils.logger import Logger
 	from .utils.recorder import Recorder
 	from .utils.config import Config
@@ -28,7 +26,7 @@ TranslationFolder = utils.get_path('lang/')
 
 def on_start_up():
 	global logger
-	logger.log('PCRC {} starting up'.format(utils.Version))
+	logger.log('PCRC {} starting up'.format(constant.Version))
 	logger.log('PCRC is open source, u can find it here: https://github.com/Fallen-Breath/PCRC')
 	logger.log('PCRC is still in development, it may not work well')
 
@@ -74,7 +72,7 @@ def main():
 	while True:
 		try:
 			text = input()
-			if(text != ''):
+			if text != '':
 				logger.log('Processing command "{}"'.format(text))
 				if text == "start":
 					start()
@@ -134,9 +132,9 @@ def main():
 					success = False
 					try:
 						cmd = text.split(' ')
-						option = cmd[1]
 						config = Config(ConfigFile)
-						value = config.convert_to_option_type(option, value)
+						option = cmd[1]
+						value = config.convert_to_option_type(option, cmd[2])
 						config.set_value(option, value)
 						config.write_to_file()
 						logger.log(
@@ -160,6 +158,8 @@ def main():
 					messages = Config(ConfigFile).display().splitlines()
 					for message in messages:
 						logger.log(message)
+				elif recorder is not None and text.startswith(recorder.config.get('command_prefix')):
+					recorder.processCommand(text, None, None)
 				else:
 					logger.error('Command not found!')
 			else:

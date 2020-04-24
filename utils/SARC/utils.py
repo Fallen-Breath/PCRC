@@ -7,8 +7,7 @@ import urllib.request
 from _sha1 import sha1
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
-from connection import *
-from packet import *
+from .packet import *
 
 
 # Script to automatically generate name to packet_id tables based on data from wiki.vg
@@ -37,11 +36,7 @@ def gen_version_links():
 
 
 # Gets the list of play state server & clientbound packets for the given version
-def gen_version_protocol(version):
-    version_links = gen_version_links()
-    if version not in version_links:
-        raise IOError('Protocol version doesnt get supported')
-    link = version_links[version]
+def gen_version_protocol_from_link(version, link):
     page = urllib.request.urlopen(link)
     html = page.read().decode('utf-8', errors='ignore').splitlines()
     counter = []
@@ -91,15 +86,6 @@ def generate_dict(hash, email, password):
 
 
 
-# Test if given packet hould be ignored
-def is_bad_packet(packet_name, minimal_packets=False):
-    if packet_name in BAD_PACKETS:
-        return True
-    if minimal_packets and packet_name in USELESS_PACKETS:
-        return True
-    return False
-
-
 # Reading config
 def load_config():
     with open('config.json', 'r') as json_file:
@@ -146,157 +132,3 @@ def get_token(email, password):
     user_name = json_data[hash]['user_name']
     return access_token, uuid, user_name
 
-
-# Serverping to get protocol version and create table
-def generate_protocol_table(address):
-    # Handshake with Next state set to 1 (status) to receive protocol version
-    protocol_connection = TCPConnection(address)
-    packet_out = Packet()
-    packet_out.write_varint(0x00)
-    packet_out.write_varint(335)
-    packet_out.write_utf(address[0])
-    packet_out.write_ushort(address[1])
-    packet_out.write_varint(1)
-    protocol_connection.send_packet(packet_out)
-    packet_out = Packet()
-    packet_out.write_varint(0x00)
-    protocol_connection.send_packet(packet_out)
-    while True:
-        ready_to_read = select.select([protocol_connection.socket], [], [], 0)[0]
-        if ready_to_read:
-            packet_in = protocol_connection.receive_packet()
-            packet_id = packet_in.read_varint()
-            protocol_connection.socket.close()
-            status_data = json.loads(packet_in.read_utf())
-            protocol_version = status_data['version']['protocol']
-            mc_version = status_data['version']['name']
-            break
-    print(status_data)
-    # Generating needed protocol version table
-    try:
-        with open('protocol.json', 'r') as json_file:
-            json_data = json.load(json_file)
-    except:
-        json_data = ''
-    if json_data == '' or str(protocol_version) not in json_data:
-        with open('protocol.json', 'w') as json_file:
-            packets = gen_version_protocol(protocol_version)
-            json.dump(packets, json_file, indent=4)
-            print('Protocol generated')
-            json_data = packets
-    else:
-        print('Protocol avaliable')
-    clientbound = json_data[str(protocol_version)]['Clientbound']
-    serverbound = json_data[str(protocol_version)]['Serverbound']
-    return clientbound, serverbound, protocol_version, mc_version
-
-
-# Login and encryption + compression
-def login(address, protocol_version, debug, access_token, uuid, user_name):
-    connection = TCPConnection(address, debug)
-
-    # Handshake with Next state set to 2 (login)
-    packet_out = Packet()
-    packet_out.write_varint(0x00)
-    packet_out.write_varint(protocol_version)
-    packet_out.write_utf(address[0])
-    packet_out.write_ushort(address[1])
-    packet_out.write_varint(2)
-    connection.send_packet(packet_out)
-
-    # Login start
-    packet_out = Packet()
-    packet_out.write_varint(0x00)
-    packet_out.write_utf(user_name)
-    connection.send_packet(packet_out)
-
-    # Begin login phase loop.
-    while True:
-        receive_ready, send_ready, exception_ready = select.select([connection.socket], [connection.socket], [], 0.01)
-        if len(receive_ready) > 0:
-            packet_in = connection.receive_packet()
-            packet_id = packet_in.read_varint()
-            if debug:
-                print('L Packet ' + hex(packet_id))
-
-            # Disconnect (login)
-            if packet_id == 0x00:
-                print(packet_in.read_utf())
-
-            # Encryption request
-            if packet_id == 0x01:
-                server_id = packet_in.read_utf()
-                pub_key = packet_in.read_bytearray_as_str()
-                ver_tok = packet_in.read_bytearray_as_str()
-
-                # Client auth
-                shared_secret = os.urandom(16)
-                verify_hash = sha1()
-                verify_hash.update(server_id.encode('utf-8'))
-                verify_hash.update(shared_secret)
-                verify_hash.update(pub_key)
-                server_id = format(int.from_bytes(verify_hash.digest(), byteorder='big', signed=True), 'x')
-                res = requests.post('https://sessionserver.mojang.com/session/minecraft/join',
-                                    data=json.dumps({'accessToken': access_token, 'selectedProfile': uuid,
-                                                     'serverId': server_id}),
-                                    headers={'content-type': 'application/json'})
-                print('Client session auth', res.status_code)
-
-                # Send Encryption Response
-                packet_out = Packet()
-                packet_out.write_varint(0x01)
-                pub_key = load_der_public_key(pub_key, default_backend())
-                encrypt_token = pub_key.encrypt(ver_tok, PKCS1v15())
-                encrypt_secret = pub_key.encrypt(shared_secret, PKCS1v15())
-                packet_out.write_varint(len(encrypt_secret))
-                packet_out.write(encrypt_secret)
-                packet_out.write_varint(len(encrypt_token))
-                packet_out.write(encrypt_token)
-                connection.send_packet(packet_out)
-                connection.configure_encryption(shared_secret)
-
-            # Login Success
-            if packet_id == 0x02:
-                u = packet_in.read_utf()
-                n = packet_in.read_utf()
-                print('Name: ' + n + '  |  UUID: ' + u)
-                print('Switching to PLAY')
-                break
-
-            # Set Compression
-            if packet_id == 0x03:
-                connection.compression_threshold = packet_in.read_varint()
-                print('Compression enabled, threshold:', connection.compression_threshold)
-    return connection
-
-
-# Send a tabcomplete to get full list of operators
-def request_ops(connection, serverbound):
-    packet_out = Packet()
-    packet_out.write_varint(serverbound['Tab-Complete (serverbound)'])
-    packet_out.write_utf('/deop ')
-    packet_out.write_bool(True)
-    packet_out.write_bool(False)
-    connection.send_packet(packet_out)
-
-
-# Send a chatmessage
-def send_chat_message(connection, serverbound, message):
-    packet_out = Packet()
-    packet_out.write_varint(serverbound['Chat Message (serverbound)'])
-    packet_out.write_utf(message)
-    connection.send_packet(packet_out)
-
-
-# Returns a string like h:m for given millis
-def convert_millis(millis):
-    seconds = int(millis / 1000) % 60
-    minutes = int(millis / (1000 * 60)) % 60
-    hours = int(millis / (1000 * 60 * 60))
-    if seconds < 10:
-        seconds = '0' + str(seconds)
-    if minutes < 10:
-        minutes = '0' + str(minutes)
-    if hours < 10:
-        hours = '0' + str(hours)
-    return str(hours) + ':' + str(minutes) + ':' + str(seconds)

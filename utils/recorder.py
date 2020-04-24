@@ -1,4 +1,5 @@
 # coding: utf8
+
 import copy
 import heapq
 import os
@@ -9,17 +10,16 @@ import time
 import json
 import traceback
 import datetime
-import subprocess
 
-from . import config, utils
+from . import config, utils, constant
 from .replay_file import ReplayFile
 from .translation import Translation
+from .packet_processor import PacketProcessor
 from .logger import Logger
 from .pycraft import authentication
 from .pycraft.networking.connection import Connection
 from .pycraft.networking.packets import Packet as PycraftPacket, clientbound, serverbound
 from .SARC.packet import Packet as SARCPacket
-from .pycraft.networking.types import PositionAndLook
 
 
 
@@ -38,7 +38,6 @@ class Recorder:
 		self.file_buffer = bytearray()
 		self.replay_file = None
 		self.file_name = None
-		self.file_urls = []
 		self.mc_version = None
 		self.mc_protocol = None
 		self.logger = Logger(name='PCRC-Recorder', display_debug=self.config.get('debug_mode'))
@@ -46,8 +45,12 @@ class Recorder:
 
 		if not self.config.get('online_mode'):
 			self.logger.log("Login in offline mode")
-			self.connection = Connection(self.config.get('address'), self.config.get('port'), username=self.config.get('username'),
-				recorder=self, allowed_versions=utils.ALLOWED_VERSIONS, handle_exception=self.onConnectionException
+			self.connection = Connection(self.config.get('address'), self.config.get('port'),
+				username=self.config.get('username'),
+				recorder=self,
+				initial_version=self.config.get('initial_version'),
+				allowed_versions=constant.ALLOWED_VERSIONS,
+				handle_exception=self.onConnectionException
 			)
 		else:
 			self.logger.log("Login in online mode")
@@ -56,7 +59,11 @@ class Recorder:
 			self.logger.log("Logged in as %s" % auth_token.profile.name)
 			self.config.set_value('username', auth_token.profile.name)
 			self.connection = Connection(self.config.get('address'), self.config.get('port'),
-				auth_token=auth_token, recorder=self, allowed_versions=utils.ALLOWED_VERSIONS, handle_exception=self.onConnectionException
+				auth_token=auth_token,
+				recorder=self,
+				initial_version=self.config.get('initial_version'),
+				allowed_versions=constant.ALLOWED_VERSIONS,
+				handle_exception=self.onConnectionException
 			)
 
 		self.connection.register_packet_listener(self.onPacketReceived, PycraftPacket)
@@ -171,8 +178,6 @@ class Recorder:
 
 	def disconnect(self):
 		if self.is_online():
-			if len(self.file_urls) > 0:
-				self.print_urls()
 			self.chat(self.translation('OnDisconnect'), priority=ChatThread.Priority.High)
 			self.chat_thread.flush_pending_chat(ChatThread.Priority.High)
 		self.connection.disconnect()
@@ -200,13 +205,13 @@ class Recorder:
 		return self.timePassed(t) - self.afk_time
 
 	def file_size_limit(self):
-		return self.config.get('file_size_limit_mb') * utils.BytePerMB
+		return self.config.get('file_size_limit_mb') * constant.BytePerMB
 
 	def file_buffer_size(self):
-		return self.config.get('file_buffer_size_mb') * utils.BytePerMB
+		return self.config.get('file_buffer_size_mb') * constant.BytePerMB
 
 	def time_recorded_limit(self):
-		return self.config.get('time_recorded_limit_hour') * utils.MilliSecondPerHour
+		return self.config.get('time_recorded_limit_hour') * constant.MilliSecondPerHour
 
 	def processPacketData(self, packet_raw):
 		if not self.is_working():
@@ -235,14 +240,14 @@ class Recorder:
 
 		# Recording
 		if self.is_working() and packet_recorded is not None:
-			if not self.isAFKing() or packet_name in utils.IMPORTANT_PACKETS or self.config.get('record_packets_when_afk'):
+			if not self.isAFKing() or packet_name in constant.IMPORTANT_PACKETS or self.config.get('record_packets_when_afk'):
 				bytes_recorded = packet_recorded.read(packet_recorded.remaining())
 				data = self.timeRecorded().to_bytes(4, byteorder='big', signed=True)
 				data += len(bytes_recorded).to_bytes(4, byteorder='big', signed=True)
 				data += bytes_recorded
 				self.write(data)
 				self.packet_counter += 1
-				if self.isAFKing() and packet_name in utils.IMPORTANT_PACKETS:
+				if self.isAFKing() and packet_name in constant.IMPORTANT_PACKETS:
 					self.logger.debug('PCRC is afking but {} is an important packet so PCRC recorded it'.format(packet_name))
 				else:
 					self.logger.debug('{} packet recorded'.format(packet_name))
@@ -312,7 +317,7 @@ class Recorder:
 	# called when there's only 1 protocol version in allowed_proto_versions in pycraft connection
 	def on_protocol_version_decided(self, protocol_version):
 		self.mc_protocol = protocol_version
-		self.mc_version = utils.Map_ProtocolToVersion[protocol_version]
+		self.mc_version = constant.Map_ProtocolToVersion[protocol_version]
 		self.logger.log('Connecting using protocol version {}, mc version = {}'.format(self.mc_protocol, self.mc_version))
 		# as a MCDR plugin
 		with open(utils.get_path('protocol.json'), 'r') as f:
@@ -332,14 +337,14 @@ class Recorder:
 		self.packet_counter = 0
 		self.last_showinfo_packetcounter = 0
 		self.file_thread = None
-		self.replay_file = ReplayFile(path=utils.RecordingFilePath)
+		self.replay_file = ReplayFile(path=constant.RecordingFilePath)
 		self.pos = None
 		if self.chat_thread is not None:
 			self.chat_thread.kill()
 		self.chat_thread = ChatThread(self)
 		self.chat_thread.start()
-		if 'Time Update' in utils.BAD_PACKETS:
-			utils.BAD_PACKETS.remove('Time Update')
+		if 'Time Update' in constant.BAD_PACKETS:
+			constant.BAD_PACKETS.remove('Time Update')
 
 	def stop(self, restart=False, by_user=False):
 		self.logger.log('Stopping PCRC, restart = {}, by_user = {}'.format(restart, by_user))
@@ -383,9 +388,9 @@ class Recorder:
 			logger.log('Recording has not started yet, abort creating replay recording file')
 			return
 
-		if self.replay_file.size() < utils.MinimumLegalFileSize:
+		if self.replay_file.size() < constant.MinimumLegalFileSize:
 			logger.warn('Size of "recording.tmcpr" too small ({}KB < {}KB), abort creating replay file'.format(
-				utils.convert_file_size_KB(self.replay_file.size()), utils.convert_file_size_KB(utils.MinimumLegalFileSize)
+				utils.convert_file_size_KB(self.replay_file.size()), utils.convert_file_size_KB(constant.MinimumLegalFileSize)
 			))
 			return
 
@@ -393,14 +398,14 @@ class Recorder:
 		logger.log('Time recorded/passed: {}/{}'.format(utils.convert_millis(self.timeRecorded()), utils.convert_millis(self.timePassed())))
 
 		# Deciding file name
-		if not os.path.exists(utils.RecordingStorageFolder):
-			os.makedirs(utils.RecordingStorageFolder)
+		if not os.path.exists(constant.RecordingStorageFolder):
+			os.makedirs(constant.RecordingStorageFolder)
 		file_name_raw = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S')
 		if self.file_name is not None:
 			file_name_raw = self.file_name
 		file_name = file_name_raw + '.mcpr'
 		counter = 2
-		while os.path.isfile(f'{utils.RecordingStorageFolder}{file_name}'):
+		while os.path.isfile(f'{constant.RecordingStorageFolder}{file_name}'):
 			file_name = f'{file_name_raw}_{counter}.mcpr'
 			counter += 1
 		logger.log('File name is set to "{}"'.format(file_name))
@@ -420,25 +425,10 @@ class Recorder:
 		self.replay_file.create(file_name)
 
 		logger.log('Size of replay file "{}": {}MB'.format(file_name, utils.convert_file_size_MB(os.path.getsize(file_name))))
-		file_path = f'{utils.RecordingStorageFolder}{file_name}'
+		file_path = f'{constant.RecordingStorageFolder}{file_name}'
 		shutil.move(file_name, file_path)
 		if self.is_online():
 			self.chat(self.translation('OnCreatedMCPRFile').format(file_name), priority=ChatThread.Priority.High)
-
-		if self.config.get('upload_file'):
-			if self.is_online():
-				self.chat(self.translation('OnUploadingMCPRFile'))
-			logger.log('Uploading "{}" to transfer.sh'.format(file_name))
-			try:
-				ret, out = subprocess.getstatusoutput(
-					'curl --upload-file {} https://transfer.sh/{}'.format(file_path, file_name))
-				url = out.splitlines()[-1]
-				self.file_urls.append(url)
-				if self.is_online():
-					self.chat(self.translation('OnUploadedMCPRFile').format(file_name, url), priority=ChatThread.Priority.High)
-			except Exception:
-				logger.error('Fail to upload "{}" to transfer.sh'.format(file_name))
-				logger.error(traceback.format_exc())
 
 	def on_final_stop(self, logger, restart):
 		logger.log('File operations finished, disconnect now')
@@ -478,7 +468,6 @@ class Recorder:
 			else:
 				self.chat_thread.add_chat(prefix + line, priority)
 
-
 	def chat(self, text, priority=None):
 		if self.is_online():
 			self._chat(text, priority=priority)
@@ -515,7 +504,7 @@ class Recorder:
 		if self.is_online():
 			self._spectate(uuid)
 		else:
-			self.logger.warn('Cannot send respawn when disconnected')
+			self.logger.warn('Cannot send spectate when disconnected')
 
 	def format_status(self, text):
 		return text.format(
@@ -524,14 +513,6 @@ class Recorder:
 			self.packet_counter, utils.convert_file_size_MB(len(self.file_buffer)), utils.convert_file_size_MB(self.replay_file.size()),
 			self.file_name
 		)
-
-	def print_urls(self):
-		if len(self.file_urls) == 0:
-			self.chat(self.translation('UrlNotFound'))
-		else:
-			self.chat(self.translation('PrintUrls').format(len(self.file_urls)))
-			for url in self.file_urls:
-				self.chat(url)
 
 	def set_config(self, option, value, forced=False):
 		if not forced and option not in config.SettableOptions:
@@ -578,7 +559,7 @@ class Recorder:
 			self.logger.log('Processing Command {} from {} {}'.format(args, sender, uuid))
 			if len(args) == 0 or args[0] != self.config.get('command_prefix') or sender == self.config.get('username'):
 				return
-			elif wl_isenabled == True and sender not in whitelist:
+			elif wl_isenabled and sender is not None and sender not in whitelist:
 				self.chat(self.translation('PermissionDenied'))
 				return
 			elif len(args) == 1:
@@ -599,8 +580,6 @@ class Recorder:
 				self.stop(by_user=True)
 			elif len(args) == 2 and args[1] == 'restart':
 				self.restart(True)
-			elif len(args) == 2 and args[1] in ['url', 'urls']:
-				self.print_urls()
 			elif len(args) == 4 and args[1] == 'set':
 				self.set_config(args[2], args[3])
 			elif len(args) == 2 and args[1] == 'set':
@@ -699,187 +678,3 @@ class ChatThread(threading.Thread):
 			time.sleep(0.001)
 		self.logger.log('Chat thread stopped')
 
-
-class PacketProcessor:
-	def __init__(self, recorder, version):
-		self.recorder = recorder
-		self.version = version
-		self.blocked_entity_ids = []
-		self.player_ids = []
-
-	@property
-	def logger(self):
-		return self.recorder.logger
-
-	def analyze(self, packet, modification=False):
-		if not modification:
-			packet = copy.deepcopy(packet)
-		packet_id = packet.read_varint()
-		packet_name = self.recorder.protocolMap[str(packet_id)] if str(packet_id) in self.recorder.protocolMap else 'unknown'
-		return packet_id, packet_name
-
-	def process(self, packet):
-		try:
-			return self._process(packet)
-		except:
-			self.logger.error('Error when processing packet')
-			try:
-				packet_id, packet_name = self.analyze(packet)
-			except:
-				self.logger.error('Fail to analyze packet information')
-			else:
-				self.logger.error('Packet id = {}; Packet name = {}'.format(packet_id, packet_name))
-			raise
-
-	def _process(self, packet):
-		def filterBadPacket(packet_result):
-			if packet_result is not None and (packet_name in utils.BAD_PACKETS or (
-					self.recorder.config.get('minimal_packets') and packet_name in utils.USELESS_PACKETS)):
-				packet_result = None
-			return packet_result
-
-		# update PCRC's position
-		def processPlayerPositionAndLook(packet_result):
-			if packet_name == 'Player Position And Look (clientbound)':
-				player_x = packet.read_double()
-				player_y = packet.read_double()
-				player_z = packet.read_double()
-				player_yaw = packet.read_float()
-				player_pitch = packet.read_float()
-				flags = packet.read_byte()
-				if flags == 0:
-					self.recorder.pos = PositionAndLook(x=player_x, y=player_y, z=player_z, yaw=player_yaw, pitch=player_pitch)
-					self.logger.log('Set self\'s position to {}'.format(self.recorder.pos))
-			return packet_result
-
-		# world time control
-		def processTimeUpdate(packet_result):
-			if packet_result is not None and 0 <= self.recorder.config.get('daytime') < 24000 and packet_name == 'Time Update':
-				self.logger.log('Set daytime to: ' + str(self.recorder.config.get('daytime')))
-				world_age = packet.read_long()
-				packet_result = SARCPacket()
-				packet_result.write_varint(packet_id)
-				packet_result.write_long(world_age)
-				packet_result.write_long(-self.recorder.config.get(
-					'daytime'))  # If negative sun will stop moving at the Math.abs of the time
-				packet_result.receive(packet_result.flush())
-				utils.BAD_PACKETS.append('Time Update')  # Ignore all further updates
-			return packet_result
-
-		# Weather yeet
-		def processChangeGameState(packet_result):
-			# Remove weather if configured
-			if packet_result is not None and not self.recorder.config.get('weather') and packet_name == 'Change Game State':
-				reason = packet.read_ubyte()
-				if reason in [1, 2, 7, 8]:
-					packet_result = None
-			return packet_result
-
-		# add player id for afk detector and uuid for recording
-		def processSpawnPlayer(packet_result):
-			if packet_result is not None and packet_name == 'Spawn Player':
-				entity_id = packet.read_varint()
-				uuid = packet.read_uuid()
-				if entity_id not in self.player_ids:
-					self.player_ids.append(entity_id)
-					self.logger.debug('Player spawned, added to player id list, id = {}'.format(entity_id))
-				if uuid not in self.recorder.player_uuids:
-					self.recorder.player_uuids.append(uuid)
-					self.logger.log('Player spawned, added to uuid list, uuid = {}'.format(uuid))
-				self.recorder.updatePlayerMovement()
-			return packet_result
-
-		# check if the spawned is in black list
-		def processSpawnEntity(packet_result):
-			EntityTypeItem = {
-				'1.12': 2,
-				'1.12.2': 2,
-				'1.14.4': 34
-			}
-			EntityTypeBat = {
-				'1.12': 65,
-				'1.12.2': 65,
-				'1.14.4': 3
-			}
-			EntityTypePhantom = {
-				'1.12': -1,
-				'1.12.2': -1,
-				'1.14.4': 97
-			}
-			# Keep track of spawned items and their ids
-			if packet_result is not None and (packet_name == 'Spawn Object' or packet_name == 'Spawn Mob'):
-				entity_id = packet.read_varint()
-				entity_uuid = packet.read_uuid()
-				entity_type = packet.read_byte()
-				self.logger.debug('{} with id {} and type {}'.format(packet_name, entity_id, entity_type))
-				entity_name = None
-				if self.recorder.config.get('remove_items') and packet_name == 'Spawn Object' and entity_type == EntityTypeItem[self.recorder.mc_version]:
-					entity_name = 'Item'
-				if self.recorder.config.get('remove_bats') and packet_name == 'Spawn Mob' and entity_type == EntityTypeBat[self.recorder.mc_version]:
-					entity_name = 'Bat'
-				if self.recorder.config.get('remove_phantoms') and packet_name == 'Spawn Mob' and entity_type == EntityTypePhantom[self.recorder.mc_version]:
-					entity_name = 'Phantom'
-				if entity_name is not None:
-					self.logger.debug('{} spawned but ignore and added to blocked id list, id = {}'.format(entity_name, entity_id))
-					self.blocked_entity_ids.append(entity_id)
-					packet_result = None
-			return packet_result
-
-		# Removed destroyed blocked entity's id
-		def processDestroyEntities(packet_result):
-			if packet_result is not None and packet_name == 'Destroy Entities':
-				count = packet.read_varint()
-				for i in range(count):
-					entity_id = packet.read_varint()
-					if entity_id in self.blocked_entity_ids:
-						self.blocked_entity_ids.remove(entity_id)
-						self.logger.debug(
-							'Entity destroyed, removed from blocked entity id list, id = {}'.format(entity_id))
-					if entity_id in self.player_ids:
-						self.player_ids.remove(entity_id)
-						self.logger.debug('Player destroyed, removed from player id list, id = {}'.format(entity_id))
-			return packet_result
-
-		# Remove item pickup animation packet
-		def processCollectItem(packet_result):
-			if packet_result is not None and self.recorder.config.get(
-					'remove_items') and packet_name == 'Collect Item':
-				collected_entity_id = packet.read_varint()
-				if collected_entity_id in self.blocked_entity_ids:
-					self.blocked_entity_ids.remove(collected_entity_id)
-					self.logger.debug('Entity item collected, removed from blocked entity id list, id = {}'.format(
-						collected_entity_id))
-				packet_result = None
-			return packet_result
-
-		# Detecting player activity to continue recording and remove items or bats
-		def processEntityPackets(packet_result):
-			if packet_name in utils.ENTITY_PACKETS:
-				entity_id = packet.read_varint()
-				if entity_id in self.player_ids:
-					self.recorder.updatePlayerMovement()
-					self.logger.debug('Update player movement time, triggered by entity id {}'.format(entity_id))
-				if entity_id in self.blocked_entity_ids:
-					packet_result = None
-			return packet_result
-
-		packet = copy.deepcopy(packet)
-		packet_recorded = copy.deepcopy(packet)
-		packet_id, packet_name = self.analyze(packet, modification=True)
-
-		# update chatSpamThresholdCount in chat thread
-		if packet_name == 'Time Update':
-			self.recorder.chat_thread.on_recieved_TimeUpdatePacket()
-
-		# process packet
-		packet_recorded = filterBadPacket(packet_recorded)
-		packet_recorded = processPlayerPositionAndLook(packet_recorded)
-		packet_recorded = processTimeUpdate(packet_recorded)
-		packet_recorded = processChangeGameState(packet_recorded)
-		packet_recorded = processSpawnPlayer(packet_recorded)
-		packet_recorded = processSpawnEntity(packet_recorded)
-		packet_recorded = processDestroyEntities(packet_recorded)
-		packet_recorded = processCollectItem(packet_recorded)
-		packet_recorded = processEntityPackets(packet_recorded)
-
-		return packet_recorded

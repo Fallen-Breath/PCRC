@@ -73,3 +73,5 @@ CommandHelp: |
     {0} marker add [<name>]: add a marker, and name it as <name> (optional)
     {0} marker del <index>: delete the marker at index <index>
     {0} name <filename>: set recording file name to <filename>
+PermissionDenied: |
+    Permission denied

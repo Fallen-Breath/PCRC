@@ -26,7 +26,12 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 ### Minecraft 服务器
 
-PCRC 目前支持连接 `1.12`、`1.12.2` 以及 `1.14.4` 的原版 Minecraft 服务端
+PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
+
+- 1.12
+- 1.12.2
+- 1.14.4
+- 1.15.2
 
 ## 优势
 
@@ -69,6 +74,8 @@ PCRC 目前支持连接 `1.12`、`1.12.2` 以及 `1.14.4` 的原版 Minecraft �
 
 `server_name`: replay 回放中心内显示的服务器名称
 
+`initial_version`: 首选的用于连接至类似 Bungeecord 的 Minecraft 版本
+
 ### PCRC 设置
 
 `file_size_limit_mb`: `.tmcpr` 文件的大小限制。每当达到这个限制时 PCRC 将会重启，单位: MB。默认值: `2048`
@@ -80,8 +87,6 @@ PCRC 目前支持连接 `1.12`、`1.12.2` 以及 `1.14.4` 的原版 Minecraft �
 `delay_before_afk_second`:  所有人都离开与暂停录制间的延迟，单位: 秒。默认值: `15`
 
 `record_packets_when_afk`: 若设为 `false`，PCRC 将会在暂停录制时忽略几乎所有到来的数据包（SARC 的行为）
-
-`upload_file`: 是否将录制好的文件上传至 [transfer.sh](transfer.sh) 以便进行分享~~（国内用户还是关掉吧不然上传十年）~~
 
 `auto_relogin`: 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
 
@@ -142,8 +147,6 @@ PCRC 目前支持连接 `1.12`、`1.12.2` 以及 `1.14.4` 的原版 Minecraft �
 `!!PCRC stop`: 关闭 PCRC
 
 `!!PCRC restart`: 重启 PCRC
-
-`!!PCRC url`: 输出所有已录制文件的网址
 
 `!!PCRC set`: 输出所有可设置的选项
 
