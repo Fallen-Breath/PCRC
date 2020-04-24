@@ -14,7 +14,7 @@ mv __temp__\%name% %name%-%ver%
 rd /S /Q __temp__
 cd %name%-%ver%
 rd /S /Q .git __pycache__ build
-rm -f %name%.spec .gitignore
+rm -f %name%.spec .gitignore make_release.bat
 cd ..
 rm -f %name%-%ver%-universal.zip
 zip -r %name%-%ver%-universal.zip %name%-%ver%
