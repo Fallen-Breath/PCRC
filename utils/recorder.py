@@ -54,7 +54,12 @@ class Recorder:
 			)
 		else:
 			self.logger.log("Login in online mode")
-			auth_token = authentication.AuthenticationToken()
+			yggdrasil_server = self.config.get('yggdrasil_server')
+			if yggdrasil_server == "":
+				yggdrasil_server = authentication.MojangServer()
+			else:
+				yggdrasil_server = authentication.YggdrasilServer(yggdrasil_server)
+			auth_token = authentication.AuthenticationToken(yggdrasil_server = yggdrasil_server)
 			auth_token.authenticate(self.config.get('username'), self.config.get('password'))
 			self.logger.log("Logged in as %s" % auth_token.profile.name)
 			self.config.set_value('username', auth_token.profile.name)

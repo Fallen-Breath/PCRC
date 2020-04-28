@@ -9,6 +9,7 @@ DefaultOption = json.loads('''
 
 	"__2__": "-------- Account and Server --------",
 	"online_mode": false,
+	"yggdrasil_server": "",
 	"username": "bot_PCRC",
 	"password": "secret",
 	"address": "localhost",
@@ -46,6 +47,7 @@ DefaultOption = json.loads('''
 
 SettableOptions = [
 	'language',
+	'yggdrasil_server',
 	'server_name',
 	'minimal_packets',
 	'daytime',
@@ -120,6 +122,7 @@ class Config:
 		messages.append(f"Debug mode = {self.get('debug_mode')}")
 		messages.append('-------- Account and Server --------')
 		messages.append(f"Online mode = {self.get('online_mode')}")
+		messages.append(f"Yggdrasil server = {self.get('yggdrasil_server')}")
 		messages.append(f"User name = {secret(self.get('username'))}")
 		messages.append(f"Password = ******")
 		messages.append(f"Server address = {self.get('address')}")
