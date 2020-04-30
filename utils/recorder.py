@@ -115,6 +115,14 @@ class Recorder:
 		self.logger.log('PCRC bot joined the server')
 		self.online = True
 		self.chat(self.translation('OnGameJoin'))
+		client_settings = serverbound.play.ClientSettingsPacket()
+		client_settings.locale = "en_US"
+		client_settings.view_distance = 16
+		client_settings.chat_mode = client_settings.ChatMode.FULL
+		client_settings.chat_colors = False
+		client_settings.displayed_skin_parts = client_settings.SkinParts.ALL
+		client_settings.main_hand = client_settings.Hand.RIGHT
+		self.connection.write_packet(client_settings)
 
 	def onDisconnect(self, packet):
 		self.logger.log('PCRC disconnected from the server, reason = {}'.format(packet.json_data))
