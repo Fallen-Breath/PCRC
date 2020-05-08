@@ -38,7 +38,7 @@ PCRC currently supports connecting to vanilla Minecraft server. Supports version
 - Can be hosted server side for 24/7 recording
 - It can be set to record only when the player is nearby
 - Multiple options can be set for custom recording
-- Restart after raw file size reaches 512MB or recording time reaches 5 hours to prevent oversize recording
+- Restart after raw file size reaches 2048MB or recording time reaches 5 hours to prevent oversize recording
 - Since the virtual player (bot) doesn't move, the recording file will not include unnecessary packets related to chunk loading, which can significantly reduce recording file size
 
 ## Usage
