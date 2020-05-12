@@ -139,6 +139,7 @@ class Config:
 		messages.append(f"Record with player only = {self.get('with_player_only')}")
 		messages.append(f"Remove items = {self.get('remove_items')}")
 		messages.append(f"Remove bats = {self.get('remove_bats')}")
+		messages.append(f"Remove phantoms = {self.get('remove_phantoms')}")
 		messages.append('========================================')
 		messages.append('-------- Whitelist --------')
 		messages.append(f"Whitelist = {self.get('enabled')}")
