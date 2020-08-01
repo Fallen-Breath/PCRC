@@ -8,9 +8,9 @@
     "username": "bot_PCRC",
     "password": "secret",
     "address": "localhost",
-    "port": 20000,
+    "port": 25565,
     "server_name": "SECRET SERVER",
-    "initial_version": "1.14.4",
+    "initial_version": "1.16.1",
 
     "__3__": "-------- PCRC Control --------",
     "file_size_limit_mb": 2048,

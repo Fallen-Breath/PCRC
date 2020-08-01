@@ -10,7 +10,7 @@ if __name__ == '__main__':
 	from utils.config import Config
 	from utils.pycraft.compat import input
 	from utils.pycraft.exceptions import YggdrasilError
-else:
+else:	
 	from .utils import utils, constant
 	from .utils.logger import Logger
 	from .utils.recorder import Recorder
@@ -174,8 +174,11 @@ def main():
 			stop()
 		else:
 			logger.log('Waiting for recorder to stop before exit')
-			while not recorder.is_stopped():
-				time.sleep(0.1)
+			try:
+				while not recorder.is_stopped():
+					time.sleep(0.1)
+			except AttributeError:
+				pass
 	except (KeyboardInterrupt, SystemExit):
 		logger.log('Forced to stop')
 		return
