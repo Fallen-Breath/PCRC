@@ -8,6 +8,8 @@ import sys
 import zipfile
 import collections
 
+from utils import constant
+
 sys.path.append("../")
 from utils.SARC.packet import Packet as SARCPacket
 import utils.utils as utils
@@ -19,12 +21,14 @@ class Data:
 		self.packet_length = packet_length
 		self.packet = packet
 
+
 WorkingDirectory = '__RFETMP__/'
 TriggerAddingDeltaThreshold = 10000
-protocol_map_name = None  # id -> name
-protocol_map_id = None  # name -> id
-target_tmcpr = None
-temp_tmcpr = None
+protocol_map_name = {}  # id -> name
+protocol_map_id = {}  # name -> id
+target_tmcpr = ''
+temp_tmcpr = ''
+
 
 def prepare():
 	global protocol_map_name, protocol_map_id, protocol_version, input_file_name
@@ -81,6 +85,7 @@ def update_tmcpr_on_editing_finished():
 	global original_tmcpr, temp_tmcpr
 	os.remove(original_tmcpr)
 	shutil.move(temp_tmcpr, original_tmcpr)
+
 
 def save_file():
 	print('Saving File')
@@ -284,7 +289,7 @@ def yeet_entity(bad_entity_id):
 							blocked_entity_ids.remove(entity_id)
 						bad = True
 
-				elif packet_name in utils.ENTITY_PACKETS:
+				elif packet_name in constant.ENTITY_PACKETS:
 					entity_id = packet.read_varint()
 					if entity_id in blocked_entity_ids:
 						bad = True
@@ -346,7 +351,7 @@ def yeet_all_entity_except_player():
 					if not has_player:
 						bad = True
 
-				elif packet_name in utils.ENTITY_PACKETS:
+				elif packet_name in constant.ENTITY_PACKETS:
 					entity_id = packet.read_varint()
 					if entity_id not in player_ids:
 						bad = True
@@ -406,62 +411,108 @@ def analyze():
 	global original_tmcpr, protocol_map_id, protocol_map_name
 	entity_type_map = {}
 	player_ids = []
-	with open(original_tmcpr, 'rb') as of:
-		all = 0
-		num = 0
-		while True:
-			time_stamp = read_int(of)
-			if time_stamp is None:
-				break
-			packet_length = read_int(of)
-			packet_data = of.read(packet_length)
-			packet = SARCPacket()
-			packet.receive(packet_data)
-			packet_id = packet.read_varint()
-			packet_name = protocol_map_name[packet_id]
-			entity_type = None
+	with open('analyze.txt', 'w') as af:
+		with open(original_tmcpr, 'rb') as of:
+			all = 0
+			num = 0
+			while True:
+				time_stamp = read_int(of)
+				if time_stamp is None:
+					break
+				packet_length = read_int(of)
+				packet_data = of.read(packet_length)
+				packet = SARCPacket()
+				packet.receive(packet_data)
+				packet_id = packet.read_varint()
+				packet_name = protocol_map_name[packet_id]
+				af.write('#{}\t{}\t@ {}\n'.format(num, packet_name, time_stamp))
+				entity_type = None
 
-			if packet_name == 'Spawn Player':
-				entity_id = packet.read_varint()
-				uuid = packet.read_uuid()
-				if entity_id not in player_ids:
-					player_ids.append(entity_id)
-			elif packet_name == 'Spawn Mob' or packet_name == 'Spawn Object':
-				entity_id = packet.read_varint()
-				entity_uuid = packet.read_uuid()
-				entity_type = packet.read_byte()
-				entity_type_map[entity_id] = ('Mob' if packet_name == 'Spawn Mob' else 'Obj') + str(entity_type)
-				entity_type = entity_type_map[entity_id]
-			elif packet_name == 'Destroy Entities':
-				count = packet.read_varint()
-				for i in range(count):
+				if packet_name == 'Spawn Player':
 					entity_id = packet.read_varint()
+					uuid = packet.read_uuid()
+					if entity_id not in player_ids:
+						player_ids.append(entity_id)
+				elif packet_name == 'Spawn Mob' or packet_name == 'Spawn Object':
+					entity_id = packet.read_varint()
+					entity_uuid = packet.read_uuid()
+					entity_type = packet.read_byte()
+					entity_type_map[entity_id] = ('Mob' if packet_name == 'Spawn Mob' else 'Obj') + str(entity_type)
+					entity_type = entity_type_map[entity_id]
+				elif packet_name == 'Destroy Entities':
+					count = packet.read_varint()
+					for i in range(count):
+						entity_id = packet.read_varint()
+						if entity_id in player_ids:
+							player_ids.remove(entity_id)
+
+				elif packet_name in constant.ENTITY_PACKETS:
+					entity_id = packet.read_varint()
+					entity_type = entity_type_map.get(entity_id, '?')
 					if entity_id in player_ids:
-						player_ids.remove(entity_id)
+						entity_type = 'Player'
 
-			elif packet_name in utils.ENTITY_PACKETS:
-				entity_id = packet.read_varint()
-				entity_type = entity_type_map.get(entity_id, '?')
-				if entity_id in player_ids:
-					entity_type = 'Player'
+				if entity_type is not None:
+					packet_name += ' (' + entity_type + ')'
 
-			if entity_type is not None:
-				packet_name += ' (' + entity_type + ')'
+				if packet_name not in counter:
+					counter[packet_name] = 0
+				counter[packet_name] += 8 + packet_length
+				all += 8 + packet_length
+				num += 1
+				if num % 100000 == 0:
+					print(f'scanned: {round(100.0 * all/os.path.getsize(original_tmcpr), 2)}%')
 
-			if packet_name not in counter:
-				counter[packet_name] = 0
-			counter[packet_name] += 8 + packet_length
-			all += 8 + packet_length
-			num += 1
-			if num % 100000 == 0:
-				print(f'scanned: {round(100.0 * all/os.path.getsize(original_tmcpr), 2)}%')
 
 	arr = list(counter.items())
 	arr.sort(key=lambda x: x[1], reverse=True)
 	for a in arr:
-		print(f'{a[0]}: {round(a[1] / utils.BytePerMB, 5)}MB')
+		print(f'{a[0]}: {round(a[1] / constant.BytePerMB, 5)}MB')
 
 	print('Done')
+
+
+def fix_missing_time_update_after_dim_changed():
+	global original_tmcpr, temp_tmcpr, protocol_map_id
+	print(f'fix missing time update after dim changed')
+	counter = 0
+	time_update_packet = None
+
+	with open(original_tmcpr, 'rb') as of:
+		with open(temp_tmcpr, 'wb') as tf:
+			num = 0
+			processed = 0
+			while True:
+				time_stamp = read_int(of)
+				if time_stamp is None:
+					break
+				packet_length = read_int(of)
+				packet_data = of.read(packet_length)
+				write_int(tf, time_stamp)
+				write_int(tf, packet_length)
+				tf.write(packet_data)
+
+				packet = SARCPacket()
+				packet.receive(packet_data)
+				packet_id = packet.read_varint()
+				packet_name = protocol_map_name[packet_id]
+
+				if packet_name == 'Time Update':
+					time_update_packet = bytes()
+					time_update_packet += struct.pack('>i', time_stamp)
+					time_update_packet += struct.pack('>i', packet_length)
+					time_update_packet += packet_data
+				elif packet_name == 'Respawn' and time_update_packet is not None:
+					tf.write(time_update_packet)
+					counter += 1
+
+				num += 1
+				processed += 8 + packet_length
+				if num % 100000 == 0:
+					print(f'processed file size: {round(100.0 * processed/os.path.getsize(original_tmcpr), 2)}%')
+	update_tmcpr_on_editing_finished()
+	print('Wrote {} time update packets after Respawn packet'.format(counter))
+
 
 print('A script to fix some bugs in recording file recorded by PCRC in old versions')
 print('It can be optimize a lot but I\'m too lazy xd. Whatever it works, but it may consume a lots of RAM')
@@ -472,17 +523,38 @@ print('Init finish')
 
 CommandListMessageData = collections.namedtuple('CommandListMessageData', ['id', 'name', 'detail'])
 CommandList = [
-	CommandListMessageData(0, 'Save and Exit', 'Exit the tool'),
-	CommandListMessageData(1, 'Time and weather fix',
-						   'Fix missing time update packet and delete remaining weather packet in PCRC 0.3-alpha and below'),
-	CommandListMessageData(2, 'Wrong packet time stamp fix after afk',
-						   'Fix wrong time stamp (missing afktime) in a packet in PCRC 0.5-alpha and below'),
-	CommandListMessageData(3, 'Player missing fix after afk',
-						   'Fix player not gets rendered after PCRC afk in PCRC 0.5-alpha and below. It\'s a bit hacky'),
-	CommandListMessageData(4, 'Analyze recording file size', ''),
-	CommandListMessageData(5, 'Yeet all zombie pigman related packets', ''),
-	CommandListMessageData(6, 'Yeet all non-player entity packets', ''),
-	CommandListMessageData(7, 'Yeet all packets with specific type', ''),
+	CommandListMessageData(
+		0, 'Save and Exit',
+		'Exit the tool'
+	),
+	CommandListMessageData(
+		1, 'Time and weather fix',
+		'Fix missing time update packet and delete remaining weather packet in PCRC 0.3-alpha and below'
+	),
+	CommandListMessageData(
+		2, 'Wrong packet time stamp fix after afk',
+		'Fix wrong time stamp (missing afktime) in a packet in PCRC 0.5-alpha and below'
+	),
+	CommandListMessageData(
+		3, 'Player missing fix after afk',
+		'Fix player not gets rendered after PCRC afk in PCRC 0.5-alpha and below. It\'s a bit hacky'
+	),
+	CommandListMessageData(
+		4, 'Analyze recording file size', ''
+	),
+	CommandListMessageData(
+		5, 'Yeet all zombie pigman related packets', ''
+	),
+	CommandListMessageData(
+		6, 'Yeet all non-player entity packets', ''
+	),
+	CommandListMessageData(
+		7, 'Yeet all packets with specific type', ''
+	),
+	CommandListMessageData(
+		8, 'Write time update packets after Respawn packet',
+		'To "fix" missing time update after dim changed'
+	),
 ]
 CommandListMessage = 'Command List:\n' + '\n'.join(['{}. {}'.format(cmd.id, cmd.name) for cmd in CommandList])
 while True:
@@ -515,12 +587,14 @@ while True:
 	elif cmd == '4':
 		analyze()
 	elif cmd == '5':
-		yeet_entity(56) # PigZombie / minecraft:zombie_pigman
+		yeet_entity(56)  # PigZombie / minecraft:zombie_pigman
 	elif cmd == '6':
 		yeet_all_entity_except_player()
 	elif cmd == '7':
 		packet_name = input('Input packet name, u can find the name in https://wiki.vg/\nname = ')
 		yeet_packet(packet_name)
+	elif cmd == '8':
+		fix_missing_time_update_after_dim_changed()
 	else:
 		print('Unknown command')
 input('press enter to exit')
