@@ -1,7 +1,8 @@
 from ....packets import Packet
 
 from ....types import (
-    VarInt, String, VarIntPrefixedByteArray, TrailingByteArray
+    VarInt, String, VarIntPrefixedByteArray, TrailingByteArray,
+    UUIDIntegerArray
 )
 
 
@@ -54,9 +55,11 @@ class LoginSuccessPacket(Packet):
                0x02
 
     packet_name = "login success"
-    definition = [
-        {'UUID': String},
-        {'Username': String}]
+    get_definition = staticmethod(lambda context: [
+        {'UUID': UUIDIntegerArray} if context.protocol_version >= 707
+        else {'UUID': String},
+        {'Username': String}
+    ])
 
 
 class SetCompressionPacket(Packet):
@@ -79,7 +82,7 @@ class PluginRequestPacket(Packet):
           (1) has the keyword argument 'early=True' set when calling
               'register_packet_listener'; and
 
-          (2) raises 'pycraft.networking.connection.IgnorePacket' after
+          (2) raises 'minecraft.networking.connection.IgnorePacket' after
               sending a corresponding 'PluginResponsePacket'.
 
         Otherwise, one 'PluginRequestPacket' may result in multiple responses,

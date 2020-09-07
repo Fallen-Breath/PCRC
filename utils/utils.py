@@ -32,6 +32,7 @@ def get_meta_data(server_name, duration, date, mcversion, protocol, player_uuids
 		'1.12.2': '9',
 		'1.14.4': '14',
 		'1.15.2': '14',
+		'1.16.1': '14',
 	}
 	if player_uuids is None:
 		player_uuids = []

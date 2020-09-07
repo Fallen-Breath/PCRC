@@ -197,25 +197,97 @@ SUPPORTED_MINECRAFT_VERSIONS = {
     '1.14.4-pre6':          496,
     '1.14.4-pre7':          497,
     '1.14.4':               498,
+    '19w34a':               550,
+    '19w35a':               551,
+    '19w36a':               552,
+    '19w37a':               553,
+    '19w38a':               554,
+    '19w38b':               555,
+    '19w39a':               556,
+    '19w40a':               557,
+    '19w41a':               558,
+    '19w42a':               559,
+    '19w44a':               560,
+    '19w45a':               561,
+    '19w45b':               562,
+    '19w46a':               563,
+    '19w46b':               564,
+    '1.15-pre1':            565,
+    '1.15-pre2':            566,
+    '1.15-pre3':            567,
+    '1.15-pre4':            569,
+    '1.15-pre5':            570,
+    '1.15-pre6':            571,
+    '1.15-pre7':            572,
     '1.15':                 573,
+    '1.15.1-pre1':          574,
     '1.15.1':               575,
     '1.15.2-pre1':          576,
     '1.15.2-pre2':          577,
     '1.15.2':               578,
+    '20w06a':               701,
+    '20w07a':               702,
+    '20w08a':               703,
+    '20w09a':               704,
+    '20w10a':               705,
+    '20w11a':               706,
+    '20w12a':               707,
+    '20w13a':               708,
+    '20w13b':               709,
+    '20w14a':               710,
+    '20w15a':               711,
+    '20w16a':               712,
+    '20w17a':               713,
+    '20w18a':               714,
+    '20w19a':               715,
+    '20w20a':               716,
+    '20w20b':               717,
+    '1.16 Pre-release 2':   722,
+    '1.16 Pre-release 3':   725,
+    '1.16 Pre-release 4':   727,
+    '1.16 Pre-release 5':   729,
+    '1.16 Pre-release 6':   730,
+    '1.16 Pre-release 7':   732,
+    '1.16 Pre-release 8':   733,
+    '1.16 Release Candidate 1':   734,
+    '1.16':                 735,
+    '1.16.1':               736,
 }
 
 # Those Minecraft versions supported by pyCraft which are "release" versions,
 # i.e. not development snapshots or pre-release versions.
-RELEASE_MINECRAFT_VERSIONS = {
-    vid: protocol for (vid, protocol) in SUPPORTED_MINECRAFT_VERSIONS.items()
-    if __import__('re').match(r'\d+(\.\d+)+$', vid)}
+RELEASE_MINECRAFT_VERSIONS = {}
 
 # The protocol versions of SUPPORTED_MINECRAFT_VERSIONS, without duplicates,
 # in ascending numerical (and hence chronological) order.
-SUPPORTED_PROTOCOL_VERSIONS = \
-    sorted(set(SUPPORTED_MINECRAFT_VERSIONS.values()))
+SUPPORTED_PROTOCOL_VERSIONS = []
 
 # The protocol versions of RELEASE_MINECRAFT_VERSIONS, without duplicates,
 # in ascending numerical (and hence chronological) order.
-RELEASE_PROTOCOL_VERSIONS = \
-    sorted(set(RELEASE_MINECRAFT_VERSIONS.values()))
+RELEASE_PROTOCOL_VERSIONS = []
+
+
+def initglobals():
+    '''Init the globals from the SUPPORTED_MINECRAFT_VERSIONS dict
+
+    This allows the SUPPORTED_MINECRAFT_VERSIONS dict to be updated, then the
+    other globals can be updated as well, to allow for dynamic version support.
+    All updates are done by reference to allow this to work else where in the code.
+    '''
+    global RELEASE_MINECRAFT_VERSIONS, SUPPORTED_PROTOCOL_VERSIONS, RELEASE_PROTOCOL_VERSIONS
+
+    import re
+
+    for (vid, protocol) in SUPPORTED_MINECRAFT_VERSIONS.items():
+        if re.match(r"\d+(\.\d+)+$", vid):
+            RELEASE_MINECRAFT_VERSIONS[vid] = protocol
+            if protocol not in RELEASE_PROTOCOL_VERSIONS:
+                RELEASE_PROTOCOL_VERSIONS.append(protocol)
+        if protocol not in SUPPORTED_PROTOCOL_VERSIONS:
+            SUPPORTED_PROTOCOL_VERSIONS.append(protocol)
+
+    SUPPORTED_PROTOCOL_VERSIONS.sort()
+    RELEASE_PROTOCOL_VERSIONS.sort()
+
+
+initglobals()
