@@ -11,4 +11,5 @@ dist
 build
 PCRC.spec
 tools/__RFETMP__
+tools/protocol
 temp_recording/

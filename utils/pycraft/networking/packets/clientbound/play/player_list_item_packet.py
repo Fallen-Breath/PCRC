@@ -1,4 +1,4 @@
-from ....packets import Packet
+from ... import Packet
 
 from ....types import (
     String, Boolean, UUID, VarInt, MutableRecord,
@@ -9,7 +9,8 @@ from ....types import (
 class PlayerListItemPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x33 if context.protocol_version >= 722 else \
+        return 0x32 if context.protocol_version >= 741 else \
+               0x33 if context.protocol_version >= 721 else \
                0x34 if context.protocol_version >= 550 else \
                0x33 if context.protocol_version >= 471 else \
                0x31 if context.protocol_version >= 451 else \

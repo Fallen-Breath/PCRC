@@ -100,10 +100,13 @@ class Recorder:
 			self.logger.log("Don't panic, that's Works As Intended")
 
 	def onPacketSent(self, packet):
-		self.logger.debug('<- {}'.format(packet.data))
+		if hasattr(packet, 'raw_data'):
+			self.logger.debug('<- {}'.format(packet.raw_data))
 
 	def onPacketReceived(self, packet):
-	#	self.logger.debug('-> {}'.format(packet.data))
+		if hasattr(packet, 'raw_data'):
+			# self.logger.debug('-> {}'.format(packet.raw_data))
+			pass
 		self.processPacketData(packet)
 
 	def onGameJoin(self, packet):
@@ -137,10 +140,13 @@ class Recorder:
 			elif translate == 'chat.type.text':  # chat
 				message += '<{}> {}'.format(name, msg)
 				try:
-					text = js['with'][0]['hoverEvent']['value']['text']
-				except TypeError:  # 1.15.2 server
-					text = js['with'][0]['hoverEvent']['value'][0]['text']
-				uuid = text[text.find(',id:"'):].split('"')[1]
+					uuid = js['with'][0]['hoverEvent']['contents']['id']  # 1.16 server
+				except:
+					try:
+						text = js['with'][0]['hoverEvent']['value']['text']
+					except TypeError:  # 1.15.2 server
+						text = js['with'][0]['hoverEvent']['value'][0]['text']
+					uuid = text[text.find(',id:"'):].split('"')[1]
 				self.processCommand(msg, name, uuid)
 			elif translate == 'commands.message.display.incoming':  # tell
 				message += '<{}>(tell) {}'.format(name, msg['text'])
@@ -216,7 +222,7 @@ class Recorder:
 	def processPacketData(self, packet_raw):
 		if not self.is_working():
 			return
-		bytes = packet_raw.data
+		bytes = packet_raw.raw_data
 		if bytes[0] == 0x00:
 			bytes = bytes[1:]
 		t = utils.getMilliTime()

@@ -1,4 +1,4 @@
-from ....packets import Packet
+from ... import Packet
 
 from ....types import (
     VarInt, Boolean, String, VarIntPrefixedByteArray, TrailingByteArray

@@ -1,4 +1,4 @@
-from ....packets import Packet
+from ... import Packet
 from ....types import (
     VarInt, String, Float, Byte, Type, Integer, Vector, Enum,
 )
@@ -9,7 +9,7 @@ __all__ = 'SoundEffectPacket',
 class SoundEffectPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x51 if context.protocol_version >= 722 else \
+        return 0x51 if context.protocol_version >= 721 else \
                0x52 if context.protocol_version >= 550 else \
                0x51 if context.protocol_version >= 471 else \
                0x4D if context.protocol_version >= 461 else \

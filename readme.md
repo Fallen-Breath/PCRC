@@ -21,6 +21,7 @@ Python version should be python3 and at least it works on Python 3.6 and Python 
 - requests
 - future
 - PyYAML
+- pynbt
 
 The requirements are also stored in `requirements.txt`
 
@@ -87,7 +88,7 @@ The config file is `config.json`. All settings can be changed in it. Those which
     
 `delay_before_afk_second`: The time delay between every player leaving and PCRC pausing recording. Default: `15`
 
-`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording (SARC's behavior)
+`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording (SARC's behavior). This can decrease the replay file size a lot but might cause block / entity desync if there will be something happening after player leaves
 
 `auto_relogin`: If this option is enabled and the client gets disconnected, it will automatically try to reconnect
 

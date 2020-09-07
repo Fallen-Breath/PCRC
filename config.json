@@ -10,7 +10,7 @@
     "address": "localhost",
     "port": 25565,
     "server_name": "SECRET SERVER",
-    "initial_version": "1.16.1",
+    "initial_version": "1.15.2",
 
     "__3__": "-------- PCRC Control --------",
     "file_size_limit_mb": 2048,
@@ -32,7 +32,7 @@
     "remove_phantoms": true,
 
     "__5__": "-------- PCRC Whitelist --------",
-    "enabled": true,
+    "enabled": false,
     "whitelist": [
         "Fallen_Breath",
         "Steve"

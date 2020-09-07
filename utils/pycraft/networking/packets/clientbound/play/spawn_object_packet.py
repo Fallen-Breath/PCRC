@@ -1,4 +1,4 @@
-from ....packets import Packet
+from ... import Packet
 from ....types.utility import descriptor
 
 from ....types import (
