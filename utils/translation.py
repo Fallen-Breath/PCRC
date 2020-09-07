@@ -12,7 +12,10 @@ class Translation:
 			if file.endswith(FileSuffix):
 				lang = file.rstrip(FileSuffix)
 				with open(lang_dir + file, encoding='utf8') as f:
-					self.translations[lang] = yaml.load(f, Loader=yaml.FullLoader)
+					try:
+						self.translations[lang] = yaml.load(f, Loader=yaml.FullLoader)
+					except:
+						self.translations[lang] = yaml.load(f, Loader=yaml.Loader)
 
 	@property
 	def languages(self):
