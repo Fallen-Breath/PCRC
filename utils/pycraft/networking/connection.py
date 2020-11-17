@@ -371,7 +371,8 @@ class Connection(object):
             self.context.protocol_version = max(self.allowed_proto_versions)
 
             # PCRC modified the value to default_proto_version if there are multiple allow version
-            self.recorder.logger.info('Allow versions of the server: {}'.format(self.allowed_proto_versions))
+            if self.recorder is not None:
+                self.recorder.logger.info('Allow versions of the server: {}'.format(self.allowed_proto_versions))
             if len(self.allowed_proto_versions) > 1:
                 self.context.protocol_version = self.default_proto_version
 
@@ -390,7 +391,8 @@ class Connection(object):
                 self.write_packet(login_start_packet)
                 self.reactor = LoginReactor(self)
 
-                self.recorder.on_protocol_version_decided(self.allowed_proto_versions.copy().pop())  # PCRC
+                if self.recorder is not None:
+                    self.recorder.on_protocol_version_decided(self.allowed_proto_versions.copy().pop())  # PCRC
             else:
                 # Determine the server's protocol version by first performing a
                 # status query.

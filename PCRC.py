@@ -8,14 +8,12 @@ if __name__ == '__main__':
 	from utils.logger import Logger
 	from utils.recorder import Recorder
 	from utils.config import Config
-	from utils.pycraft.compat import input
 	from utils.pycraft.exceptions import YggdrasilError
 else:	
 	from .utils import utils, constant
 	from .utils.logger import Logger
 	from .utils.recorder import Recorder
 	from .utils.config import Config
-	from .utils.pycraft.compat import input
 	from .utils.pycraft.exceptions import YggdrasilError
 
 recorder = None

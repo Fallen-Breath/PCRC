@@ -13,7 +13,7 @@ BytePerMB = BytePerKB * 1024
 MinimumLegalFileSize = 10 * BytePerKB
 RecordingFilePath = 'temp_recording/'
 RecordingStorageFolder = 'PCRC_recordings/'
-ALLOWED_VERSIONS = ['1.12', '1.12.2', '1.14.4', '1.15.2', '1.16.1', '1.16.2', '1.16.3']
+ALLOWED_VERSIONS = ['1.12', '1.12.2', '1.14.4', '1.15.2', '1.16.1', '1.16.2', '1.16.3', '1.16.4']
 Map_VersionToProtocol = pycraft.SUPPORTED_MINECRAFT_VERSIONS
 Map_ProtocolToVersion = {}
 for item in Map_VersionToProtocol.items():
@@ -27,6 +27,7 @@ EntityTypeItem = {
 	'1.16.1': 35,
 	'1.16.2': 35,
 	'1.16.3': 35,
+	'1.16.4': 35,
 }
 EntityTypeBat = {
 	'1.12': 65,
@@ -36,6 +37,7 @@ EntityTypeBat = {
 	'1.16.1': 3,
 	'1.16.2': 3,
 	'1.16.3': 3,
+	'1.16.4': 3,
 }
 EntityTypePhantom = {
 	'1.12': -1,
@@ -45,6 +47,7 @@ EntityTypePhantom = {
 	'1.16.1': 58,
 	'1.16.2': 58,
 	'1.16.3': 58,
+	'1.16.4': 58,
 }
 
 FILE_FORMAT_VERSION_DICT = {
@@ -55,6 +58,7 @@ FILE_FORMAT_VERSION_DICT = {
 	'1.16.1': '14',
 	'1.16.2': '14',
 	'1.16.3': '14',
+	'1.16.4': '14',
 }
 
 
