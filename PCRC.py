@@ -27,6 +27,7 @@ def on_start_up():
 	logger.log('PCRC {} starting up'.format(constant.Version))
 	logger.log('PCRC is open source, u can find it here: https://github.com/Fallen-Breath/PCRC')
 	logger.log('PCRC is still in development, it may not work well')
+	logger.log('Enter "start" to start PCRC')
 
 
 def start():
