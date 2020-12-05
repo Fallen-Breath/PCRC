@@ -119,12 +119,15 @@ class Recorder:
 		self.online = True
 		self.chat(self.translation('OnGameJoin'))
 		client_settings = serverbound.play.ClientSettingsPacket()
-		client_settings.locale = "en_US"
-		client_settings.view_distance = 16
+		client_settings.locale = self.config.get('language')
+		client_settings.view_distance = self.config.get('view_distance')
 		client_settings.chat_mode = client_settings.ChatMode.FULL
-		client_settings.chat_colors = False
+		client_settings.chat_colors = self.config.get('chat_colors')
 		client_settings.displayed_skin_parts = client_settings.SkinParts.ALL
-		client_settings.main_hand = client_settings.Hand.RIGHT
+		if self.config.get('right_main_hand'):
+			client_settings.main_hand = client_settings.Hand.RIGHT
+		else:
+			client_settings.main_hand = client_settings.Hand.LEFT
 		self.connection.write_packet(client_settings)
 
 	def onDisconnect(self, packet):
