@@ -27,15 +27,9 @@ def crc32_file(fn):
 
 
 def get_meta_data(server_name, duration, date, mcversion, protocol, player_uuids):
-	file_format_version_dict = {
-		'1.12': '6',
-		'1.12.2': '9',
-		'1.14.4': '14',
-		'1.15.2': '14',
-	}
 	if player_uuids is None:
 		player_uuids = []
-	file_format_version = file_format_version_dict[mcversion]
+	file_format_version = constant.FILE_FORMAT_VERSION_DICT[mcversion]
 	meta_data = {
 		'singleplayer': False,
 		'serverName': server_name,

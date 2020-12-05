@@ -1,5 +1,4 @@
-from ....packets import Packet
-
+from ... import Packet
 from ....types import (
     VarInt, String, UnsignedShort
 )

@@ -1,7 +1,4 @@
-from __future__ import print_function
-
 import copy
-import traceback
 from collections import deque
 from threading import RLock
 import zlib
@@ -12,8 +9,6 @@ import select
 import sys
 import json
 import re
-
-from future.utils import raise_
 
 from .types import VarInt
 from .packets import clientbound, serverbound
@@ -62,7 +57,7 @@ class Connection(object):
         allowed_versions=None,
         handle_exception=None,
         handle_exit=None,
-        recorder=None
+        recorder=None,  # PCRC
     ):
         """Sets up an instance of this object to be able to connect to a
         minecraft server.
@@ -108,7 +103,7 @@ class Connection(object):
         """  # NOQA
 
         # This lock is re-entrant because it may be acquired in a re-entrant
-        # manner from within an outgoing packet listener
+        # manner from within an outgoing packet
         self._write_lock = RLock()
 
         self.networking_thread = None
@@ -118,7 +113,10 @@ class Connection(object):
         self.outgoing_packet_listeners = []
         self.early_outgoing_packet_listeners = []
         self._exception_handlers = []
+
+        # PCRC fields
         self.running_networking_thread = 0
+        self.recorder = recorder
 
         def proto_version(version):
             if isinstance(version, str):
@@ -150,7 +148,6 @@ class Connection(object):
         self.options.port = port
         self.auth_token = auth_token
         self.username = username
-        self.recorder = recorder
         self.connected = False
 
         self.handle_exception = handle_exception
@@ -200,6 +197,10 @@ class Connection(object):
     def listener(self, *packet_types, **kwds):
         """
         Shorthand decorator to register a function as a packet listener.
+
+        Wraps :meth:`pycraft.networking.connection.register_packet_listener`
+        :param packet_types: Packet types to listen for.
+        :param kwds: Keyword arguments for `register_packet_listener`
         """
         def listener_decorator(handler_func):
             self.register_packet_listener(handler_func, *packet_types, **kwds)
@@ -367,9 +368,13 @@ class Connection(object):
             # It is important that this is set correctly even when connecting
             # in status mode, as some servers, e.g. SpigotMC with the
             # ProtocolSupport plugin, use it to determine the correct response.
+            self.context.protocol_version = max(self.allowed_proto_versions)
 
-            # PCRC modified the value to default_proto_version
-            self.context.protocol_version = self.default_proto_version
+            # PCRC modified the value to default_proto_version if there are multiple allow version
+            if self.recorder is not None:
+                self.recorder.logger.info('Allow versions of the server: {}'.format(self.allowed_proto_versions))
+            if len(self.allowed_proto_versions) > 1:
+                self.context.protocol_version = self.default_proto_version
 
             self.spawned = False
             self._connect()
@@ -385,7 +390,9 @@ class Connection(object):
                     login_start_packet.name = self.username
                 self.write_packet(login_start_packet)
                 self.reactor = LoginReactor(self)
-                self.recorder.on_protocol_version_decided(self.allowed_proto_versions.copy().pop())
+
+                if self.recorder is not None:
+                    self.recorder.on_protocol_version_decided(self.allowed_proto_versions.copy().pop())  # PCRC
             else:
                 # Determine the server's protocol version by first performing a
                 # status query.
@@ -393,9 +400,6 @@ class Connection(object):
                 self.write_packet(serverbound.status.RequestPacket())
                 self.reactor = PlayingStatusReactor(self)
             self._start_network_thread()
-
-    def check_connection(self):
-        return self._check_connection()
 
     def _check_connection(self):
         if self.networking_thread is not None and \
@@ -502,7 +506,8 @@ class Connection(object):
 
         # If allowed by the final exception handler, re-raise the exception.
         if self.handle_exception is None and not caught:
-            raise_(*exc_info)
+            exc_value, exc_tb = exc_info[1:]
+            raise exc_value.with_traceback(exc_tb)
 
     def _version_mismatch(self, server_protocol=None, server_version=None):
         if server_protocol is None:
@@ -517,7 +522,10 @@ class Connection(object):
         ss = 'supported, but not allowed for this connection' \
              if server_protocol in SUPPORTED_PROTOCOL_VERSIONS \
              else 'not supported'
-        raise VersionMismatch("Server's %s is %s." % (vs, ss))
+        err = VersionMismatch("Server's %s is %s." % (vs, ss))
+        err.server_protocol = server_protocol
+        err.server_version = server_version
+        raise err
 
     def _handle_exit(self):
         if not self.connected and self.handle_exit is not None:
@@ -541,10 +549,11 @@ class NetworkingThread(threading.Thread):
         self.connection = connection
         self.name = "Networking Thread"
         self.daemon = True
+
         self.previous_thread = previous
 
     def run(self):
-        self.connection.running_networking_thread += 1
+        self.connection.running_networking_thread += 1  # PCRC
         try:
             if self.previous_thread is not None:
                 if self.previous_thread.is_alive():
@@ -560,7 +569,7 @@ class NetworkingThread(threading.Thread):
         finally:
             with self.connection._write_lock:
                 self.connection.networking_thread = None
-            self.connection.running_networking_thread -= 1
+            self.connection.running_networking_thread -= 1  # PCRC
 
     def _run(self):
         while not self.interrupt:
@@ -584,8 +593,8 @@ class NetworkingThread(threading.Thread):
                 else:
                     read_timeout = 0.05
 
-            # Read and react to as many as 500 packets.
-            while num_packets < 500 and not self.interrupt:
+            # Read and react to as many as 50 packets.
+            while num_packets < 50 and not self.interrupt:
                 packet = self.connection.reactor.read_packet(
                     self.connection.file_object, timeout=read_timeout)
                 if not packet:
@@ -601,7 +610,8 @@ class NetworkingThread(threading.Thread):
                     exc_info = None
 
             if exc_info is not None:
-                raise_(*exc_info)
+                exc_value, exc_tb = exc_info[1:]
+                raise exc_value.with_traceback(exc_tb)
 
 
 class PacketReactor(object):
@@ -649,19 +659,20 @@ class PacketReactor(object):
                     packet_data.send(decompressed_packet)
                     packet_data.reset_cursor()
 
-            packet_raw = copy.deepcopy(packet_data.bytes.getvalue())
-
+            packet_raw = copy.deepcopy(packet_data.bytes.getvalue())  # PCRC storing raw data
             packet_id = VarInt.read(packet_data)
 
             # If we know the structure of the packet, attempt to parse it
-            # otherwise just skip it
+            # otherwise, just return an instance of the base Packet class.
             if packet_id in self.clientbound_packets:
                 packet = self.clientbound_packets[packet_id]()
                 packet.context = self.connection.context
                 packet.read(packet_data)
             else:
-                packet = packets.Packet(context=self.connection.context)
-            packet.data = packet_raw
+                packet = packets.Packet()
+                packet.context = self.connection.context
+                packet.id = packet_id
+            packet.raw_data = packet_raw  # PCRC storing raw data
             return packet
         else:
             return None
@@ -773,7 +784,6 @@ class PlayingReactor(PacketReactor):
             position_response.pitch = packet.pitch
             position_response.on_ground = True
             self.connection.write_packet(position_response)
-
             self.connection.spawned = True
 
         elif packet.packet_name == "disconnect":

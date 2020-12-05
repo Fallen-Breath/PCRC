@@ -21,6 +21,7 @@ Python version should be python3 and at least it works on Python 3.6 and Python 
 - requests
 - future
 - PyYAML
+- pynbt
 
 The requirements are also stored in `requirements.txt`
 
@@ -32,13 +33,16 @@ PCRC currently supports connecting to vanilla Minecraft server. Supports version
 - 1.12.2
 - 1.14.4
 - 1.15.2
+- 1.16.1
+- 1.16.2
+- 1.16.3
 
 ## Advantage
 
 - Can be hosted server side for 24/7 recording
 - It can be set to record only when the player is nearby
 - Multiple options can be set for custom recording
-- Restart after raw file size reaches 512MB or recording time reaches 5 hours to prevent oversize recording
+- Restart after raw file size reaches 2048MB or recording time reaches 5 hours to prevent oversize recording
 - Since the virtual player (bot) doesn't move, the recording file will not include unnecessary packets related to chunk loading, which can significantly reduce recording file size
 
 ## Usage
@@ -86,7 +90,7 @@ The config file is `config.json`. All settings can be changed in it. Those which
     
 `delay_before_afk_second`: The time delay between every player leaving and PCRC pausing recording. Default: `15`
 
-`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording (SARC's behavior)
+`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording (SARC's behavior). This can decrease the replay file size a lot but might cause block / entity desync if there will be something happening after player leaves
 
 `auto_relogin`: If this option is enabled and the client gets disconnected, it will automatically try to reconnect
 

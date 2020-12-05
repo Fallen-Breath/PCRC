@@ -146,6 +146,17 @@ class PacketProcessor:
 					packet_result = None
 			return packet_result
 
+		# Detecting player activity to continue recording and remove items or bats
+		def processRespawn(packet_result):
+			if packet_name == 'Respawn':
+				try:
+					constant.BAD_PACKETS.remove('Time Update')
+				except ValueError:
+					pass
+				else:
+					self.logger.debug('Removed Time Update packet from BAD_PACKET list due to dimension change')
+			return packet_result
+
 		packet = copy.deepcopy(packet)
 		packet_recorded = copy.deepcopy(packet)
 		packet_id, packet_name = self.analyze(packet, modification=True)
@@ -163,5 +174,6 @@ class PacketProcessor:
 		packet_recorded = processSpawnEntity(packet_recorded)
 		packet_recorded = processDestroyEntities(packet_recorded)
 		packet_recorded = processEntityPackets(packet_recorded)
+		packet_recorded = processRespawn(packet_recorded)
 
 		return packet_recorded

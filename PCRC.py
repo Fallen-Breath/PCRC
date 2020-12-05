@@ -8,14 +8,12 @@ if __name__ == '__main__':
 	from utils.logger import Logger
 	from utils.recorder import Recorder
 	from utils.config import Config
-	from utils.pycraft.compat import input
 	from utils.pycraft.exceptions import YggdrasilError
-else:
+else:	
 	from .utils import utils, constant
 	from .utils.logger import Logger
 	from .utils.recorder import Recorder
 	from .utils.config import Config
-	from .utils.pycraft.compat import input
 	from .utils.pycraft.exceptions import YggdrasilError
 
 recorder = None
@@ -29,6 +27,7 @@ def on_start_up():
 	logger.log('PCRC {} starting up'.format(constant.Version))
 	logger.log('PCRC is open source, u can find it here: https://github.com/Fallen-Breath/PCRC')
 	logger.log('PCRC is still in development, it may not work well')
+	logger.log('Enter "start" to start PCRC')
 
 
 def start():
@@ -174,8 +173,11 @@ def main():
 			stop()
 		else:
 			logger.log('Waiting for recorder to stop before exit')
-			while not recorder.is_stopped():
-				time.sleep(0.1)
+			try:
+				while not recorder.is_stopped():
+					time.sleep(0.1)
+			except AttributeError:
+				pass
 	except (KeyboardInterrupt, SystemExit):
 		logger.log('Forced to stop')
 		return
