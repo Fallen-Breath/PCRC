@@ -58,7 +58,8 @@ class AbstractDimensionPacket(Packet):
 class JoinGamePacket(AbstractDimensionPacket):
     @staticmethod
     def get_id(context):
-        return 0x24 if context.protocol_version >= 741 else \
+        return 0x26 if context.protocol_version >= 756 else \
+               0x24 if context.protocol_version >= 741 else \
                0x25 if context.protocol_version >= 721 else \
                0x26 if context.protocol_version >= 550 else \
                0x25 if context.protocol_version >= 389 else \
@@ -170,7 +171,8 @@ class JoinGamePacket(AbstractDimensionPacket):
 class RespawnPacket(AbstractDimensionPacket):
     @staticmethod
     def get_id(context):
-        return 0x39 if context.protocol_version >= 741 else \
+        return 0x3D if context.protocol_version >= 756 else \
+               0x39 if context.protocol_version >= 741 else \
                0x3A if context.protocol_version >= 721 else \
                0x3B if context.protocol_version >= 550 else \
                0x3A if context.protocol_version >= 471 else \

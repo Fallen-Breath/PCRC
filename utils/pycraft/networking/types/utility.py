@@ -26,11 +26,11 @@ class Vector(namedtuple('BaseVector', ('x', 'y', 'z'))):
 
     def __add__(self, other):
         return NotImplemented if not isinstance(other, Vector) else \
-               type(self)(self.x + other.x, self.y + other.y, self.z + other.z)
+            type(self)(self.x + other.x, self.y + other.y, self.z + other.z)
 
     def __sub__(self, other):
         return NotImplemented if not isinstance(other, Vector) else \
-               type(self)(self.x - other.x, self.y - other.y, self.z - other.z)
+            type(self)(self.x - other.x, self.y - other.y, self.z - other.z)
 
     def __neg__(self):
         return type(self)(-self.x, -self.y, -self.z)

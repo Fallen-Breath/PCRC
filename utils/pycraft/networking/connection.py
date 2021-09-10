@@ -48,16 +48,16 @@ class Connection(object):
     handling default network behaviour
     """
     def __init__(
-        self,
-        address,
-        port=25565,
-        auth_token=None,
-        username=None,
-        initial_version=None,
-        allowed_versions=None,
-        handle_exception=None,
-        handle_exit=None,
-        recorder=None,  # PCRC
+            self,
+            address,
+            port=25565,
+            auth_token=None,
+            username=None,
+            initial_version=None,
+            allowed_versions=None,
+            handle_exception=None,
+            handle_exit=None,
+            recorder=None,  # PCRC
     ):
         """Sets up an instance of this object to be able to connect to a
         minecraft server.
@@ -161,8 +161,8 @@ class Connection(object):
     def _start_network_thread(self):
         with self._write_lock:
             if self.networking_thread is not None and \
-               not self.networking_thread.interrupt or \
-               self.new_networking_thread is not None:
+                    not self.networking_thread.interrupt or \
+                    self.new_networking_thread is not None:
                 raise InvalidState('A networking thread is already running.')
             elif self.networking_thread is None:
                 self.networking_thread = NetworkingThread(self)
@@ -403,8 +403,8 @@ class Connection(object):
 
     def _check_connection(self):
         if self.networking_thread is not None and \
-           not self.networking_thread.interrupt or \
-           self.new_networking_thread is not None:
+                not self.networking_thread.interrupt or \
+                self.new_networking_thread is not None:
             raise InvalidState('There is an existing connection.')
 
     def _connect(self):
@@ -424,7 +424,7 @@ class Connection(object):
         # then IPv6, then other address families.
         def key(ai):
             return 0 if ai[0] == socket.AF_INET else \
-                   1 if ai[0] == socket.AF_INET6 else 2
+                1 if ai[0] == socket.AF_INET6 else 2
         ai_faml, ai_type, ai_prot, _ai_cnam, ai_addr = min(info, key=key)
 
         self.socket = socket.socket(ai_faml, ai_type, ai_prot)
@@ -515,13 +515,13 @@ class Connection(object):
 
         if server_protocol is None:
             vs = 'version' if server_version is None else \
-                 ('version of %s' % server_version)
+                ('version of %s' % server_version)
         else:
             vs = ('protocol version of %d' % server_protocol) + \
                  ('' if server_version is None else ' (%s)' % server_version)
         ss = 'supported, but not allowed for this connection' \
-             if server_protocol in SUPPORTED_PROTOCOL_VERSIONS \
-             else 'not supported'
+            if server_protocol in SUPPORTED_PROTOCOL_VERSIONS \
+            else 'not supported'
         err = VersionMismatch("Server's %s is %s." % (vs, ss))
         err.server_protocol = server_protocol
         err.server_version = server_version
@@ -651,7 +651,7 @@ class PacketReactor(object):
                 if decompressed_size > 0:
                     decompressor = zlib.decompressobj()
                     decompressed_packet = decompressor.decompress(
-                                                       packet_data.read())
+                        packet_data.read())
                     assert len(decompressed_packet) == decompressed_size, \
                         'decompressed length %d, but expected %d' % \
                         (len(decompressed_packet), decompressed_size)
