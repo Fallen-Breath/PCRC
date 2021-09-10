@@ -42,6 +42,7 @@ class Profile(object):
 class AuthenticationToken(object):
     """
     Represents an authentication token.
+
     See http://wiki.vg/Authentication.
     """
     AGENT_NAME = "Minecraft"
@@ -51,9 +52,11 @@ class AuthenticationToken(object):
         """
         Constructs an `AuthenticationToken` based on `access_token` and
         `client_token`.
+
         Parameters:
             access_token - An `str` object containing the `access_token`.
             client_token - An `str` object containing the `client_token`.
+
         Returns:
             A `AuthenticationToken` with `access_token` and `client_token` set.
         """
@@ -86,17 +89,20 @@ class AuthenticationToken(object):
         """
         Authenticates the user against https://authserver.mojang.com using
         `username` and `password` parameters.
+
         Parameters:
             username - An `str` object with the username (unmigrated accounts)
                 or email address for a Mojang account.
             password - An `str` object with the password.
             invalidate_previous - A `bool`. When `True`, invalidate
                 all previously acquired `access_token`s across all clients.
+
         Returns:
             Returns `True` if successful.
             Otherwise it will raise an exception.
+
         Raises:
-            minecraft.exceptions.YggdrasilError
+            pycraft.exceptions.YggdrasilError
         """
         payload = {
             "agent": {
@@ -132,11 +138,13 @@ class AuthenticationToken(object):
         Refreshes the `AuthenticationToken`. Used to keep a user logged in
         between sessions and is preferred over storing a user's password in a
         file.
+
         Returns:
             Returns `True` if `AuthenticationToken` was successfully refreshed.
             Otherwise it raises an exception.
+
         Raises:
-            minecraft.exceptions.YggdrasilError
+            pycraft.exceptions.YggdrasilError
             ValueError - if `AuthenticationToken.access_token` or
                 `AuthenticationToken.client_token` isn't set.
         """
@@ -164,12 +172,15 @@ class AuthenticationToken(object):
     def validate(self):
         """
         Validates the AuthenticationToken.
+
         `AuthenticationToken.access_token` must be set!
+
         Returns:
             Returns `True` if `AuthenticationToken` is valid.
             Otherwise it will raise an exception.
+
         Raises:
-            minecraft.exceptions.YggdrasilError
+            pycraft.exceptions.YggdrasilError
             ValueError - if `AuthenticationToken.access_token` is not set.
         """
         if self.access_token is None:
@@ -188,14 +199,17 @@ class AuthenticationToken(object):
         """
         Invalidates `access_token`s using an account's
         `username` and `password`.
+
         Parameters:
             username - ``str`` containing the username
             password - ``str`` containing the password
+
         Returns:
             Returns `True` if sign out was successful.
             Otherwise it will raise an exception.
+
         Raises:
-            minecraft.exceptions.YggdrasilError
+            pycraft.exceptions.YggdrasilError
         """
         res = _make_request(AUTH_SERVER, "signout",
                             {"username": username, "password": password})
@@ -207,10 +221,12 @@ class AuthenticationToken(object):
         """
         Invalidates `access_token`s using the token pair stored in
         the `AuthenticationToken`.
+
         Returns:
             ``True`` if tokens were successfully invalidated.
+
         Raises:
-            :class:`minecraft.exceptions.YggdrasilError`
+            :class:`pycraft.exceptions.YggdrasilError`
         """
         res = _make_request(AUTH_SERVER, "invalidate",
                             {"accessToken": self.access_token,
@@ -224,12 +240,16 @@ class AuthenticationToken(object):
         """
         Informs the Mojang session-server that we're joining the
         MineCraft server with id ``server_id``.
+
         Parameters:
             server_id - ``str`` with the server id
+
         Returns:
             ``True`` if no errors occured
+
         Raises:
-            :class:`minecraft.exceptions.YggdrasilError`
+            :class:`pycraft.exceptions.YggdrasilError`
+
         """
         if not self.authenticated:
             err = "AuthenticationToken hasn't been authenticated yet!"
@@ -249,9 +269,11 @@ def _make_request(server, endpoint, data):
     """
     Fires a POST with json-packed data to the given endpoint and returns
     response.
+
     Parameters:
         endpoint - An `str` object with the endpoint, e.g. "authenticate"
         data - A `dict` containing the payload data.
+
     Returns:
         A `requests.Request` object.
     """
