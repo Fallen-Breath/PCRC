@@ -36,6 +36,8 @@ PCRC currently supports connecting to vanilla Minecraft server. Supports version
 - 1.16.1
 - 1.16.2
 - 1.16.3
+- 1.16.4
+- 1.17.1
 
 ## Advantage
 
