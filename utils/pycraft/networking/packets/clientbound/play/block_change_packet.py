@@ -9,7 +9,8 @@ from ....types import (
 class BlockChangePacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x0B if context.protocol_version >= 721 else \
+        return 0x0C if context.protocol_version >= 756 else \
+               0x0B if context.protocol_version >= 721 else \
                0x0C if context.protocol_version >= 550 else \
                0x0B if context.protocol_version >= 332 else \
                0x0C if context.protocol_version >= 318 else \
@@ -48,7 +49,8 @@ class BlockChangePacket(Packet):
 class MultiBlockChangePacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x3B if context.protocol_version >= 741 else \
+        return 0x3F if context.protocol_version >= 756 else \
+               0x3B if context.protocol_version >= 741 else \
                0x0F if context.protocol_version >= 721 else \
                0x10 if context.protocol_version >= 550 else \
                0x0F if context.protocol_version >= 343 else \

@@ -7,7 +7,8 @@ from ... import Packet
 class ExplosionPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x1B if context.protocol_version >= 741 else \
+        return 0x1C if context.protocol_version >= 756 else \
+               0x1B if context.protocol_version >= 741 else \
                0x1C if context.protocol_version >= 721 else \
                0x1D if context.protocol_version >= 550 else \
                0x1C if context.protocol_version >= 471 else \
