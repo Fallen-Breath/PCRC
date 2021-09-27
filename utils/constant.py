@@ -2,7 +2,7 @@
 import os
 from . import pycraft
 
-Version = '0.11.2-alpha'
+Version = '0.11.3-alpha'
 ROOT_PATH = [
 	os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', ''),  # I'm in ./utils/ folder so ../ might be the path
 	'./',

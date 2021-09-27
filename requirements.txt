@@ -1,5 +1,5 @@
 cryptography>=1.5
-requests~=2.22.0
+requests>=2.22.0
 future
 PyYAML>=5.1
-PyNBT~=3.0.0
+PyNBT>=3.0.0

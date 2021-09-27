@@ -91,7 +91,7 @@ class Recorder:
 		return self.working
 
 	def onConnectionException(self, exc, exc_info):
-		self.logger.error('Exception in network thread: {}'.format(exc))
+		self.logger.error('Exception in network thread: {} {}'.format(type(exec), exc))
 		self.logger.debug(traceback.format_exc())
 		if not self.stop_by_user:
 			self.logger.error('Stopping the recorder since PCRC has not been stopped by user')

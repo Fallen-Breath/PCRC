@@ -1,7 +1,6 @@
-# coding: utf8
-
 import time
 import traceback
+from typing import Optional
 
 if __name__ == '__main__':
 	from utils import utils, constant
@@ -16,7 +15,7 @@ else:
 	from .utils.config import Config
 	from .utils.pycraft.exceptions import YggdrasilError
 
-recorder = None
+recorder: Optional[Recorder] = None
 logger = Logger(name='PCRC')
 ConfigFile = utils.get_path('config.json')
 TranslationFolder = utils.get_path('lang/')
