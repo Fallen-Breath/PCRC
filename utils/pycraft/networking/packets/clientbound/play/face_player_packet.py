@@ -8,7 +8,8 @@ from ... import Packet
 class FacePlayerPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x33 if context.protocol_version >= 741 else \
+        return 0x37 if context.protocol_version >= 756 else \
+               0x33 if context.protocol_version >= 741 else \
                0x34 if context.protocol_version >= 721 else \
                0x35 if context.protocol_version >= 550 else \
                0x34 if context.protocol_version >= 471 else \

@@ -8,7 +8,8 @@ from ....types import (
 class MapPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x25 if context.protocol_version >= 741 else \
+        return 0x27 if context.protocol_version >= 756 else \
+               0x25 if context.protocol_version >= 741 else \
                0x26 if context.protocol_version >= 721 else \
                0x27 if context.protocol_version >= 550 else \
                0x26 if context.protocol_version >= 389 else \
