@@ -92,6 +92,7 @@ class JoinGamePacket(AbstractDimensionPacket):
             VarInt if context.protocol_version >= 749 else UnsignedByte},
         {'level_type': String} if context.protocol_version < 716 else {},
         {'render_distance': VarInt} if context.protocol_version >= 468 else {},
+        {'simulation_distance': VarInt } if context.protocol_version >= 757 else {},
         {'reduced_debug_info': Boolean},
         {'respawn_screen': Boolean} if context.protocol_version >= 571 else {},
         {'is_debug': Boolean} if context.protocol_version >= 716 else {},

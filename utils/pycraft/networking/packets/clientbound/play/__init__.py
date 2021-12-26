@@ -36,7 +36,6 @@ def get_packets(context):
         EntityPositionDeltaPacket,
         TimeUpdatePacket,
         UpdateHealthPacket,
-        CombatEventPacket,
         ExplosionPacket,
         SpawnObjectPacket,
         BlockChangePacket,
@@ -148,7 +147,7 @@ class SetCompressionPacket(Packet):
     # Note: removed between protocol versions 47 and 107.
     @staticmethod
     def get_id(context):
-        return 0x03 if context.protocol_version(756) else \
+        return 0x03 if context.protocol_version >= 756 else \
             0x46
 
 
@@ -260,7 +259,8 @@ class EntityPositionDeltaPacket(Packet):
 class TimeUpdatePacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x58 if context.protocol_version >= 756 else \
+        return 0x59 if context.protocol_version >= 757 else \
+               0x58 if context.protocol_version >= 756 else \
                0x4E if context.protocol_version >= 721 else \
                0x4F if context.protocol_version >= 550 else \
                0x4E if context.protocol_version >= 471 else \
@@ -328,7 +328,8 @@ class PluginMessagePacket(AbstractPluginMessagePacket):
 class PlayerListHeaderAndFooterPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x5E if context.protocol_version >= 756 else \
+        return 0x5F if context.protocol_version >= 757 else \
+               0x5E if context.protocol_version >= 756 else \
                0x53 if context.protocol_version >= 721 else \
                0x54 if context.protocol_version >= 550 else \
                0x53 if context.protocol_version >= 471 else \

@@ -9,7 +9,8 @@ __all__ = 'SoundEffectPacket',
 class SoundEffectPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x5C if context.protocol_version >= 756 else \
+        return 0x5D if context.protocol_version >= 757 else \
+               0x5C if context.protocol_version >= 756 else \
                0x51 if context.protocol_version >= 721 else \
                0x52 if context.protocol_version >= 550 else \
                0x51 if context.protocol_version >= 471 else \

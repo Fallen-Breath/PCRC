@@ -272,6 +272,8 @@ SUPPORTED_MINECRAFT_VERSIONS = {
     '1.16.4-rc1':    1073741827,
     '1.16.4':               754,
     '1.17.1':               756,
+    '1.18':                 757,
+    '1.18.1':               757,
 }
 
 # Those Minecraft versions supported by pyCraft which are "release" versions,
