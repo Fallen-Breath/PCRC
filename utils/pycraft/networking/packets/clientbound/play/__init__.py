@@ -36,6 +36,7 @@ def get_packets(context):
         EntityPositionDeltaPacket,
         TimeUpdatePacket,
         UpdateHealthPacket,
+        CombatEventPacket,
         ExplosionPacket,
         SpawnObjectPacket,
         BlockChangePacket,
