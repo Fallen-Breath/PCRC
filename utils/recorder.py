@@ -54,7 +54,12 @@ class Recorder:
 			)
 		else:
 			self.logger.log("Login in online mode")
-			auth_token = authentication.AuthenticationToken()
+			yggdrasil_server = self.config.get('yggdrasil_server')
+			if yggdrasil_server == "":
+				yggdrasil_server = authentication.MojangServer()
+			else:
+				yggdrasil_server = authentication.YggdrasilServer(yggdrasil_server)
+			auth_token = authentication.AuthenticationToken(yggdrasil_server = yggdrasil_server)
 			auth_token.authenticate(self.config.get('username'), self.config.get('password'))
 			self.logger.log("Logged in as %s" % auth_token.profile.name)
 			self.config.set_value('username', auth_token.profile.name)
@@ -113,6 +118,17 @@ class Recorder:
 		self.logger.log('PCRC bot joined the server')
 		self.online = True
 		self.chat(self.translation('OnGameJoin'))
+		client_settings = serverbound.play.ClientSettingsPacket()
+		client_settings.locale = self.config.get('language')
+		client_settings.view_distance = self.config.get('view_distance')
+		client_settings.chat_mode = client_settings.ChatMode.FULL
+		client_settings.chat_colors = self.config.get('chat_colors')
+		client_settings.displayed_skin_parts = client_settings.SkinParts.ALL
+		if self.config.get('right_main_hand'):
+			client_settings.main_hand = client_settings.Hand.RIGHT
+		else:
+			client_settings.main_hand = client_settings.Hand.LEFT
+		self.connection.write_packet(client_settings)
 
 	def onDisconnect(self, packet):
 		self.logger.log('PCRC disconnected from the server, reason = {}'.format(packet.json_data))

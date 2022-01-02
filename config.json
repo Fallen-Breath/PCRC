@@ -30,6 +30,9 @@
     "remove_items": true,
     "remove_bats": true,
     "remove_phantoms": true,
+    "view_distance": 16,
+    "chat_colors": false,
+    "right_main_hand": true,
 
     "__5__": "-------- PCRC Whitelist --------",
     "enabled": false,
