@@ -1,30 +1,60 @@
+import operator
+
 from ....packets import Packet
 from ....types import (
     String, Byte, VarInt, Boolean, UnsignedByte, Enum, BitFieldEnum,
     AbsoluteHand
 )
+from .....utility import attribute_transform
 
 
 class ClientSettingsPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x05 if context.protocol_version >= 464 else \
-               0x04 if context.protocol_version >= 389 else \
-               0x03 if context.protocol_version >= 343 else \
-               0x04 if context.protocol_version >= 336 else \
-               0x05 if context.protocol_version >= 318 else \
-               0x04 if context.protocol_version >= 94 else \
+        return 0x05 if context.protocol_later_eq(464) else \
+               0x04 if context.protocol_later_eq(389) else \
+               0x03 if context.protocol_later_eq(343) else \
+               0x04 if context.protocol_later_eq(336) else \
+               0x05 if context.protocol_later_eq(318) else \
+               0x04 if context.protocol_later_eq(94) else \
                0x15
 
     packet_name = 'client settings'
 
-    get_definition = staticmethod(lambda context: [
-        {'locale': String},
-        {'view_distance': Byte},
-        {'chat_mode': VarInt if context.protocol_version > 47 else Byte},
-        {'chat_colors': Boolean},
-        {'displayed_skin_parts': UnsignedByte},
-        {'main_hand': VarInt} if context.protocol_version > 49 else {}])
+    @staticmethod
+    def get_definition(context):
+        return [
+            {'locale': String},
+            {'view_distance': Byte},
+            {'chat_mode': VarInt if context.protocol_later(47) else Byte},
+            {'chat_colors': Boolean},
+            {'displayed_skin_parts': UnsignedByte},
+            {'main_hand': VarInt} if context.protocol_later(49) else {},
+
+            {'enable_text_filtering': Boolean}
+            if context.protocol_later_eq(757) else
+            {'disable_text_filtering': Boolean}
+            if context.protocol_later_eq(755) else {},
+
+            {'allow_server_listings': Boolean}
+            if context.protocol_later_eq(755) else {},
+        ]
+
+    # Set a default value for 'enable_text_filtering', because most clients
+    # will probably want this value, and to avoid breaking old code.
+    enable_text_filtering = False
+
+    # To support the possibility of both 'enable_text_filtering' and
+    # 'disable_text_filtering' fields existing, make 'disable_text_filtering'
+    # (which is the less likely to be used of the two) into a property that
+    # stores the negation of its value in the ordinary attribute
+    # 'enable_text_filtering'.
+    disable_text_filtering = attribute_transform(
+        'enable_text_filtering', operator.not_, operator.not_)
+
+    # Set a default value for 'allow_server_listings', because most clients
+    # will probably want this value, and to avoid breaking old code.
+    allow_server_listings = False
 
     field_enum = classmethod(
         lambda cls, field, context: {

@@ -1,27 +1,28 @@
+from ....types.basic import Boolean
 from ... import Packet
 
 from ....types import (
     Double, Float, Byte, VarInt, BitFieldEnum, Vector, Direction,
-    PositionAndLook, multi_attribute_alias, Boolean
+    PositionAndLook, multi_attribute_alias,
 )
 
 
 class PlayerPositionAndLookPacket(Packet, BitFieldEnum):
     @staticmethod
     def get_id(context):
-        return 0x38 if context.protocol_version >= 756 else \
-               0x34 if context.protocol_version >= 741 else \
-               0x35 if context.protocol_version >= 721 else \
-               0x36 if context.protocol_version >= 550 else \
-               0x35 if context.protocol_version >= 471 else \
-               0x33 if context.protocol_version >= 451 else \
-               0x32 if context.protocol_version >= 389 else \
-               0x31 if context.protocol_version >= 352 else \
-               0x30 if context.protocol_version >= 345 else \
-               0x2F if context.protocol_version >= 336 else \
-               0x2E if context.protocol_version >= 332 else \
-               0x2F if context.protocol_version >= 318 else \
-               0x2E if context.protocol_version >= 70 else \
+        return 0x38 if context.protocol_later_eq(755) else \
+               0x34 if context.protocol_later_eq(741) else \
+               0x35 if context.protocol_later_eq(721) else \
+               0x36 if context.protocol_later_eq(550) else \
+               0x35 if context.protocol_later_eq(471) else \
+               0x33 if context.protocol_later_eq(451) else \
+               0x32 if context.protocol_later_eq(389) else \
+               0x31 if context.protocol_later_eq(352) else \
+               0x30 if context.protocol_later_eq(345) else \
+               0x2F if context.protocol_later_eq(336) else \
+               0x2E if context.protocol_later_eq(332) else \
+               0x2F if context.protocol_later_eq(318) else \
+               0x2E if context.protocol_later_eq(70) else \
                0x08
 
     packet_name = "player position and look"
@@ -32,8 +33,9 @@ class PlayerPositionAndLookPacket(Packet, BitFieldEnum):
         {'yaw': Float},
         {'pitch': Float},
         {'flags': Byte},
-        {'teleport_id': VarInt} if context.protocol_version >= 107 else {},
-        {'dismount_vehicle': Boolean} if context.protocol_version >= 756 else {},
+        {'teleport_id': VarInt} if context.protocol_later_eq(107) else {},
+        {'dismount_vehicle': Boolean}
+        if context.protocol_later_eq(755) else {},
     ])
 
     # Access the 'x', 'y', 'z' fields as a Vector tuple.

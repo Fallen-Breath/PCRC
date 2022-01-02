@@ -12,9 +12,11 @@ import re
 
 from .types import VarInt
 from .packets import clientbound, serverbound
-from . import packets
-from . import encryption
-from .. import SUPPORTED_PROTOCOL_VERSIONS, SUPPORTED_MINECRAFT_VERSIONS
+from . import packets, encryption
+from .. import (
+    utility, KNOWN_MINECRAFT_VERSIONS, SUPPORTED_MINECRAFT_VERSIONS,
+    SUPPORTED_PROTOCOL_VERSIONS, PROTOCOL_VERSION_INDICES
+)
 from ..exceptions import (
     VersionMismatch, LoginDisconnect, IgnorePacket, InvalidState
 )
@@ -31,6 +33,33 @@ class ConnectionContext(object):
     """
     def __init__(self, **kwds):
         self.protocol_version = kwds.get('protocol_version')
+
+    def protocol_earlier(self, other_pv):
+        """Returns True if the protocol version of this context was published
+           earlier than 'other_pv', or else False."""
+        return utility.protocol_earlier(self.protocol_version, other_pv)
+
+    def protocol_earlier_eq(self, other_pv):
+        """Returns True if the protocol version of this context was published
+           earlier than, or is equal to, 'other_pv', or else False."""
+        return utility.protocol_earlier_eq(self.protocol_version, other_pv)
+
+    def protocol_later(self, other_pv):
+        """Returns True if the protocol version of this context was published
+           later than 'other_pv', or else False."""
+        return utility.protocol_earlier(other_pv, self.protocol_version)
+
+    def protocol_later_eq(self, other_pv):
+        """Returns True if the protocol version of this context was published
+           later than, or is equal to, 'other_pv', or else False."""
+        return utility.protocol_earlier_eq(other_pv, self.protocol_version)
+
+    def protocol_in_range(self, start_pv, end_pv):
+        """Returns True if the protocol version of this context was published
+           later than, or is equal to, 'start_pv' and was published earlier
+           than 'end_pv' (analogously to Python's 'range' function)."""
+        return (utility.protocol_earlier(self.protocol_version, end_pv) and
+                utility.protocol_earlier_eq(start_pv, self.protocol_version))
 
 
 class _ConnectionOptions(object):
@@ -135,13 +164,15 @@ class Connection(object):
             allowed_versions = set(map(proto_version, allowed_versions))
             self.allowed_proto_versions = allowed_versions
 
+        latest_allowed_proto = max(self.allowed_proto_versions,
+                                   key=PROTOCOL_VERSION_INDICES.get)
+
         if initial_version is None:
-            self.default_proto_version = max(self.allowed_proto_versions)
+            self.default_proto_version = latest_allowed_proto
         else:
             self.default_proto_version = proto_version(initial_version)
 
-        self.context = ConnectionContext(
-            protocol_version=max(self.allowed_proto_versions))
+        self.context = ConnectionContext(protocol_version=latest_allowed_proto)
 
         self.options = _ConnectionOptions()
         self.options.address = address
@@ -368,7 +399,9 @@ class Connection(object):
             # It is important that this is set correctly even when connecting
             # in status mode, as some servers, e.g. SpigotMC with the
             # ProtocolSupport plugin, use it to determine the correct response.
-            self.context.protocol_version = max(self.allowed_proto_versions)
+            self.context.protocol_version \
+                = max(self.allowed_proto_versions,
+                      key=PROTOCOL_VERSION_INDICES.get)
 
             # PCRC modified the value to default_proto_version if there are multiple allow version
             if self.recorder is not None:
@@ -446,7 +479,9 @@ class Connection(object):
                 while self._pop_packet():
                     pass
 
-            if self.networking_thread is not None:
+            if self.new_networking_thread is not None:
+                self.new_networking_thread.interrupt = True
+            elif self.networking_thread is not None:
                 self.networking_thread.interrupt = True
 
             if self.socket is not None:
@@ -455,6 +490,7 @@ class Connection(object):
                 except socket.error:
                     pass
                 finally:
+                    self.file_object.close()
                     self.socket.close()
                     self.socket = None
 
@@ -468,6 +504,8 @@ class Connection(object):
         self.write_packet(handshake)
 
     def _handle_exception(self, exc, exc_info):
+        final_handler = self.handle_exception
+
         # Call the current PacketReactor's exception handler.
         try:
             if self.reactor.handle_exception(exc, exc_info):
@@ -488,9 +526,9 @@ class Connection(object):
             caught = False
 
         # Call the user-specified final exception handler.
-        if self.handle_exception not in (None, False):
+        if final_handler not in (None, False):
             try:
-                self.handle_exception(exc, exc_info)
+                final_handler(exc, exc_info)
             except Exception as new_exc:
                 exc, exc_info = new_exc, sys.exc_info()
 
@@ -500,18 +538,24 @@ class Connection(object):
         except (TypeError, AttributeError):
             pass
 
-        # Record the exception and cleanly terminate the connection.
+        # Record the exception.
         self.exception, self.exc_info = exc, exc_info
-        self.disconnect(immediate=True)
+
+        # The following condition being false indicates that an exception
+        # handler has initiated a new connection, meaning that we should not
+        # interfere with the connection state. Otherwise, make sure that any
+        # current connection is completely terminated.
+        if (self.new_networking_thread or self.networking_thread).interrupt:
+            self.disconnect(immediate=True)
 
         # If allowed by the final exception handler, re-raise the exception.
-        if self.handle_exception is None and not caught:
+        if final_handler is None and not caught:
             exc_value, exc_tb = exc_info[1:]
             raise exc_value.with_traceback(exc_tb)
 
     def _version_mismatch(self, server_protocol=None, server_version=None):
         if server_protocol is None:
-            server_protocol = SUPPORTED_MINECRAFT_VERSIONS.get(server_version)
+            server_protocol = KNOWN_MINECRAFT_VERSIONS.get(server_version)
 
         if server_protocol is None:
             vs = 'version' if server_version is None else \
@@ -771,7 +815,7 @@ class PlayingReactor(PacketReactor):
             self.connection.write_packet(keep_alive_packet)
 
         elif packet.packet_name == "player position and look":
-            if self.connection.context.protocol_version >= 107:
+            if self.connection.context.protocol_later_eq(107):
                 teleport_confirm = serverbound.play.TeleportConfirmPacket()
                 teleport_confirm.teleport_id = packet.teleport_id
                 self.connection.write_packet(teleport_confirm)

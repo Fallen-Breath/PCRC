@@ -1,4 +1,5 @@
-from ... import Packet
+from ..... import PRE
+from ....packets import Packet
 from ....types import (
     VarInt, Byte, Boolean, UnsignedByte, VarIntPrefixedByteArray, String,
     MutableRecord
@@ -8,15 +9,15 @@ from ....types import (
 class MapPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x27 if context.protocol_version >= 756 else \
-               0x25 if context.protocol_version >= 741 else \
-               0x26 if context.protocol_version >= 721 else \
-               0x27 if context.protocol_version >= 550 else \
-               0x26 if context.protocol_version >= 389 else \
-               0x25 if context.protocol_version >= 345 else \
-               0x24 if context.protocol_version >= 334 else \
-               0x25 if context.protocol_version >= 318 else \
-               0x24 if context.protocol_version >= 107 else \
+        return 0x27 if context.protocol_later_eq(755) else \
+               0x25 if context.protocol_later_eq(741) else \
+               0x26 if context.protocol_later_eq(721) else \
+               0x27 if context.protocol_later_eq(550) else \
+               0x26 if context.protocol_later_eq(389) else \
+               0x25 if context.protocol_later_eq(345) else \
+               0x24 if context.protocol_later_eq(334) else \
+               0x25 if context.protocol_later_eq(318) else \
+               0x24 if context.protocol_later_eq(107) else \
                0x34
 
     packet_name = 'map'
@@ -24,9 +25,9 @@ class MapPacket(Packet):
     @property
     def fields(self):
         fields = 'id', 'scale', 'icons', 'width', 'height', 'pixels'
-        if self.context.protocol_version >= 107:
+        if self.context.protocol_later_eq(107):
             fields += 'is_tracking_position',
-        if self.context.protocol_version >= 452:
+        if self.context.protocol_later_eq(452):
             fields += 'is_locked',
         return fields
 
@@ -72,28 +73,31 @@ class MapPacket(Packet):
         self.map_id = VarInt.read(file_object)
         self.scale = Byte.read(file_object)
 
-        if self.context.protocol_version >= 107:
+        if self.context.protocol_in_range(107, PRE | 6):
             self.is_tracking_position = Boolean.read(file_object)
-        else:
+        elif self.context.protocol_earlier(107):
             self.is_tracking_position = True
 
-        if self.context.protocol_version >= 452:
+        if self.context.protocol_later_eq(452):
             self.is_locked = Boolean.read(file_object)
         else:
             self.is_locked = False
 
+        if self.context.protocol_later_eq(PRE | 6):
+            self.is_tracking_position = Boolean.read(file_object)
+
         icon_count = VarInt.read(file_object)
         self.icons = []
         for i in range(icon_count):
-            if self.context.protocol_version >= 373:
+            if self.context.protocol_later_eq(373):
                 type = VarInt.read(file_object)
             else:
                 type, direction = divmod(UnsignedByte.read(file_object), 16)
             x = Byte.read(file_object)
             z = Byte.read(file_object)
-            if self.context.protocol_version >= 373:
+            if self.context.protocol_later_eq(373):
                 direction = UnsignedByte.read(file_object)
-            if self.context.protocol_version >= 364:
+            if self.context.protocol_later_eq(364):
                 has_name = Boolean.read(file_object)
                 display_name = String.read(file_object) if has_name else None
             else:
@@ -135,12 +139,12 @@ class MapPacket(Packet):
     def write_fields(self, packet_buffer):
         VarInt.send(self.map_id, packet_buffer)
         Byte.send(self.scale, packet_buffer)
-        if self.context.protocol_version >= 107:
+        if self.context.protocol_later_eq(107):
             Boolean.send(self.is_tracking_position, packet_buffer)
 
         VarInt.send(len(self.icons), packet_buffer)
         for icon in self.icons:
-            if self.context.protocol_version >= 373:
+            if self.context.protocol_later_eq(373):
                 VarInt.send(icon.type, packet_buffer)
             else:
                 type_and_direction = (icon.type << 4) & 0xF0
@@ -148,9 +152,9 @@ class MapPacket(Packet):
                 UnsignedByte.send(type_and_direction, packet_buffer)
             Byte.send(icon.location[0], packet_buffer)
             Byte.send(icon.location[1], packet_buffer)
-            if self.context.protocol_version >= 373:
+            if self.context.protocol_later_eq(373):
                 UnsignedByte.send(icon.direction, packet_buffer)
-            if self.context.protocol_version >= 364:
+            if self.context.protocol_later_eq(364):
                 Boolean.send(icon.display_name is not None, packet_buffer)
                 if icon.display_name is not None:
                     String.send(icon.display_name, packet_buffer)
