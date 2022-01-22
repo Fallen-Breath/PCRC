@@ -77,6 +77,10 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 `password`: 用于正版登录时的 Minecraft 账号的密码
 
+`micro_token`: 微软登录token，用于微软登录。不填写则使用账号密码登录。获取方式：将`micro_token`填写为任意字符串，如`123`。将输出的网址在浏览器中打开，登录 Microsoft 账号。登录成功后，网页将重定向至空白页面。复制网址中的code参数再次填入。（注意不要包含后面的lc参数）
+
+`auto`: 是否开启自动登录，不影响用户名密码登录。需要 TOKEN 文件（微软登录成功后会自动生成，并把此选项自动改为`true`）
+
 `address`: Minecraft 服务器的 IP 地址
 
 `port`: Minecraft 服务器的端口

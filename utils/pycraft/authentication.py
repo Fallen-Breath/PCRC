@@ -2,6 +2,7 @@ import requests
 import json
 import uuid
 from .exceptions import YggdrasilError
+from .microsoft_authentication import get_login_info
 
 #: The base url for Ygdrassil requests
 AUTH_SERVER = "https://authserver.mojang.com"
@@ -131,6 +132,15 @@ class AuthenticationToken(object):
         self.profile.id_ = json_resp["selectedProfile"]["id"]
         self.profile.name = json_resp["selectedProfile"]["name"]
 
+        return True
+
+    def microsoft_authenticate(self, microsoftToken: str):
+        resp = get_login_info(microsoftToken)
+        self.username = resp[2]
+        self.access_token = resp[0]
+        self.client_token = uuid.uuid4().hex
+        self.profile.id_ = resp[1]
+        self.profile.name = resp[2]
         return True
 
     def refresh(self):

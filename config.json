@@ -7,6 +7,8 @@
     "online_mode": false,
     "username": "bot_PCRC",
     "password": "secret",
+    "micro_token": "",
+    "auto": false,
     "address": "localhost",
     "port": 25565,
     "server_name": "SECRET SERVER",
