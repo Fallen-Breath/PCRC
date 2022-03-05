@@ -5,12 +5,11 @@
 
     "__2__": "-------- Account and Server --------",
     "online_mode": false,
+    "authenticate_type": "mojang",
     "username": "bot_PCRC",
     "password": "secret",
-    "micro_token": "",
-    "auto": false,
     "address": "localhost",
-    "port": 25565,
+    "port": 31529,
     "server_name": "SECRET SERVER",
     "initial_version": "1.15.2",
 

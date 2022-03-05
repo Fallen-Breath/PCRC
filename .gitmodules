@@ -1,0 +1,3 @@
+[submodule "pycraft"]
+	path = pycraft
+	url = https://github.com/ammaraskar/pyCraft.git
