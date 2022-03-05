@@ -11,6 +11,8 @@ DefaultOption = json.loads('''
 	"online_mode": false,
 	"username": "bot_PCRC",
 	"password": "secret",
+	"micro_token": "",
+	"auto": false,
 	"address": "localhost",
 	"port": 20000,
 	"server_name": "SECRET SERVER",

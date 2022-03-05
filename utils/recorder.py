@@ -3,6 +3,7 @@
 import copy
 import heapq
 import os
+import pickle
 import shutil
 import socket
 import threading
@@ -55,8 +56,24 @@ class Recorder:
 		else:
 			self.logger.log("Login in online mode")
 			auth_token = authentication.AuthenticationToken()
-			auth_token.authenticate(self.config.get('username'), self.config.get('password'))
-			self.logger.log("Logged in as %s" % auth_token.profile.name)
+			micro_token = self.config.get('micro_token')
+
+			if self.config.get('auto'):
+				with open("TOKEN", "rb") as f:
+					auth_token = pickle.load(f)
+			elif micro_token is not None or micro_token != '':
+				auth_token.microsoft_authenticate(micro_token)
+				print("Logged in as %s..." % auth_token.username)
+				
+				self.config.set_value('micro_token', '')
+				with open("TOKEN", "wb") as f:
+					pickle.dump(auth_token, f)
+				self.config.set_value('auto', True)
+				self.config.write_to_file()
+			else:
+				auth_token.authenticate(self.config.get('username'), self.config.get('password'))
+				self.logger.log("Logged in as %s" % auth_token.profile.name)
+				
 			self.config.set_value('username', auth_token.profile.name)
 			self.connection = Connection(self.config.get('address'), self.config.get('port'),
 				auth_token=auth_token,
@@ -65,6 +82,7 @@ class Recorder:
 				allowed_versions=constant.ALLOWED_VERSIONS,
 				handle_exception=self.onConnectionException
 			)
+			
 
 		self.connection.register_packet_listener(self.onPacketReceived, PycraftPacket)
 		self.connection.register_packet_listener(self.onPacketSent, PycraftPacket, outgoing=True)
