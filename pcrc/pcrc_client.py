@@ -7,7 +7,7 @@ from urllib.parse import urlparse, parse_qs
 
 from minecraft.networking.packets import Packet, JoinGamePacket
 from minecraft.networking.packets.clientbound.play import DisconnectPacket, ChatMessagePacket, TimeUpdatePacket
-from pcrc import constant
+from pcrc import protocol
 from pcrc.config import Config, SettableOptions
 from pcrc.connection.pcrc_authentication import PcrcAuthenticationToken
 from pcrc.connection.pcrc_connection import PcrcConnection
@@ -18,7 +18,7 @@ from pcrc.states import ConnectionState
 from pcrc.utils.translation import Translation
 
 
-class PcrcImpl:
+class PcrcClient:
 	def __init__(self):
 		self.logger = PcrcLogger()
 		self.config = Config()
@@ -88,7 +88,7 @@ class PcrcImpl:
 			username=self.config.get('username'),
 			auth_token=token,
 			initial_version=self.config.get('initial_version'),
-			allowed_versions=constant.ALLOWED_VERSIONS,
+			allowed_versions=protocol.SUPPORTED_MINECRAFT_VERSIONS,
 			handle_exception=self.on_connection_exception
 		)
 
@@ -158,7 +158,7 @@ class PcrcImpl:
 	# called when there's only 1 protocol version in allowed_proto_versions in pycraft connection
 	def on_protocol_version_decided(self, protocol_version):
 		self.mc_protocol = protocol_version
-		self.mc_version = constant.Map_ProtocolToVersion[protocol_version]
+		self.mc_version = protocol.PROTOCOL_TO_VERSION[protocol_version]
 		self.logger.info('Connecting using protocol version {}, mc version = {}'.format(self.mc_protocol, self.mc_version))
 
 	def on_switched_to_playing_reactor(self):

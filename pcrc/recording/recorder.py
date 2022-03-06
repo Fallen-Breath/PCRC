@@ -17,11 +17,11 @@ from pcrc.states import RecordingState
 from pcrc.utils import packet_util, misc_util
 
 if TYPE_CHECKING:
-	from pcrc.pcrc_impl import PcrcImpl
+	from pcrc.pcrc_client import PcrcClient
 
 
 class Recorder:
-	def __init__(self, pcrc: 'PcrcImpl'):
+	def __init__(self, pcrc: 'PcrcClient'):
 		self.pcrc = pcrc
 		self.logger: Logger = pcrc.logger
 		self.packet_processor = PacketProcessor(self)
@@ -244,9 +244,6 @@ class Recorder:
 					# self.logger.debug('{} recorded'.format(packet_name))
 			else:
 				self.logger.debug('{} ignore due to being afk'.format(packet_name))
-		else:
-			self.logger.debug('{} ignore'.format(packet_name))
-			pass
 
 		if self.replay_file.size > self.get_file_size_limit():
 			self.logger.info('tmcpr file size limit {}MB reached! Restarting'.format(misc_util.B2MB(self.get_file_size_limit())))
@@ -270,12 +267,14 @@ class Recorder:
 			)
 
 	def on_command(self, command: str, player_name: Optional[str], player_uuid: Optional[str]):
+		if player_name == self.get_config('username'):
+			return
 		try:
 			whitelist = self.get_config('whitelist')
 			wl_isenabled = self.get_config('enabled')
 			args = command.split(' ')  # !!PCRC <> <> <> <>
 			self.logger.info('Processing Command {} from {} {}'.format(args, player_name, player_uuid))
-			if len(args) == 0 or args[0] != self.get_config('command_prefix') or player_name == self.get_config('username'):
+			if len(args) == 0 or args[0] != self.get_config('command_prefix'):
 				return
 			elif wl_isenabled and player_name is not None and player_name not in whitelist:
 				self.chat(self.tr('PermissionDenied'))

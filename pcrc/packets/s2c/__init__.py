@@ -1,7 +1,7 @@
 from typing import List
 
 from minecraft.networking.packets import Packet
-from minecraft.networking.types import VarInt, Byte, Float
+from minecraft.networking.types import VarInt, Byte, Float, UUID
 from pcrc.packets.s2c import entity_packet
 from pcrc.utils import packet_util
 
@@ -57,8 +57,33 @@ class ChangeGameStatePacket(Packet):
 	]
 
 
+class SpawnLivingEntityPacket(Packet):
+	"""
+	wiki.vg names:
+	- 1.12: "Spawn Mob"
+	- >1.12: "Spawn Living Entity"
+	"""
+	@classmethod
+	def get_id(cls, context):
+		return \
+			2 if context.protocol_later_eq(754) else \
+			3 if context.protocol_later_eq(335) else \
+			-1
+
+	entity_id: int
+	entity_uuid: str
+	type_id: int
+
+	definition = [
+		{'entity_id': VarInt},
+		{'entity_uuid': UUID},
+		{'type_id': VarInt},
+		# i don't care the rest of the packet
+	]
+
+	packet_name = 'Spawn Living Entity'
+
+
 PACKETS = packet_util.gather_all_packet_classes(globals().values())
 PACKETS |= entity_packet.PACKETS
-if entity_packet.AbstractEntityPacket in PACKETS:
-	raise RuntimeError()
 

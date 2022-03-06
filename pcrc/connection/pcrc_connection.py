@@ -8,13 +8,13 @@ from minecraft.networking.packets import Packet, PositionAndLookPacket
 from pcrc.utils import redbaron_util
 
 if TYPE_CHECKING:
-	from pcrc.pcrc_impl import PcrcImpl
+	from pcrc.pcrc_client import PcrcClient
 
 
 class PcrcConnection(Connection):
-	def __init__(self, *args, pcrc: 'PcrcImpl', **kwargs):
+	def __init__(self, *args, pcrc: 'PcrcClient', **kwargs):
 		super().__init__(*args, **kwargs)
-		self.pcrc: 'PcrcImpl' = pcrc
+		self.pcrc: 'PcrcClient' = pcrc
 		self.running_networking_thread = 0
 		self.__running_networking_thread_lock = Lock()
 
@@ -26,6 +26,7 @@ class PcrcConnection(Connection):
 		super().connect()
 		if isinstance(self.reactor, LoginReactor):
 			self.pcrc.on_protocol_version_decided(self.allowed_proto_versions.copy().pop())
+
 	@staticmethod
 	def patch():
 		def player_position_fix():

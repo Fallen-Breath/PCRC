@@ -1,7 +1,6 @@
 import json
 import os
 import shutil
-import time
 import zipfile
 import zlib
 from typing import List, Optional
@@ -11,7 +10,7 @@ from pcrc import constant
 
 
 class ReplayRecording:
-	def __init__(self, path='.'):
+	def __init__(self, path: str):
 		self.path = path
 		self.mods = []
 		self.meta_data = {}
@@ -90,7 +89,10 @@ class ReplayRecording:
 		return ret
 
 	def set_meta_data(self, server_name: str, duration: int, date: int, mc_version: str, protocol: int, player_uuids: List[str]):
-		file_format_version = constant.FILE_FORMAT_VERSION_DICT[mc_version]
+		file_format_version = \
+			6 if mc_version == '1.12' else \
+			9 if mc_version == '1.12.2' else \
+			14
 		self.meta_data = {
 			'singleplayer': False,
 			'serverName': server_name,

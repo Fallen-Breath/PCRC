@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 from minecraft.networking.packets import ChatPacket
 
 if TYPE_CHECKING:
-	from pcrc.pcrc_impl import PcrcImpl
+	from pcrc.pcrc_client import PcrcClient
 
 
 class ChatPriority:
@@ -32,7 +32,7 @@ class Message:
 
 
 class ChatManager:
-	def __init__(self, pcrc: 'PcrcImpl'):
+	def __init__(self, pcrc: 'PcrcClient'):
 		self.logger: Logger = pcrc.logger
 		self.__pcrc = pcrc
 		self.__message_queue = PriorityQueue()

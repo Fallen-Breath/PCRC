@@ -5,7 +5,7 @@ from minecraft.networking.types import VarInt
 from pcrc.utils import packet_util
 
 
-class AbstractEntityPacket(ABC, Packet):
+class AbstractEntityPacket(Packet, ABC):
 	entity_id: int
 
 	fields = 'entity_id'
@@ -161,8 +161,6 @@ class EntityMetadataPacket(AbstractEntityPacket):
 	def get_id(cls, context):
 		return \
 			77 if context.protocol_later_eq(756) else \
-			68 if context.protocol_later_eq(753) else \
-			-1 if context.protocol_later_eq(736) else \
 			68 if context.protocol_later_eq(578) else \
 			67 if context.protocol_later_eq(498) else \
 			60 if context.protocol_later_eq(340) else \
@@ -177,8 +175,6 @@ class EntityVelocityPacket(AbstractEntityPacket):
 	def get_id(cls, context):
 		return \
 			79 if context.protocol_later_eq(756) else \
-			70 if context.protocol_later_eq(753) else \
-			-1 if context.protocol_later_eq(736) else \
 			70 if context.protocol_later_eq(578) else \
 			69 if context.protocol_later_eq(498) else \
 			62 if context.protocol_later_eq(340) else \

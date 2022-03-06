@@ -1,11 +1,9 @@
 import time
-import traceback
-from typing import Optional
 
 from pcrc import constant
-from pcrc.pcrc_impl import PcrcImpl
+from pcrc.pcrc_client import PcrcClient
 
-pcrc = PcrcImpl()
+pcrc = PcrcClient()
 logger = pcrc.logger
 
 
