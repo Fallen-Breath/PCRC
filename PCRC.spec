@@ -4,14 +4,12 @@
 block_cipher = None
 
 
-a = Analysis([
-                 '__main__.py',
-                 'pycraft/minecraft/networking/connection.py'
-             ],
-             pathex=[],
+a = Analysis(['__main__.py'],
+             pathex=['pycraft'],
              binaries=[],
              datas=[
                   ('pycraft/minecraft', 'minecraft'),
+                  ('pycraft/LICENSE', 'minecraft'),
                   ('pcrc/resources', 'pcrc/resources')
              ],
              hiddenimports=[],
@@ -36,6 +34,7 @@ exe = EXE(pyz,
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
+          upx=False,
           upx_exclude=[],
           runtime_tmpdir=None,
           console=True,
