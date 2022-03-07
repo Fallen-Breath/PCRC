@@ -19,8 +19,8 @@ def list_file_with_suffix(directory: str, suffix: str):
 	return list_file(directory, lambda file_path: file_path.endswith(suffix))
 
 
-def touch_file(file_path: str):
-	if not os.path.isfile(file_path):
+def touch_file(file_path: str, forced: bool = False):
+	if forced or not os.path.isfile(file_path):
 		touch_directory(os.path.dirname(file_path))
 		with open(file_path, 'w'):
 			pass

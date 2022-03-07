@@ -16,11 +16,12 @@ class ReplayRecording:
 		self.mods = []
 		self.meta_data = {}
 		self.markers = []
-		if not os.path.exists(temp_file_dir):
-			os.makedirs(temp_file_dir)
 		self.__file_size = 0
 
-		self.__touch_recording_file()
+		if os.path.exists(temp_file_dir):
+			shutil.rmtree(temp_file_dir)
+		os.makedirs(temp_file_dir)
+		file_util.touch_file(self.recording_file_path, forced=True)
 		# these 3 files are not used in PCRC recording
 		self.write_markers()
 		self.write_mods()
@@ -36,9 +37,6 @@ class ReplayRecording:
 	@property
 	def recording_file_path(self) -> str:
 		return self.__get_file('recording.tmcpr')
-
-	def __touch_recording_file(self):
-		file_util.touch_file(self.recording_file_path)
 
 	def create_replay_recording(self, target_file_path: str):
 		file_util.touch_directory(os.path.dirname(target_file_path))
