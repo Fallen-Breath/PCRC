@@ -102,7 +102,7 @@ class Recorder:
 		if len(self.file_buffer) == 0:
 			return
 		self.replay_file.write_recording_content(self.file_buffer)
-		self.logger.info('Flushing {} bytes to "recording.tmcpr" file, uncompressed file size = {}MB now'.format(len(self.file_buffer), misc_util.B2MB(self.replay_file.size)))
+		self.logger.info('Flushing {} bytes, uncompressed file size = {}MB now'.format(len(self.file_buffer), misc_util.B2MB(self.replay_file.size)))
 		self.file_buffer.clear()
 
 	def write(self, data: bytes):
@@ -260,6 +260,15 @@ class Recorder:
 				misc_util.format_milli(self.get_time_recorded(current_time)), misc_util.format_milli(self.get_time_passed(current_time)), self.packet_counter)
 			)
 
+	def get_status(self) -> str:
+		return self.tr(
+			'chat.command.status',
+			self.is_recording(), self.is_recording() and not self.is_afking(),
+			misc_util.format_milli(self.get_time_recorded()), misc_util.format_milli(self.get_time_passed()),
+			self.packet_counter, misc_util.B2MB(len(self.file_buffer)), misc_util.B2MB(self.replay_file.size),
+			self.file_name
+		)
+
 	def on_command(self, command: str, player_name: Optional[str], player_uuid: Optional[str]):
 		if player_name == self.pcrc.player_name:
 			return
@@ -276,13 +285,7 @@ class Recorder:
 			elif len(args) == 1:
 				self.chat(self.tr('chat.command.help', self.get_config('command_prefix')))
 			elif len(args) == 2 and args[1] == 'status':
-				self.chat(self.tr(
-					'chat.command.status',
-					self.is_recording(), self.is_recording() and not self.is_afking(),
-					misc_util.format_milli(self.get_time_recorded()), misc_util.format_milli(self.get_time_passed()),
-					self.packet_counter, misc_util.B2MB(len(self.file_buffer)), misc_util.B2MB(self.replay_file.size),
-					self.file_name
-				))
+				self.chat(self.get_status())
 			elif len(args) == 2 and args[1] in ['spectate', 'spec'] and player_name is not None and player_uuid is not None:
 				self.chat(self.tr('chat.command.spectate', player_name, player_uuid))
 				self.spectate(player_uuid)

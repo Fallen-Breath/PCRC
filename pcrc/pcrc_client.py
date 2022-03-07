@@ -22,7 +22,7 @@ from pcrc.utils.translation import Translation
 
 class PcrcClient:
 	def __init__(self, *, input_manager: Optional[InputManager] = None):
-		self.logger = PcrcLogger()
+		self.logger: PcrcLogger = PcrcLogger()
 		self.config = Config()
 		self.translation = Translation()
 		self.chat_manager = ChatManager(self)

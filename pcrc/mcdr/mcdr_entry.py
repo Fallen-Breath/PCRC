@@ -53,8 +53,8 @@ def register_command(server: PluginServerInterface):
 		requires(lambda src: src.has_permission(config.permission_required)).
 		then(Literal('start').runs(start_pcrc)).
 		then(Literal('stop').runs(stop_pcrc)).
-		then(Literal('set_redirect_url').then(GreedyText('url').runs(set_redirect_url))).
-		then(Literal('reload').runs(reload_config))
+		then(Literal('reload').runs(reload_config)).
+		then(Literal('set_redirect_url').then(GreedyText('url').runs(set_redirect_url)))
 	)
 
 

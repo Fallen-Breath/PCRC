@@ -1,11 +1,11 @@
 import json
+from typing import Type, Any
 
 from pcrc.utils import resources_util
 
 SettableOptions = [
 	'language',
 	'server_name',
-	'minimal_packets',
 	'daytime',
 	'weather',
 	'with_player_only',
@@ -40,10 +40,10 @@ class Config:
 			new_data[key] = self.data.get(key, DEFAULT_CONFIG[key])
 		self.data = new_data
 
-	def get_option_type(self, option):
+	def get_option_type(self, option) -> Type:
 		return type(self.data[option])
 
-	def convert_to_option_type(self, option, value):
+	def convert_to_option_type(self, option: str, value: Any) -> Any:
 		t = self.get_option_type(option)
 		if t == bool:
 			value = value in ['True', 'true', 'TRUE', True] or (type(value) is int and value != 0)
@@ -51,11 +51,10 @@ class Config:
 			value = t(value)
 		return value
 
-	def set_value(self, option, value, forced=False):
+	def set_value(self, option: str, value: Any, forced: bool = False):
 		if not forced:
 			value = self.convert_to_option_type(option, value)
 		self.data[option] = value
-		return
 
 	def write_to_file(self):
 		text = json.dumps(self.data, indent=4)

@@ -25,7 +25,6 @@
     "command_prefix": "!!PCRC",
 
     "__4__": "-------- PCRC Features --------",
-    "minimal_packets": true,
     "daytime": 4000,
     "weather": false,
     "with_player_only": true,

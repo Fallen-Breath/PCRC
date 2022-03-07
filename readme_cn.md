@@ -1,7 +1,7 @@
 PCRC
 --------
 
-[English](https://github.com/Fallen-Breath/PCRC/blob/master/readme.md)
+[English](readme.md) | **中文**
 
 > 基于 PyCraft 的 Replay 客户端
 
@@ -19,9 +19,10 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 - cryptography
 - requests
-- future
-- PyYAML
 - pynbt
+- redbaron
+- colorlog
+- ruamel.yaml
 
 所需的模块也已储存在 `requirements.txt` 中
 
@@ -37,9 +38,11 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 - 1.16.2
 - 1.16.3
 - 1.16.4
+- 1.16.5
 - 1.17.1
 - 1.18
 - 1.18.1
+- 1.18.2
 
 ## 优势
 
@@ -52,34 +55,48 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 ## 使用方法
 
-1. 在 [Release](https://github.com/Fallen-Breath/PCRC/releases) 页面中下载最新的 PCRC 并解压
-2. 按需求填写配置文件 `config.json`
-3. 运行 `PCRC.py` 或 `PCRC.exe`
-4. 在控制台中输入指令 `start` 以启动 PCRC
-5. （**推荐**）将 PCRC 机器人切换为旁观者模式
-6. 使用控制台或游戏内聊天来控制 PCRC
+### 直接启动
+
+1. 在 [Release](https://github.com/Fallen-Breath/PCRC/releases) 页面中下载最新的 PCRC
+2. 执行 `python PCRC.pyz` 或 `PCRC.exe`
+  - 首次启动时，PCRC 将生成默认配置文件并退出。按需填写配置文件，再启动
+3. 在控制台中输入指令 `start` 以启动 PCRC
+4. （**推荐**）将 PCRC 机器人切换为旁观者模式
+5. 使用控制台或游戏内聊天来控制 PCRC
+
+### 作为 MCDR 插件
+
+需要 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.0
+
+将 [Release](https://github.com/Fallen-Breath/PCRC/releases) 中下载的 `PCRC.pyz` 文件放入 MCDR 的插件文件夹中即可
+
+注意：卸载插件将导致 PCRC 停止录制并退出游戏
 
 ## 配置文件
 
 配置文件为 `config.json`，所有设置均可在其中更改。其中名为如 `__1__` 的为分隔符，无需修改
 
+当作为 MCDR 的插件时，配置文件的路径将为 `config/pcrc/config.json`，同时 `config/pcrc/mcdr_config.json` 将储存着与 MCDR 相关的配置
+
 ### 基本设置
 
 `language`: PCRC 机器人使用的语言。语言文件需放置于 `lang/`
+
+`recording_temp_file_directory`: 用于存放 PCRC 录制用临时文件的路径
+
+`recording_storage_directory`: 用于存放完成的录制文件的路径
 
 `debug_mode`: 是否输出调试信息
 
 ### 账号与服务器
 
-`online_mode`: 是否使用正版登录
+`authenticate_type`: 账号登录的方式。它可为 `offline`、`mojang` 或 `microsoft`，分别对应盗版账号、Mojang 账号登录以及微软账号登录
 
-`username`: 用于盗版登录的玩家id，或者是用于正版登录的 Minecraft 账号的邮箱
+  若使用微软账号登录，启动后首次连接至服务器时，需要按照控制台输出进行微软账号的登录
 
-`password`: 用于正版登录时的 Minecraft 账号的密码
+`username`: 用于盗版登录的玩家id，或者是用于 Mojang 账号登录的邮箱
 
-`micro_token`: 微软登录token，用于微软登录。不填写则使用账号密码登录。获取方式：将`micro_token`填写为任意字符串，如`123`。将输出的网址在浏览器中打开，登录 Microsoft 账号。登录成功后，网页将重定向至空白页面。复制网址中的code参数再次填入。（注意不要包含后面的lc参数）
-
-`auto`: 是否开启自动登录，不影响用户名密码登录。需要 TOKEN 文件（微软登录成功后会自动生成，并把此选项自动改为`true`）
+`password`: 用于 Mojang 账号登录的密码
 
 `address`: Minecraft 服务器的 IP 地址
 
@@ -88,6 +105,35 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 `server_name`: replay 回放中心内显示的服务器名称
 
 `initial_version`: 首选的用于连接至类似 Bungeecord 的 Minecraft 版本
+
+帐户相关配置条目的例子：
+
+```json5
+// 使用盗版账号登录
+{
+    "authenticate_type": "offline",
+    "username": "MyPlayerName",  // 你想指定的玩家名
+    "password": "",  // 该条目的值不会被使用，将被忽略
+}
+```
+
+```json5
+// 使用 Mojang 账号登录
+{
+    "authenticate_type": "mojang",
+    "username": "MyEmail@mail.com",  // 你的 Mojang 账号的邮箱
+    "password": "mypassword",  // 你的 Mojang 账号的密码
+}
+```
+
+```json5
+// 使用微软账号登录
+{
+    "authenticate_type": "microsoft",
+    "username": "",  // 该条目的值不会被使用，将被忽略
+    "password": "",  // 该条目的值不会被使用，将被忽略
+}
+```
 
 ### PCRC 设置
 
@@ -109,8 +155,6 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 ### PCRC 特性
 
-`minimal_packets`: 在这个选项设为 `true` 时 PCRC会仅录制能能维持录制的最小数量的数据包。 可用于在录制超长时间延迟摄影时减小文件大小
-
 `daytime`: 将游戏时间设置为一个固定值并忽略之后所有的时间变化。将其设为 `-1` 以录制正常的昼夜循环
 
 `weather`: 是否录制天气
@@ -129,7 +173,9 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 ### 控制台指令
 
-`start`: 开启PCRC 并开始录制
+仅在独立运行时有效
+
+`start`: 开启 PCRC 并开始录制
 
 `stop`: 停止 PCRC 并关闭录制
 
@@ -141,7 +187,25 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 `set <选项> <值>` 将 PCRC 与配置文件中的 <选项> 设置为 <值>
 
-`!!PCRC <命令> [<命令的参数>]` 同使用游戏中指令一样的效果
+`whitelist [on|off]` 开关白名单
+
+`whitelist [add|del] <玩家名>` 向白名单增/删玩家
+
+`whitelist status` 查看白名单列表及其开启状态
+
+### MCDR 插件指令
+
+仅在作为 MCDR 插件时有效
+
+`!!PCRC start`: 开启 PCRC 并开始录制
+
+`!!PCRC stop`: 停止 PCRC 并关闭录制。仅对控制台输入有效
+
+`!!PCRC reload`: 重载与 MCDR 相关的配置文件
+
+`!!PCRC set_redirect_url <url>`: 输入用于微软账号登录时的页面链接
+
+需要权限等级 1 以执行这些指令。最低所需的权限等级可在与 MCDR 相关的配置文件中设置
 
 ### 游戏内指令
 
