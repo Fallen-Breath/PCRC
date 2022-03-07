@@ -12,6 +12,7 @@ from pcrc import protocol
 from pcrc.config import Config, SettableOptions
 from pcrc.connection.pcrc_authentication import PcrcAuthenticationToken
 from pcrc.connection.pcrc_connection import PcrcConnection
+from pcrc.input import InputManager, StdinInputManager
 from pcrc.logger import PcrcLogger
 from pcrc.recording.chat import ChatManager, ChatPriority
 from pcrc.recording.recorder import Recorder
@@ -20,21 +21,25 @@ from pcrc.utils.translation import Translation
 
 
 class PcrcClient:
-	def __init__(self):
+	def __init__(self, *, input_manager: Optional[InputManager] = None):
 		self.logger = PcrcLogger()
 		self.config = Config()
 		self.translation = Translation()
 		self.chat_manager = ChatManager(self)
 		self.recorder = Recorder(self)
+		self.input_manager = input_manager or StdinInputManager()
 
 		self.logger.set_debug(self.config.get('debug_mode'))
 
 		self.__connection: Optional[PcrcConnection] = None
 		self.__connection_state = ConnectionState.disconnected
+		self.__flag_stopping = False
 		self.__flag_stop_by_user = False
 		self.__flag_should_restart = False
 		self.mc_protocol: Optional[int] = None
 		self.mc_version: Optional[str] = None
+		self.player_name: Optional[str] = None
+		self.__token = PcrcAuthenticationToken(self.logger)
 		self.__start_lock = Lock()
 
 	def tr(self, key: str, *args, **kwargs) -> str:
@@ -42,9 +47,9 @@ class PcrcClient:
 
 	def set_config(self, option, value, forced=False):
 		if not forced and option not in SettableOptions:
-			self.chat(self.tr('IllegalOptionName', option, self.config.get('command_prefix')))
+			self.chat(self.tr('chat.illegal_toption_name', option, self.config.get('command_prefix')))
 			return
-		self.chat(self.tr('OnOptionSet', option, value))
+		self.chat(self.tr('chat.option_set', option, value))
 		self.config.set_value(option, value)
 		self.logger.info('Option <{}> set to <{}>'.format(option, value))
 
@@ -56,34 +61,51 @@ class PcrcClient:
 		return self.__connection_state in {ConnectionState.connected}
 
 	def connect(self) -> bool:
-		if self.config.get('online_mode'):
-			token = PcrcAuthenticationToken()
-			authenticate_type: str = self.config.get('authenticate_type')
-			if authenticate_type == 'mojang':
+		success = self.__connect()
+		if not success:
+			self.__connection_state = ConnectionState.disconnected
+		return success
+
+	def __connect(self) -> bool:
+		self.__on_connecting()
+
+		token = self.__token
+		authenticate_type: str = self.config.get('authenticate_type')
+		if authenticate_type == 'offline':
+			token = None
+			username = self.config.get('username')
+		elif authenticate_type == 'mojang':
+			try:
 				token.mojang_authenticate(self.config.get('username'), self.config.get('password'))
-			elif authenticate_type == 'microsoft':
-				self.logger.info('Please open the url below in your browse')
+			except Exception as e:
+				self.logger.error(self.tr('login.mojang.failed', e))
+				return False
+			username = token.username
+		elif authenticate_type == 'microsoft':
+			if not token.microsoft_refresh_authenticate():
+				self.logger.info(self.tr('login.microsoft.url_hint.0'))
 				self.logger.info(token.MS_AUTH_URL)
-				self.logger.info('After logged in, you will be redirected to an empty page. Enter the redirected url here')
+				self.logger.info(self.tr('login.microsoft.url_hint.1'))
 				while True:
-					user_input = input('Redirected url: ')
+					user_input = self.input_manager.input(self.tr('login.microsoft.input'))
 					queries = parse_qs(urlparse(user_input).query)
 					auth_codes = queries.get('code', [])
 					if len(auth_codes) != 1:
-						self.logger.info('Please input valid redirected url')
+						self.logger.info(self.tr('login.microsoft.input.invalid'))
 					else:
 						auth_code = auth_codes[0]
 						break
-				token.microsoft_authenticate(auth_code)
-			else:
-				raise ValueError('Unrecognized authenticate type {}'.format(authenticate_type))
+				try:
+					token.microsoft_authenticate(auth_code)
+				except Exception as e:
+					self.logger.error(self.tr('login.microsoft.failed', e))
+					return False
 			username = token.username
 		else:
-			token = None
-			username = self.config.get('username')
-			authenticate_type = 'offline'
+			raise ValueError('Unrecognized authenticate type {}'.format(authenticate_type))
 
 		self.logger.info('Logged in as {} ({})'.format(username, authenticate_type))
+		self.player_name = username
 
 		self.__connection = PcrcConnection(
 			pcrc=self,
@@ -108,12 +130,11 @@ class PcrcClient:
 			self.logger.error('Fail to analyze server address {}'.format(self.config.get('address')))
 		except:
 			self.logger.error('Fail to connect to {}:{}'.format(self.config.get('address'), self.config.get('port')))
-		self.__connection_state = ConnectionState.disconnected
 		return False
 
 	def disconnect(self):
 		if self.is_online():
-			self.chat(self.tr('OnDisconnect'), priority=ChatPriority.High)
+			self.chat(self.tr('chat.disconnect'), priority=ChatPriority.High)
 			self.chat_manager.flush_chats(ChatPriority.High)
 			time.sleep(0.2)  # sleep for a while to make sure the chat packets are sent
 		self.__connection_state = ConnectionState.disconnecting
@@ -144,11 +165,15 @@ class PcrcClient:
 		:param restart: If PCRC should restart after stopping
 		:param callback: The optional callback method to be called after fully stopped
 		"""
+		if self.__flag_stopping:
+			self.logger.warning('PCRC is already stopping')
+			return
 		self.logger.info('Stopping PCRC, restart = {}, by_user = {}'.format(restart, by_user))
-		self.chat(self.tr('OnPCRCStopping'))
+		self.chat(self.tr('chat.stopping'))
+		self.__flag_stopping = True
 		self.__flag_stop_by_user |= by_user
 		self.__flag_should_restart |= restart
-		return self.recorder.stop_recording(callback or (lambda: ()))
+		self.recorder.stop_recording(callback or (lambda: ()))
 
 	def restart(self, by_user: bool):
 		self.stop(by_user=by_user, restart=True)
@@ -173,9 +198,13 @@ class PcrcClient:
 	def on_switched_to_playing_reactor(self):
 		self.recorder.start_recording()
 
-	def __on_connected(self):
+	def __on_connecting(self):
+		self.__connection_state = ConnectionState.logging_in
+		self.__flag_stopping = False
 		self.__flag_stop_by_user = False
 		self.__flag_should_restart = False
+
+	def __on_connected(self):
 		self.__connection.register_packet_listener(self.on_packet_received, Packet)
 		self.__connection.register_packet_listener(self.on_packet_sent, Packet, outgoing=True)
 		self.__connection.register_packet_listener(self.on_game_joined_packet, JoinGamePacket)
@@ -229,7 +258,7 @@ class PcrcClient:
 	def on_game_joined_packet(self, packet):
 		self.logger.info('PCRC bot joined the server')
 		self.__connection_state = ConnectionState.connected
-		self.chat(self.tr('OnGameJoin'))
+		self.chat(self.tr('chat.game_join'))
 
 	def on_disconnect_packet(self, packet):
 		self.logger.info('PCRC disconnected from the server, reason = {}'.format(packet.json_data))
@@ -303,7 +332,7 @@ class PcrcClient:
 		"""
 		Disconnected and file saved
 		"""
-		return self.is_disconnected() and self.recorder.is_stopped()
+		return self.is_disconnected() and self.recorder.is_stopped() and not self.__flag_should_restart
 
 	def is_running(self) -> bool:
 		return not self.is_fully_stopped()

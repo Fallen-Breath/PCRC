@@ -1,63 +1,41 @@
-OnGameJoin: |
-    o/ start recording!
-OnDisconnect: |
-    o/ bye!
-RecordingContinue: |
-    Someone is nearby, continue recording now
-RecordingPause: |
-    Everyone left, pause recording now, go afk
-OnCreatingMCPRFile: |
-    Creating recording file
-OnCreatedMCPRFile: |
-    Recording file "{0}" created
-OnUploadingMCPRFile: |
-    Uploading recording file
-OnUploadedMCPRFile: |
-    "{0}" url = {1}
-OnPCRCStopping: |
-    PCRC stopping
-OnReachFileSizeLimit: |
-    File size limit {0}MB reached! Restarting PCRC
-OnReachTimeLimit: |
-    Recording time limit {0} reached! Restarting PCRC
-UrlNotFound: |
-    No url found
-PrintUrls: |
-    There are {0} uploaded file urls:
-IllegalOptionName: |
+login.mojang.failed: 'Failed to authenticate with Mojang: {}'
+login.microsoft.url_hint.0: Please open the url below in your browse
+login.microsoft.url_hint.1: After logged in, you will be redirected to an empty page. Enter the redirected url here
+login.microsoft.input: 'Input redirected url: '
+login.microsoft.input.invalid: Please input a valid redirected url. There should be a "code" entry in url's queries
+login.microsoft.failed: 'Failed to authenticate with Microsoft: {}'
+
+chat.game_join: o/ start recording!
+chat.disconnect: o/ bye!
+chat.continue_recording: Someone is nearby, continue recording now
+chat.pause_recording: Everyone left, pause recording now, go afk
+chat.creating_recording_file: Creating recording file
+chat.created_recording_file: Recording file "{0}" created
+chat.stopping: PCRC stopping
+chat.reached_file_size_limit: File size limit {0}MB reached! Restarting PCRC
+chat.reached_time_limit: Recording time limit {0} reached! Restarting PCRC
+chat.illegal_toption_name: |
     You cannot change option "{0}"!
     Use "{1} set" to see settable options
-OnOptionSet: |
-    Setting <{0}> to <{1}>
-CommandStatusResult: |
+chat.option_set: Setting <{0}> to <{1}>
+chat.command.status: |
     Running: {0}; Recording: {1}
     Time recorded/passed: {2}/{3}
     Packet Recorded: {4}
     Buffer/File size: {5}MB/{6}MB
     File name: {7}
-CommandSpectateResult: |
-    Spectating to {0}(uuid = {1})
-CommandPositionResult: |
-    I'm at {0}
-CommandPositionResultUnknown: |
-    Idk where am I qwq
-CommandSetListTitle: |
-    Settable options:
-MarkerNotFound: |
-    No marker found
-CommandMarkerListTitle: |
-    Marker list:
-OnMarkerAdded: |
-    Marker at {0} added
-OnMarkerDeleted: |
-    Marker at {0} deleted
-OnFileNameSet:
-    File name is set to "{0}"
-UnknownCommand: |
-    Unknown command! Type "{0}" for help
-WrongArguments: |
-    Wrong Arguments!
-CommandHelp: |
+chat.command.spectate: Spectating to {0}(uuid = {1})
+chat.command.position: I'm at {0}
+chat.command.position.unknown: Idk where am I qwq
+chat.command.set.title: 'Settable options:'
+chat.command.marker.no_marker: No marker found
+chat.command.marker.list_title: 'Marker list:'
+chat.command.marker.add: Marker at {0} added
+chat.command.marker.delete: Marker at {0} deleted
+chat.command.name: File name is set to "{0}"
+chat.command.unknown: Unknown command! Type "{0}" for help
+chat.command.wrong_argument: Wrong Arguments!
+chat.command.help: |
     ----- PCRC Command List -----
     {0}: show help
     {0} status: show status
@@ -72,5 +50,4 @@ CommandHelp: |
     {0} marker add [<name>]: add a marker, and name it as <name> (optional)
     {0} marker del <index>: delete the marker at index <index>
     {0} name <filename>: set recording file name to <filename>
-PermissionDenied: |
-    Permission denied
+chat.command.permission_denied: Permission denied

@@ -1,11 +1,15 @@
 import inspect
-from typing import Type, Callable, Any, Optional, Tuple, Iterable, Collection, List
+from typing import Type, Callable, Any, Optional, Tuple, List
 
 from redbaron import RedBaron, ProxyList, DefNode
 
 
 def read_class(clazz: Type) -> Tuple[RedBaron, Any]:
-	red = RedBaron(inspect.getsource(clazz))
+	try:
+		source = inspect.getsource(clazz)
+	except OSError:
+		raise OSError('Cannot get source code of class {} from {}'.format(clazz, inspect.getsourcefile(clazz)))
+	red = RedBaron(source)
 	return red, red[0]
 
 

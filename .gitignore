@@ -9,6 +9,8 @@
 /temp_recording
 
 # Build files
+/build
+/dist
 /release
 /*.pyz
 

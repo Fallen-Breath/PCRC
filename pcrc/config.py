@@ -24,11 +24,13 @@ class Config:
 	data: dict
 
 	def __init__(self):
+		self.was_missing_file = False
 		try:
 			with open(CONFIG_FILE, 'r', encoding='utf8') as f:
 				self.data = json.load(f)
 		except FileNotFoundError:
 			self.data = {}
+			self.was_missing_file = True
 		self.fill_missing_options()
 		self.write_to_file()
 

@@ -19,9 +19,10 @@ Python version should be python3 and at least it works on Python 3.6 and Python 
 
 - cryptography
 - requests
-- future
-- PyYAML
 - pynbt
+- redbaron
+- colorlog
+- ruamel.yaml
 
 The requirements are also stored in `requirements.txt`
 
@@ -53,7 +54,7 @@ PCRC currently supports connecting to vanilla Minecraft server. Supports version
 
 1. Download and unzip the latest PCRC in [Release](https://github.com/Fallen-Breath/PCRC/releases) page
 2. Fill in the `config.json` file on demand
-3. Run `PCRC.py` or `PCRC.exe`
+3. Run `python PCRC.pyz` or `PCRC.exe`
 4. Input `start` in the console to start PCRC
 5. (**Recommand**) Set the gamemode of the PCRC bot to spectator
 6. Use console or chat in game to control PCRC
@@ -66,15 +67,19 @@ The config file is `config.json`. All settings can be changed in it. Those which
 
 `language`: The language that the PCRC bot will speak in the game. Language file should be in folder `lang/`
 
+`recording_temp_file_directory`: Path to the directory where PCRC will store its temporary recording files in
+
+`recording_storage_directory`: Path to the directory where PCRC will save its finished recording files
+
 `debug_mode`: Whether outputs debug info or not
 
 ### Account and Server
 
-`online_mode`: Use online mode to login or offline mode instead
+`authenticate_type`: The way to login. It can be `offline`, `mojang` or `microsoft`
 
-`username`: Username for offline mode or email for the used Minecraft account
+`username`: The username for offline mode login, or the email address of the Minecraft account if you are using `mojang` type online mode login
 
-`password`: Password for the used Minecraft account if login in in online mode
+`password`: The password of the Minecraft account if you are using `mojang` type online mode login
 
 `address`: IP Address of the Minecraft server
 
@@ -83,6 +88,35 @@ The config file is `config.json`. All settings can be changed in it. Those which
 `server_name`: The server name showed in replay viewer
 
 `initial_version`: The preferred Minecraft version that used to connect to bungeecord like server
+
+Cheatsheets for accounts:
+
+```json5
+// Log in with offline mode
+{
+    "authenticate_type": "offline",
+    "username": "the player name you want to use",
+    "password": "<ignored>",
+}
+```
+
+```json5
+// Log in with mojang account
+{
+    "authenticate_type": "mojang",
+    "username": "your mojang account email address",
+    "password": "your mojang account password",
+}
+```
+
+```json5
+// Log in with microsoft account
+{
+    "authenticate_type": "microsoft",
+    "username": "<ignored>",
+    "password": "<ignored>",
+}
+```
 
 ### PCRC Control
 

@@ -6,8 +6,7 @@
     "debug_mode": false,
 
     "__2__": "-------- Account and Server --------",
-    "online_mode": false,
-    "authenticate_type": "mojang",
+    "authenticate_type": "offline",
     "username": "bot_PCRC",
     "password": "secret",
     "address": "localhost",

@@ -1,7 +1,7 @@
 import datetime
 import os
 from logging import Logger
-from threading import Thread, Event
+from threading import Thread
 from typing import TYPE_CHECKING, Any, Optional, Callable
 
 from minecraft.networking.packets import Packet
@@ -115,18 +115,16 @@ class Recorder:
 			raise RuntimeError('Server version information should be gathered when recording starts')
 		self.on_recording_start()
 
-	def stop_recording(self, callback: Callable[[], Any]) -> Event:
+	def stop_recording(self, callback: Callable[[], Any]):
 		"""
 		The returned Event indicates if the replay recording saving operation is done
 		"""
 		self.logger.info('Stop recording')
 		self.__recording_state = RecordingState.saving
 		if self.file_thread is None:
-			event = Event()
-			self.file_thread = Thread(name='ReplaySaver', target=self.__create_replay_file, args=(event, callback))
+			self.file_thread = Thread(name='ReplaySaver', target=self.__create_replay_file, args=(callback, ))
 			self.file_thread.setDaemon(True)
 			self.file_thread.start()
-			return event
 		else:
 			raise RuntimeError('Stop recording twice')
 
@@ -152,7 +150,7 @@ class Recorder:
 		self.replay_file = None
 		self.pcrc.on_replay_file_saved()
 
-	def __create_replay_file(self, finish_event: Event, callback: Callable):
+	def __create_replay_file(self, callback: Callable):
 		try:
 			self.flush()
 
@@ -184,7 +182,7 @@ class Recorder:
 				file_name = '{}_{}.mcpr'.format(file_name_raw, counter)
 				counter += 1
 			self.logger.info('Creating "{}"'.format(file_path))
-			self.pcrc.chat(self.tr('OnCreatingMCPRFile'))
+			self.pcrc.chat(self.tr('chat.creating_recording_file'))
 
 			self.replay_file.set_meta_data(
 				server_name=self.get_config('server_name'),
@@ -197,11 +195,10 @@ class Recorder:
 			self.replay_file.create_replay_recording(file_path)
 
 			self.logger.info('Size of replay file "{}": {}MB'.format(file_path, misc_util.B2MB(os.path.getsize(file_path))))
-			self.pcrc.chat(self.tr('OnCreatedMCPRFile', file_name), priority=ChatPriority.High)
+			self.pcrc.chat(self.tr('chat.created_recording_file', file_name), priority=ChatPriority.High)
 		finally:
 			self.on_replay_file_saved()
 			callback()
-			finish_event.set()
 
 	def on_packet(self, packet: Packet):
 		if not self.is_recording():
@@ -222,7 +219,7 @@ class Recorder:
 			if noPlayerMovement:
 				self.afk_time += current_time - self.last_t
 			if self.last_no_player_movement != noPlayerMovement:
-				self.pcrc.chat(self.tr('RecordingPause') if self.is_afking() else self.tr('RecordingContinue'))
+				self.pcrc.chat(self.tr('chat.pause_recording') if self.is_afking() else self.tr('chat.continue_recording'))
 			self.last_no_player_movement = noPlayerMovement
 		self.last_t = current_time
 
@@ -244,12 +241,12 @@ class Recorder:
 
 		if self.replay_file.size > self.get_file_size_limit():
 			self.logger.info('tmcpr file size limit {}MB reached! Restarting'.format(misc_util.B2MB(self.get_file_size_limit())))
-			self.pcrc.chat(self.tr('OnReachFileSizeLimit', misc_util.B2MB(self.get_file_size_limit())))
+			self.pcrc.chat(self.tr('chat.reached_file_size_limit', misc_util.B2MB(self.get_file_size_limit())))
 			self.pcrc.restart(by_user=False)
 
 		if self.get_time_recorded(current_time) > self.get_time_recorded_limit():
 			self.logger.info('{} actual recording time reached!'.format(misc_util.format_milli(self.get_time_recorded_limit())))
-			self.pcrc.chat(self.tr('OnReachTimeLimit', misc_util.format_milli(self.get_time_recorded_limit())))
+			self.pcrc.chat(self.tr('chat.reached_time_limit', misc_util.format_milli(self.get_time_recorded_limit())))
 			self.pcrc.restart(by_user=False)
 
 		def get_showinfo_time():
@@ -264,7 +261,7 @@ class Recorder:
 			)
 
 	def on_command(self, command: str, player_name: Optional[str], player_uuid: Optional[str]):
-		if player_name == self.get_config('username'):
+		if player_name == self.pcrc.player_name:
 			return
 		try:
 			whitelist = self.get_config('whitelist')
@@ -274,28 +271,28 @@ class Recorder:
 			if len(args) == 0 or args[0] != self.get_config('command_prefix'):
 				return
 			elif wl_isenabled and player_name is not None and player_name not in whitelist:
-				self.chat(self.tr('PermissionDenied'))
+				self.chat(self.tr('chat.command.permission_denied'))
 				return
 			elif len(args) == 1:
-				self.chat(self.tr('CommandHelp', self.get_config('command_prefix')))
+				self.chat(self.tr('chat.command.help', self.get_config('command_prefix')))
 			elif len(args) == 2 and args[1] == 'status':
 				self.chat(self.tr(
-					'CommandStatusResult',
+					'chat.command.status',
 					self.is_recording(), self.is_recording() and not self.is_afking(),
 					misc_util.format_milli(self.get_time_recorded()), misc_util.format_milli(self.get_time_passed()),
 					self.packet_counter, misc_util.B2MB(len(self.file_buffer)), misc_util.B2MB(self.replay_file.size),
 					self.file_name
 				))
 			elif len(args) == 2 and args[1] in ['spectate', 'spec'] and player_name is not None and player_uuid is not None:
-				self.chat(self.tr('CommandSpectateResult', player_name, player_uuid))
+				self.chat(self.tr('chat.command.spectate', player_name, player_uuid))
 				self.spectate(player_uuid)
 			elif len(args) == 2 and args[1] == 'here':
 				self.chat('!!here')
 			elif len(args) == 2 and args[1] in ['where', 'location', 'loc', 'position', 'pos']:
 				if self.pos is not None:
-					self.chat(self.tr('CommandPositionResult', misc_util.format_pos(self.pos)))
+					self.chat(self.tr('chat.command.position', misc_util.format_pos(self.pos)))
 				else:
-					self.chat(self.tr('CommandPositionResultUnknown'))
+					self.chat(self.tr('chat.command.position.unknown'))
 			elif len(args) == 2 and args[1] in ['stop']:
 				self.pcrc.stop(by_user=True)
 			elif len(args) == 2 and args[1] == 'restart':
@@ -303,7 +300,7 @@ class Recorder:
 			elif len(args) == 4 and args[1] == 'set':
 				self.pcrc.set_config(args[2], args[3])
 			elif len(args) == 2 and args[1] == 'set':
-				self.chat(self.tr('CommandSetListTitle'))
+				self.chat(self.tr('chat.command.set.title'))
 				self.chat(', '.join(SettableOptions))
 			elif (len(args) == 2 and args[1] == 'marker') or (len(args) == 3 and args[1] == 'marker' and args[2] == 'list'):
 				self.print_markers()
@@ -313,16 +310,16 @@ class Recorder:
 				try:
 					index = int(args[3])
 				except ValueError:
-					self.chat(self.tr('WrongArguments'))
+					self.chat(self.tr('chat.command.wrong_argument'))
 				else:
 					if 1 <= index <= len(self.replay_file.markers):
 						self.delete_marker(index)
 					else:
-						self.chat(self.tr('WrongArguments'))
+						self.chat(self.tr('chat.command.wrong_argument'))
 			elif len(args) == 3 and args[1] == 'name':
 				self.set_file_name(args[2])
 			else:
-				self.chat(self.tr('UnknownCommand', self.get_config('command_prefix')))
+				self.chat(self.tr('chat.command.unknown', self.get_config('command_prefix')))
 		except:
 			self.logger.exception('Error when processing command "{}"'.format(command))
 
@@ -334,15 +331,15 @@ class Recorder:
 
 	def set_file_name(self, new_name):
 		old_name = self.file_name
-		self.chat(self.tr('OnFileNameSet', new_name))
+		self.chat(self.tr('chat.command.name', new_name))
 		self.file_name = new_name
 		self.logger.info('File name is setting from {} to {}'.format(old_name, new_name))
 
 	def print_markers(self):
 		if len(self.replay_file.markers) == 0:
-			self.pcrc.chat(self.tr('MarkerNotFound'))
+			self.pcrc.chat(self.tr('chat.command.marker.no_marker'))
 		else:
-			self.pcrc.chat(self.tr('CommandMarkerListTitle'))
+			self.pcrc.chat(self.tr('chat.command.marker.list_title'))
 			for i in range(len(self.replay_file.markers)):
 				name = self.replay_file.markers[i]['value']['name'] if 'name' in self.replay_file.markers[i]['value'] else ''
 				self.pcrc.chat('{}. {} {}'.format(i + 1, misc_util.format_milli(self.replay_file.markers[i]['realTimestamp']), name))
@@ -353,10 +350,10 @@ class Recorder:
 			return
 		time_stamp = self.get_time_recorded()
 		marker = self.replay_file.add_marker(self.get_time_recorded(), self.pos, name)
-		self.pcrc.chat(self.tr('OnMarkerAdded', misc_util.format_milli(time_stamp)))
+		self.pcrc.chat(self.tr('chat.command.marker.add', misc_util.format_milli(time_stamp)))
 		self.logger.info('Marker added: {}, {} markers has been stored'.format(marker, len(self.replay_file.markers)))
 
 	def delete_marker(self, index):
 		marker = self.replay_file.pop_marker(index - 1)
-		self.pcrc.chat(self.tr('OnMarkerDeleted', misc_util.format_milli(marker['realTimestamp'])))
+		self.pcrc.chat(self.tr('chat.command.marker.delete', misc_util.format_milli(marker['realTimestamp'])))
 		self.logger.info('Marker deleted: {}, {} markers has been stored'.format(marker, len(self.replay_file.markers)))

@@ -1,3 +1,9 @@
+# pycraft requirements
+cryptography
+requests
+pynbt
+
+# PCRC requirements
 redbaron
 colorlog
-requests
+ruamel.yaml

@@ -1,4 +1,6 @@
+import sys
 import time
+from threading import Event
 
 from pcrc import constant
 from pcrc.pcrc_client import PcrcClient
@@ -9,6 +11,11 @@ logger = pcrc.logger
 
 
 def on_start_up():
+	if pcrc.config.was_missing_file:
+		logger.error('Config file not found, default config file generated')
+		logger.error('Please fill in the config file on demand')
+		sys.exit(1)
+
 	logger.info('PCRC {} starting up'.format(constant.VERSION))
 	logger.info('PCRC is open source, u can find it here: https://github.com/Fallen-Breath/PCRC')
 	logger.info('Supported Minecraft version = {}'.format(SUPPORTED_MINECRAFT_VERSIONS))
@@ -26,8 +33,8 @@ def start():
 	global pcrc
 	if is_stopped():
 		logger.info('Creating new PCRC recorder')
-		pcrc.start()
-		logger.info('Recorder started, success = {}'.format(1))
+		success = pcrc.start()
+		logger.info('Recorder started, success = {}'.format(success))
 	else:
 		logger.warning('Recorder is running, ignore')
 
@@ -35,7 +42,9 @@ def start():
 def stop():
 	global pcrc
 	if is_working():
-		pcrc.stop(by_user=True)
+		event = Event()
+		pcrc.stop(by_user=True, callback=lambda: event.set())
+		event.wait()
 		logger.info('Recorder stopped')
 	else:
 		logger.info('Recorder is not running, ignore')

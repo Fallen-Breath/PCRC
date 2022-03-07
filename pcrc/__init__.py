@@ -7,6 +7,7 @@ pycraft_lib_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'pyc
 def append_pycraft_lib_path():
 	if pycraft_lib_path not in sys.path:
 		sys.path.append(pycraft_lib_path)
+		# print('Appended {}'.format(pycraft_lib_path))
 
 
 def pop_pycraft_lib_path():

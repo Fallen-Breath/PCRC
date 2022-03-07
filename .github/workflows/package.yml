@@ -1,4 +1,4 @@
-name: CI for MCDR Plugin
+name: CI for PCRC
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   package:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v2
@@ -14,13 +14,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.6
-
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
 
     - name: Install dependencies
       run: |
@@ -32,7 +25,13 @@ jobs:
         pip install mcdreforged  # this is required for packing PCRC
         python -m mcdreforged pack -o ./package
 
+    - name: Generate single file exe using pyinstaller
+      run: |
+        pip install pyinstaller
+        pyinstaller PCRC.spec
+        move dist\\PCRC.exe package
+
     - uses: actions/upload-artifact@v2
       with:
         name: PCRC distribution for ${{ github.sha }}
-        path: package/
+        path: package

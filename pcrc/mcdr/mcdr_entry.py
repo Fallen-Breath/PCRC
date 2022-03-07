@@ -1,27 +1,45 @@
 import os
 import time
+from queue import Queue, Empty
 from typing import Optional
 
 from mcdreforged.api.decorator import new_thread
-from mcdreforged.command.builder.nodes.basic import Literal
-from mcdreforged.command.command_source import CommandSource
+from mcdreforged.command.builder.nodes.arguments import GreedyText
+from mcdreforged.command.builder.nodes.basic import Literal, CommandContext
+from mcdreforged.command.command_source import CommandSource, PlayerCommandSource
 from mcdreforged.plugin.server_interface import PluginServerInterface, ServerInterface
 from mcdreforged.utils.logger import SyncStdoutStreamHandler
 
 import pcrc as pcrc_module
 import pcrc.config as pcrc_config
+from pcrc.input import InputManager
 from pcrc.mcdr.mcdr_config import McdrConfig
 from pcrc.pcrc_client import PcrcClient
 
 psi = ServerInterface.get_instance().as_plugin_server_interface()
 config: McdrConfig
 pcrc: PcrcClient
+source_that_starts_pcrc: Optional[CommandSource] = None
+user_inputs = Queue()
+
+
+class MCDRInputManager(InputManager):
+	def input(self, message: str) -> str:
+		while True:
+			try:
+				user_inputs.get_nowait()
+			except Empty:
+				break
+		if isinstance(source_that_starts_pcrc, PlayerCommandSource):
+			source_that_starts_pcrc.reply('Check server console for PCRC to login with microsoft')
+		psi.logger.info('Use command `!!PCRC set_redirect_url <url>` to input the redirected url')
+		return user_inputs.get()
 
 
 def on_load(server: PluginServerInterface, old):
 	pcrc_config.CONFIG_FILE = os.path.join(psi.get_data_folder(), 'config.json')
 	global pcrc
-	pcrc = PcrcClient()
+	pcrc = PcrcClient(input_manager=MCDRInputManager())
 	pcrc.logger.set_console_handler(SyncStdoutStreamHandler())
 	pcrc.logger.set_console_logging_prefix('PCRC@{}'.format(hex((id(pcrc) >> 16) & (id(pcrc) & 0xFFFF))[2:].rjust(4, '0')))
 	register_command(server)
@@ -35,8 +53,13 @@ def register_command(server: PluginServerInterface):
 		requires(lambda src: src.has_permission(config.permission_required)).
 		then(Literal('start').runs(start_pcrc)).
 		then(Literal('stop').runs(stop_pcrc)).
+		then(Literal('set_redirect_url').then(GreedyText('url').runs(set_redirect_url))).
 		then(Literal('reload').runs(reload_config))
 	)
+
+
+def set_redirect_url(source: CommandSource, context: CommandContext):
+	user_inputs.put_nowait(context['url'])
 
 
 def reload_config(source: Optional[CommandSource]):
@@ -48,15 +71,20 @@ def reload_config(source: Optional[CommandSource]):
 
 @new_thread('PCRC Connect')
 def start_pcrc(source: CommandSource):
+	global source_that_starts_pcrc
+	source_that_starts_pcrc = source
 	if pcrc.start():
 		source.reply('PCRC started')
 	else:
 		source.reply('PCRC failed to start, check console for more information')
+	source_that_starts_pcrc = None
 
 
 def stop_pcrc(source: CommandSource):
-	source.reply('Stopping PCRC')
-	pcrc.stop(by_user=True, callback=lambda: source.reply('PCRC stopped'))
+	# for players, the bot is able to handle `!!PCRC stop` command itself
+	if source.is_console:
+		source.reply('Stopping PCRC')
+		pcrc.stop(by_user=True)
 
 
 def on_unload(server: PluginServerInterface):
