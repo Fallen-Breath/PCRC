@@ -43,6 +43,7 @@ class PcrcAuthenticationToken(AuthenticationToken):
 		self.profile.name = player_name
 
 	def mojang_authenticate(self, username: str, password: str):
+		self.logger.info('Authenticating with Mojang')
 		self.authenticate(username, password)
 
 

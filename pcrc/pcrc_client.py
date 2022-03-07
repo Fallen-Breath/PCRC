@@ -73,14 +73,14 @@ class PcrcClient:
 		authenticate_type: str = self.config.get('authenticate_type')
 		if authenticate_type == 'offline':
 			token = None
-			username = self.config.get('username')
+			player_name = self.config.get('username')
 		elif authenticate_type == 'mojang':
 			try:
 				token.mojang_authenticate(self.config.get('username'), self.config.get('password'))
 			except Exception as e:
 				self.logger.error(self.tr('login.mojang.failed', e))
 				return False
-			username = token.username
+			player_name = token.profile.name
 		elif authenticate_type == 'microsoft':
 			if not token.microsoft_refresh_authenticate():
 				self.logger.info(self.tr('login.microsoft.url_hint.0'))
@@ -100,12 +100,12 @@ class PcrcClient:
 				except Exception as e:
 					self.logger.error(self.tr('login.microsoft.failed', e))
 					return False
-			username = token.username
+			player_name = token.username
 		else:
 			raise ValueError('Unrecognized authenticate type {}'.format(authenticate_type))
 
-		self.logger.info('Logged in as {} ({})'.format(username, authenticate_type))
-		self.player_name = username
+		self.logger.info('Logged in as {} ({})'.format(player_name, authenticate_type))
+		self.player_name = player_name
 
 		self.__connection = PcrcConnection(
 			pcrc=self,
