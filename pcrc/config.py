@@ -1,47 +1,6 @@
 import json
 
-
-DefaultOption = {
-	"__1__": "-------- Base --------",
-	"language": "en_us",
-	"debug_mode": False,
-
-	"__2__": "-------- Account and Server --------",
-	"online_mode": False,
-	"authenticate_type": "mojang",
-	"username": "bot_PCRC",
-	"password": "secret",
-	"address": "localhost",
-	"port": 20000,
-	"server_name": "SECRET SERVER",
-	"initial_version": "1.14.4",
-
-	"__3__": "-------- PCRC Control --------",
-	"file_size_limit_mb": 2048,
-	"file_buffer_size_mb": 8,
-	"time_recorded_limit_hour": 12,
-	"delay_before_afk_second": 15,
-	"record_packets_when_afk": True,
-	"auto_relogin": True,
-	"chat_spam_protect": True,
-	"command_prefix": "!!PCRC",
-
-	"__4__": "-------- PCRC Features --------",
-	"minimal_packets": True,
-	"daytime": 4000,
-	"weather": False,
-	"with_player_only": True,
-	"remove_items": False,
-	"remove_bats": True,
-	"remove_phantoms": True,
-
-	"__5__": "-------- PCRC Whitelist --------",
-	"enabled": False,
-	"whitelist": [
-		"Fallen_Breath",
-		"Steve"
-	]
-}
+from pcrc.utils import resources_util
 
 SettableOptions = [
 	'language',
@@ -57,11 +16,13 @@ SettableOptions = [
 	'time_recorded_limit_hour',
 ]
 
-
+DEFAULT_CONFIG = json.loads(resources_util.get_data('resources/default_config.json'))
 CONFIG_FILE = 'config.json'
 
 
 class Config:
+	data: dict
+
 	def __init__(self):
 		try:
 			with open(CONFIG_FILE, 'r', encoding='utf8') as f:
@@ -73,8 +34,8 @@ class Config:
 
 	def fill_missing_options(self):
 		new_data = {}
-		for key in DefaultOption.keys():
-			new_data[key] = self.data.get(key, DefaultOption[key])
+		for key in DEFAULT_CONFIG.keys():
+			new_data[key] = self.data.get(key, DEFAULT_CONFIG[key])
 		self.data = new_data
 
 	def get_option_type(self, option):
@@ -107,41 +68,4 @@ class Config:
 		if option in self.data:
 			return self.data[option]
 		else:
-			return None
-
-	def display(self):
-		def secret(text):
-			return '******' if len(text) <= 4 else '{}***{}'.format(text[0:2], text[-1])
-		messages = [
-			'================ Config ================',
-			'-------- Base --------',
-			f"Language = {self.get('language')}",
-			f"Debug mode = {self.get('debug_mode')}",
-			'-------- Account and Server --------',
-			f"Online mode = {self.get('online_mode')}",
-			f"User name = {secret(self.get('username'))}",
-			f"Password = ******",
-			f"Server address = {self.get('address')}",
-			f"Server port = {self.get('port')}",
-			f"Server name = {self.get('server_name')}",
-			f"Initial Version = {self.get('initial_version')}",
-			'-------- PCRC Control --------',
-			f"File size limit = {self.get('file_size_limit_mb')}MB",
-			f"File buffer size = {self.get('file_buffer_size_mb')}MB",
-			f"Time recorded limit = {self.get('time_recorded_limit_hour')}h",
-			f"Auto relogin = {self.get('auto_relogin')}",
-			f"Chat spam protect = {self.get('chat_spam_protect')}",
-			'-------- PCRC Features --------',
-			f"Minimal packets mode = {self.get('minimal_packets')}",
-			f"Daytime set to = {self.get('daytime')}",
-			f"Weather switch = {self.get('weather')}",
-			f"Record with player only = {self.get('with_player_only')}",
-			f"Remove items = {self.get('remove_items')}",
-			f"Remove bats = {self.get('remove_bats')}",
-			f"Remove phantoms = {self.get('remove_phantoms')}",
-			'========================================',
-			'-------- Whitelist --------',
-			f"Whitelist = {self.get('enabled')}",
-			f"Whitelist player(s) = {self.get('whitelist')}"
-		]
-		return '\n'.join(messages)
+			raise KeyError('Unknown option name: {}'.format(option))

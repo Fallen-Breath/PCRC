@@ -1,16 +1,16 @@
-.idea
-release
-__pycache__
-*.mcpr
-*.tmcpr
-*.log
-test.py
-*.pyc
-PCRC_recordings
-dist
-build
-PCRC.spec
-tools/__RFETMP__
-tools/protocol
-temp_recording/
-/TOKEN
+# IDE
+/.idea
+
+# PCRC outputs
+/config.json
+/logs
+/PCRC_recordings
+/PCRC_recording_temp
+/temp_recording
+
+# Build files
+/release
+/*.pyz
+
+# Dev files
+/protocol_tool

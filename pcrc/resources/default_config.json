@@ -1,6 +1,8 @@
 {
     "__1__": "-------- Base --------",
     "language": "en_us",
+    "recording_temp_file_directory": "PCRC_recording_temp",
+    "recording_storage_directory": "PCRC_recordings",
     "debug_mode": false,
 
     "__2__": "-------- Account and Server --------",
@@ -9,14 +11,14 @@
     "username": "bot_PCRC",
     "password": "secret",
     "address": "localhost",
-    "port": 31529,
+    "port": 25565,
     "server_name": "SECRET SERVER",
-    "initial_version": "1.15.2",
+    "initial_version": "1.14.4",
 
     "__3__": "-------- PCRC Control --------",
     "file_size_limit_mb": 2048,
     "file_buffer_size_mb": 8,
-    "time_recorded_limit_hour": 24,
+    "time_recorded_limit_hour": 12,
     "delay_before_afk_second": 15,
     "record_packets_when_afk": true,
     "auto_relogin": true,
@@ -28,7 +30,7 @@
     "daytime": 4000,
     "weather": false,
     "with_player_only": true,
-    "remove_items": true,
+    "remove_items": false,
     "remove_bats": true,
     "remove_phantoms": true,
 

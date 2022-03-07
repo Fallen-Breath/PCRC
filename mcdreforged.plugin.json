@@ -1,0 +1,21 @@
+{
+	"id": "pcrc",
+	"version": "1.0.0",
+	"name": "PCRC",
+	"description": {
+		"en_us": "PyCraft based Replay Client",
+		"zh_cn": "基于PyCraft的Replay客户端"
+	},
+	"author": [
+		"Fallen_Breath"
+	],
+	"link": "https://github.com/Fallen-Breath/PCRC",
+
+	"entrypoint": "pcrc.mcdr.mcdr_entry",
+	"archive_name": "PCRC.pyz",
+	"resources": [
+		"__main__.py",
+		"pycraft",
+		"LICENSE"
+	]
+}

@@ -26,13 +26,18 @@ MC_1_16_5 = Protocol.from_mc_version('1.16.5')
 MC_1_17_1 = Protocol.from_mc_version('1.17.1')
 MC_1_18   = Protocol.from_mc_version('1.18')
 MC_1_18_1 = Protocol.from_mc_version('1.18.1')
+MC_1_18_2 = Protocol.from_mc_version('1.18.2')
 
 ALL_PROTOCOL: List[Protocol] = list(filter(lambda o: isinstance(o, Protocol), globals().values()))
 SUPPORTED_MINECRAFT_VERSIONS: List[str] = list(map(lambda p: p.mc_version, ALL_PROTOCOL))
 SUPPORTED_PROTOCOL_VERSIONS: List[int] = list(map(lambda p: p.protocol_number, ALL_PROTOCOL))
 
-VERSION_TO_PROTOCOL = minecraft.SUPPORTED_MINECRAFT_VERSIONS
-PROTOCOL_TO_VERSION = dict([(v, k) for k, v in VERSION_TO_PROTOCOL.items()])
+
+def get_mc_version(protocol_version: int) -> str:
+	for v, p in minecraft.SUPPORTED_MINECRAFT_VERSIONS.items():
+		if p == protocol_version:
+			return v
+	return 'unknown ({})'.format(protocol_version)
 
 
 class MobTypeIds:

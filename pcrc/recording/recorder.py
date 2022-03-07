@@ -1,9 +1,8 @@
 import datetime
 import os
-import shutil
 from logging import Logger
 from threading import Thread, Event
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Callable
 
 from minecraft.networking.packets import Packet
 from minecraft.networking.types import PositionAndLook
@@ -89,13 +88,13 @@ class Recorder:
 		return self.get_time_passed(t) - self.afk_time
 
 	def get_file_size_limit(self) -> int:
-		return self.get_config('file_size_limit_mb') * constant.BytePerMB
+		return self.get_config('file_size_limit_mb') * constant.BYTE_PER_MB
 
 	def get_file_buffer_size(self) -> int:
-		return self.get_config('file_buffer_size_mb') * constant.BytePerMB
+		return self.get_config('file_buffer_size_mb') * constant.BYTE_PER_MB
 
 	def get_time_recorded_limit(self) -> int:
-		return self.get_config('time_recorded_limit_hour') * constant.MilliSecondPerHour
+		return self.get_config('time_recorded_limit_hour') * constant.MILLI_SECOND_PER_HOUR
 
 	# ==========
 
@@ -103,7 +102,7 @@ class Recorder:
 		if len(self.file_buffer) == 0:
 			return
 		self.replay_file.write_recording_content(self.file_buffer)
-		self.logger.info('Flushing {} bytes to "recording.tmcpr" file, file size = {}MB now'.format(len(self.file_buffer), misc_util.B2MB(self.replay_file.size)))
+		self.logger.info('Flushing {} bytes to "recording.tmcpr" file, uncompressed file size = {}MB now'.format(len(self.file_buffer), misc_util.B2MB(self.replay_file.size)))
 		self.file_buffer.clear()
 
 	def write(self, data: bytes):
@@ -116,12 +115,15 @@ class Recorder:
 			raise RuntimeError('Server version information should be gathered when recording starts')
 		self.on_recording_start()
 
-	def stop_recording(self):
+	def stop_recording(self, callback: Callable[[], Any]) -> Event:
+		"""
+		The returned Event indicates if the replay recording saving operation is done
+		"""
 		self.logger.info('Stop recording')
 		self.__recording_state = RecordingState.saving
 		if self.file_thread is None:
 			event = Event()
-			self.file_thread = Thread(name='ReplaySaver', target=self.__create_replay_file, args=(event,))
+			self.file_thread = Thread(name='ReplaySaver', target=self.__create_replay_file, args=(event, callback))
 			self.file_thread.setDaemon(True)
 			self.file_thread.start()
 			return event
@@ -141,7 +143,7 @@ class Recorder:
 		self.packet_counter = 0
 		self.last_showinfo_packet_counter = 0
 		self.file_thread = None
-		self.replay_file = ReplayRecording(path=constant.RecordingFilePath)
+		self.replay_file = ReplayRecording(temp_file_dir=self.get_config('recording_temp_file_directory'))
 		self.pos = None
 
 	def on_replay_file_saved(self):
@@ -150,7 +152,7 @@ class Recorder:
 		self.replay_file = None
 		self.pcrc.on_replay_file_saved()
 
-	def __create_replay_file(self, finish_event: Event):
+	def __create_replay_file(self, finish_event: Event, callback: Callable):
 		try:
 			self.flush()
 
@@ -162,9 +164,9 @@ class Recorder:
 				self.logger.warning('Recording has not started yet, abort creating replay recording file')
 				return
 
-			if self.replay_file.size < constant.MinimumLegalFileSize:
+			if self.replay_file.size < constant.MINIMUM_LEGAL_FILE_SIZE:
 				self.logger.warning('Size of "recording.tmcpr" too small ({}KB < {}KB), abort creating replay file'.format(
-					misc_util.B2KB(self.replay_file.size), misc_util.B2KB(constant.MinimumLegalFileSize)
+					misc_util.B2KB(self.replay_file.size), misc_util.B2KB(constant.MINIMUM_LEGAL_FILE_SIZE)
 				))
 				return
 
@@ -172,21 +174,17 @@ class Recorder:
 			self.logger.info('Time recorded/passed: {}/{}'.format(misc_util.format_milli(self.get_time_recorded()), misc_util.format_milli(self.get_time_passed())))
 
 			# Deciding file name
-			if not os.path.exists(constant.RecordingStorageFolder):
-				os.makedirs(constant.RecordingStorageFolder)
-			file_name_raw = datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S')
-			if self.file_name is not None:
-				file_name_raw = self.file_name
+			file_name_raw = self.file_name or datetime.datetime.today().strftime('PCRC_%Y_%m_%d_%H_%M_%S')
 			file_name = file_name_raw + '.mcpr'
 			counter = 2
-			while os.path.isfile(f'{constant.RecordingStorageFolder}{file_name}'):
+			while True:
+				file_path = os.path.join(self.get_config('recording_storage_directory'), file_name)
+				if not os.path.isfile(file_path):
+					break
 				file_name = '{}_{}.mcpr'.format(file_name_raw, counter)
 				counter += 1
-			self.logger.info('File name is set to "{}"'.format(file_name))
-
-			self.logger.info('Creating "{}"'.format(file_name))
-			if self.pcrc.is_online():
-				self.pcrc.chat(self.tr('OnCreatingMCPRFile'))
+			self.logger.info('Creating "{}"'.format(file_path))
+			self.pcrc.chat(self.tr('OnCreatingMCPRFile'))
 
 			self.replay_file.set_meta_data(
 				server_name=self.get_config('server_name'),
@@ -196,14 +194,13 @@ class Recorder:
 				protocol=self.pcrc.mc_protocol,
 				player_uuids=self.player_uuids
 			)
-			self.replay_file.create_replay_recording(file_name)
+			self.replay_file.create_replay_recording(file_path)
 
-			self.logger.info('Size of replay file "{}": {}MB'.format(file_name, misc_util.B2MB(os.path.getsize(file_name))))
-			file_path = f'{constant.RecordingStorageFolder}{file_name}'
-			shutil.move(file_name, file_path)
+			self.logger.info('Size of replay file "{}": {}MB'.format(file_path, misc_util.B2MB(os.path.getsize(file_path))))
 			self.pcrc.chat(self.tr('OnCreatedMCPRFile', file_name), priority=ChatPriority.High)
 		finally:
 			self.on_replay_file_saved()
+			callback()
 			finish_event.set()
 
 	def on_packet(self, packet: Packet):
@@ -248,12 +245,12 @@ class Recorder:
 		if self.replay_file.size > self.get_file_size_limit():
 			self.logger.info('tmcpr file size limit {}MB reached! Restarting'.format(misc_util.B2MB(self.get_file_size_limit())))
 			self.pcrc.chat(self.tr('OnReachFileSizeLimit', misc_util.B2MB(self.get_file_size_limit())))
-			self.pcrc.restart()
+			self.pcrc.restart(by_user=False)
 
 		if self.get_time_recorded(current_time) > self.get_time_recorded_limit():
 			self.logger.info('{} actual recording time reached!'.format(misc_util.format_milli(self.get_time_recorded_limit())))
 			self.pcrc.chat(self.tr('OnReachTimeLimit', misc_util.format_milli(self.get_time_recorded_limit())))
-			self.pcrc.restart()
+			self.pcrc.restart(by_user=False)
 
 		def get_showinfo_time():
 			return int(self.get_time_passed(current_time) / (5 * 60 * 1000))

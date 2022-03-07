@@ -68,7 +68,7 @@ class ChatManager:
 		packet = ChatPacket()
 		packet.message = text
 		self.__pcrc.send_packet(packet)
-		self.logger.info('Sent chat message "{}" to the server'.format(text))
+		self.logger.debug('Sent chat message "{}" to the server'.format(text))
 		self.__chat_spam_threshold += 20
 
 	# instant send all chat with priority <= p

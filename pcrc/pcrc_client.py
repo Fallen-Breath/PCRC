@@ -2,7 +2,8 @@ import json
 import socket
 import time
 import traceback
-from typing import Optional
+from threading import Lock
+from typing import Optional, Callable, Any
 from urllib.parse import urlparse, parse_qs
 
 from minecraft.networking.packets import Packet, JoinGamePacket
@@ -25,13 +26,16 @@ class PcrcClient:
 		self.translation = Translation()
 		self.chat_manager = ChatManager(self)
 		self.recorder = Recorder(self)
+
+		self.logger.set_debug(self.config.get('debug_mode'))
+
 		self.__connection: Optional[PcrcConnection] = None
 		self.__connection_state = ConnectionState.disconnected
 		self.__flag_stop_by_user = False
 		self.__flag_should_restart = False
-
 		self.mc_protocol: Optional[int] = None
 		self.mc_version: Optional[str] = None
+		self.__start_lock = Lock()
 
 	def tr(self, key: str, *args, **kwargs) -> str:
 		return self.translation.translate(key, self.config.get('language')).format(*args, **kwargs)
@@ -112,6 +116,7 @@ class PcrcClient:
 			self.chat(self.tr('OnDisconnect'), priority=ChatPriority.High)
 			self.chat_manager.flush_chats(ChatPriority.High)
 			time.sleep(0.2)  # sleep for a while to make sure the chat packets are sent
+		self.__connection_state = ConnectionState.disconnecting
 		try:
 			self.logger.debug('Disconnecting')
 			self.__connection.disconnect()
@@ -124,41 +129,45 @@ class PcrcClient:
 				self.logger.error('Failed to immediate disconnect')
 		self.__connection_state = ConnectionState.disconnected
 
-	def start(self):
-		self.logger.info('Starting PCRC')
-		if self.is_disconnected():
-			self.connect()
-		else:
-			self.logger.info('Cannot start PCRC before it disconnects')
+	def start(self) -> bool:
+		with self.__start_lock:
+			self.logger.info('Starting PCRC')
+			if self.is_disconnected():
+				return self.connect()
+			else:
+				self.logger.info('Cannot start PCRC before it disconnects')
+				return False
 
-	def stop(self, restart: bool = False, by_user: bool = False):
+	def stop(self, by_user: bool, *, restart: bool = False, callback: Optional[Callable[[], Any]] = None):
+		"""
+		:param by_user: If it's stopped by user, connection error due to disconnecting will be suppressed
+		:param restart: If PCRC should restart after stopping
+		:param callback: The optional callback method to be called after fully stopped
+		"""
 		self.logger.info('Stopping PCRC, restart = {}, by_user = {}'.format(restart, by_user))
 		self.chat(self.tr('OnPCRCStopping'))
 		self.__flag_stop_by_user |= by_user
 		self.__flag_should_restart |= restart
-		self.recorder.stop_recording()
+		return self.recorder.stop_recording(callback or (lambda: ()))
 
-	def restart(self, by_user: bool = False):
-		self.stop(restart=True, by_user=by_user)
+	def restart(self, by_user: bool):
+		self.stop(by_user=by_user, restart=True)
 
 	# =======================
 	#        Callbacks
 	# =======================
 
 	def on_connection_exception(self, exc, exc_info):
-		self.logger.error('Exception in network thread: {} {}'.format(type(exec), exc))
+		(self.logger.debug if self.has_started_disconnecting() else self.logger.error)('Exception in network thread: {} {}'.format(type(exec), exc))
 		if not self.__flag_stop_by_user:
 			self.logger.debug(traceback.format_exc())
 			self.logger.warning('Stopping the recorder since PCRC has not been stopped by user')
-			self.stop(restart=self.config.get('auto_relogin'))
-		else:
-			self.logger.info('Don\'t panic, that\'s Works As Intended')
-			time.sleep(1)
+			self.stop(by_user=False, restart=self.config.get('auto_relogin'))
 
 	# called when there's only 1 protocol version in allowed_proto_versions in pycraft connection
 	def on_protocol_version_decided(self, protocol_version):
 		self.mc_protocol = protocol_version
-		self.mc_version = protocol.PROTOCOL_TO_VERSION[protocol_version]
+		self.mc_version = protocol.get_mc_version(protocol_version)
 		self.logger.info('Connecting using protocol version {}, mc version = {}'.format(self.mc_protocol, self.mc_version))
 
 	def on_switched_to_playing_reactor(self):
@@ -178,9 +187,13 @@ class PcrcClient:
 	def on_fully_stopped(self):
 		if self.is_online():
 			self.disconnect()
+
+		self.chat_manager.stop()
+		while self.__connection.has_running_thread():
+			time.sleep(0.001)
+		self.__connection = None
 		self.mc_version = None
 		self.mc_protocol = None
-		self.chat_manager.stop()
 		self.logger.info('PCRC stopped')
 
 		if self.__flag_should_restart:
@@ -221,7 +234,7 @@ class PcrcClient:
 	def on_disconnect_packet(self, packet):
 		self.logger.info('PCRC disconnected from the server, reason = {}'.format(packet.json_data))
 		self.__connection_state = ConnectionState.disconnected
-		self.stop(restart=self.config.get('auto_relogin'))
+		self.stop(by_user=False, restart=self.config.get('auto_relogin'))
 
 	def on_chat_message_packet(self, packet):
 		js = json.loads(packet.json_data)
@@ -283,8 +296,14 @@ class PcrcClient:
 	def is_disconnected(self) -> bool:
 		return self.__connection_state == ConnectionState.disconnected
 
+	def has_started_disconnecting(self) -> bool:
+		return self.__connection_state == ConnectionState.disconnecting or self.is_disconnected()
+
 	def is_fully_stopped(self) -> bool:
 		"""
 		Disconnected and file saved
 		"""
 		return self.is_disconnected() and self.recorder.is_stopped()
+
+	def is_running(self) -> bool:
+		return not self.is_fully_stopped()

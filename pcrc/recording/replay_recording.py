@@ -7,16 +7,17 @@ from typing import List, Optional
 
 from minecraft.networking.types import PositionAndLook
 from pcrc import constant
+from pcrc.utils import file_util
 
 
 class ReplayRecording:
-	def __init__(self, path: str):
-		self.path = path
+	def __init__(self, temp_file_dir: str):
+		self.temp_file_dir = temp_file_dir
 		self.mods = []
 		self.meta_data = {}
 		self.markers = []
-		if not os.path.exists(path):
-			os.makedirs(path)
+		if not os.path.exists(temp_file_dir):
+			os.makedirs(temp_file_dir)
 		self.__file_size = 0
 
 		self.__touch_recording_file()
@@ -26,29 +27,27 @@ class ReplayRecording:
 		self.write_meta_data()
 
 	def __get_file(self, file_name: str) -> str:
-		return os.path.join(self.path, file_name)
+		return os.path.join(self.temp_file_dir, file_name)
 
 	@property
 	def size(self):
 		return self.__file_size
 
 	@property
-	def recording_file(self) -> str:
+	def recording_file_path(self) -> str:
 		return self.__get_file('recording.tmcpr')
 
 	def __touch_recording_file(self):
-		with open(self.recording_file, 'w'):
-			pass
+		file_util.touch_file(self.recording_file_path)
 
-	def create_replay_recording(self, file_name: str):
-		tmcpr = self.recording_file
-		if not os.path.isfile(tmcpr):
-			self.__touch_recording_file()
+	def create_replay_recording(self, target_file_path: str):
+		file_util.touch_directory(os.path.dirname(target_file_path))
+		file_util.touch_file(self.recording_file_path)
 
-		zipf = zipfile.ZipFile(file_name, 'w', zipfile.ZIP_DEFLATED)
+		zipf = zipfile.ZipFile(target_file_path, 'w', zipfile.ZIP_DEFLATED)
 
 		def add(name: str, data: Optional[str] = None):
-			existed_file_name = os.path.join(self.path, name)
+			existed_file_name = os.path.join(self.temp_file_dir, name)
 			if data is not None:
 				with open(existed_file_name, 'w', encoding='utf8') as f:
 					f.write(data)
@@ -57,10 +56,10 @@ class ReplayRecording:
 		add('markers.json')
 		add('mods.json')
 		add('metaData.json')
-		add('recording.tmcpr.crc32', str(crc32_file(tmcpr)))
+		add('recording.tmcpr.crc32', str(crc32_file(self.recording_file_path)))
 		add('recording.tmcpr')
 		zipf.close()
-		shutil.rmtree(self.path)
+		shutil.rmtree(self.temp_file_dir)
 
 	def add_marker(self, time_stamp: int, pos: PositionAndLook, name=None):
 		marker = {
@@ -109,7 +108,7 @@ class ReplayRecording:
 		self.write_meta_data()
 
 	def write_recording_content(self, content: bytes):
-		with open(self.recording_file, 'ab+') as file_handler:
+		with open(self.recording_file_path, 'ab+') as file_handler:
 			file_handler.write(content)
 		self.__file_size += len(content)
 
@@ -127,7 +126,7 @@ class ReplayRecording:
 
 
 def crc32_file(file_name: str) -> int:
-	BUFFER_SIZE = constant.BytePerMB
+	BUFFER_SIZE = constant.BYTE_PER_MB
 	crc = 0
 	with open(file_name, 'rb') as handler:
 		while True:
@@ -135,4 +134,4 @@ def crc32_file(file_name: str) -> int:
 			if len(buffer) == 0:
 				break
 			crc = zlib.crc32(buffer, crc)
-	return crc & 0xffffffff
+	return crc & 0xFFFFFFFF

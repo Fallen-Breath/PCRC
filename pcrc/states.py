@@ -5,6 +5,7 @@ class ConnectionState(Enum):
 	disconnected = auto()
 	connecting = auto()
 	connected = auto()
+	disconnecting = auto()
 
 
 class RecordingState(Enum):

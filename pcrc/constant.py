@@ -1,9 +1,7 @@
-Version = '0.12.0-alpha.1'
-MilliSecondPerHour = 60 * 60 * 1000
-BytePerKB = 1024
-BytePerMB = BytePerKB * 1024
-MinimumLegalFileSize = 10 * BytePerKB
-RecordingFilePath = 'temp_recording/'
-RecordingStorageFolder = 'PCRC_recordings/'
+VERSION = '1.0.0'
+PACKAGE_NAME = 'pcrc'
 
-
+MILLI_SECOND_PER_HOUR = 60 * 60 * 1000
+BYTE_PER_KB = 1024
+BYTE_PER_MB = BYTE_PER_KB * 1024
+MINIMUM_LEGAL_FILE_SIZE = 10 * BYTE_PER_KB

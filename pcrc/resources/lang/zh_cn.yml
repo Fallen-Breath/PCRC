@@ -58,7 +58,7 @@ UnknownCommand: |
 WrongArguments: |
     参数错误！
 CommandHelp: |
-    ----- 命令列表 -----
+    ----- PCRC命令列表 -----
     {0}: 显示帮助信息
     {0} status: 显示状态
     {0} here: 发送一个“!!here”指令

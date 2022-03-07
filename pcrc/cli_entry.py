@@ -2,16 +2,16 @@ import time
 
 from pcrc import constant
 from pcrc.pcrc_client import PcrcClient
+from pcrc.protocol import SUPPORTED_MINECRAFT_VERSIONS
 
 pcrc = PcrcClient()
 logger = pcrc.logger
 
 
 def on_start_up():
-	logger.info('PCRC {} starting up'.format(constant.Version))
+	logger.info('PCRC {} starting up'.format(constant.VERSION))
 	logger.info('PCRC is open source, u can find it here: https://github.com/Fallen-Breath/PCRC')
-	logger.info('PCRC is still in development, it may not work well')
-	logger.info('Enter "start" to start PCRC')
+	logger.info('Supported Minecraft version = {}'.format(SUPPORTED_MINECRAFT_VERSIONS))
 
 
 def is_working():
@@ -42,7 +42,8 @@ def stop():
 
 
 def main():
-	global pcrc
+	on_start_up()
+	logger.info('Enter "start" to start PCRC')
 	while True:
 		try:
 			text = input()
@@ -69,7 +70,7 @@ def main():
 			stop()
 		else:
 			logger.info('Waiting for recorder to stop before exit')
-			while not pcrc.is_fully_stopped():
+			while pcrc.is_running():
 				time.sleep(0.1)
 	except (KeyboardInterrupt, SystemExit):
 		logger.info('Forced to stop')
@@ -79,7 +80,3 @@ def main():
 
 	logger.info('Exited')
 
-
-if __name__ == "__main__":
-	on_start_up()
-	main()

@@ -1,25 +1,24 @@
+from typing import Dict, Collection
+
 from ruamel.yaml import YAML
-import os
 
-from pcrc.utils import file_util
+from pcrc.utils import resources_util
 
-FILE_SUFFIX = '.yml'
-LANG_DIR = 'lang'
+LANGUAGES = ['en_us', 'zh_cn']
 
 
 class Translation:
 	def __init__(self):
-		self.translations = {}
-		for file_path in file_util.list_file_with_suffix(LANG_DIR, FILE_SUFFIX):
-			lang = os.path.basename(file_path)[:-len(FILE_SUFFIX)]
-			with open(file_path, encoding='utf8') as f:
-				self.translations[lang] = YAML().load(f)
+		self.translations: Dict[str, Dict[str, str]] = {}
+		for lang in LANGUAGES:
+			lang_file_path = 'resources/lang/{}.yml'.format(lang)
+			self.translations[lang] = YAML().load(resources_util.get_data(lang_file_path))
 
 	@property
-	def languages(self):
+	def languages(self) -> Collection[str]:
 		return self.translations.keys()
 
-	def has_language(self, language):
+	def has_language(self, language: str) -> bool:
 		return language in self.languages
 
 	def translate(self, key: str, language: str) -> str:
