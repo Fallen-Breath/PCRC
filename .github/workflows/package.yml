@@ -29,18 +29,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Pack PCRC
-      run: |
-        pip install mcdreforged  # this is required for packing PCRC
-        python -m mcdreforged pack -o ./package
 
     - name: Generate single file exe using pyinstaller
       run: |
         pip install pyinstaller
         pyinstaller PCRC.spec
         move dist\PCRC.exe package
+        pip install -r requirements.txt
 
     - name: Apply UPX compression
       uses: crazy-max/ghaction-upx@v1
@@ -49,6 +44,18 @@ jobs:
         files: |
           package\PCRC.exe
         args: -fq
+
+    - name: Pack PCRC into pyz
+      run: |
+        move pycraft\minecraft .
+        move pycraft\LICENSE .
+        rd /s/q pycraft
+        md pycraft
+        move minecraft pycraft\
+        move LICENSE pycraft\
+
+        pip install mcdreforged  # this is required for packing PCRC
+        python -m mcdreforged pack -o ./package
 
     - uses: actions/upload-artifact@v2
       with:
