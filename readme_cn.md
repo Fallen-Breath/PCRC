@@ -5,8 +5,6 @@ PCRC
 
 > 基于 PyCraft 的 Replay 客户端
 
-~~SARC在 1.13 后跑不起来了，所以我搓了个这个东西~~
-
 这是一个 Minecraft 客户端，它可以录制出能被 [Replay Mod](https://www.replaymod.com/) 识别的录像文件（*.mcpr）
 
 非常感谢 [SARC](https://github.com/Robitobi01/SARC) 提供了 replay 相关的逻辑处理部分与 [pyCraft](https://github.com/ammaraskar/pyCraft) 提供了 Minecraft 客户端相关的东西
@@ -30,19 +28,12 @@ Python 的版本需要 python3，至少它在 Python 3.6 与 Python 3.8 中能�
 
 PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
-- 1.12
-- 1.12.2
+- 1.12 / 1.12.2
 - 1.14.4
 - 1.15.2
-- 1.16.1
-- 1.16.2
-- 1.16.3
-- 1.16.4
-- 1.16.5
+- 1.16.1 ~ 1.16.5
 - 1.17.1
-- 1.18
-- 1.18.1
-- 1.18.2
+- 1.18 ~ 1.18.2
 
 ## 优势
 

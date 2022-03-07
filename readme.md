@@ -5,8 +5,6 @@ PCRC
 
 > PyCraft based Replay Client
 
-~~SARC doesn't work in 1.13+ version so I made this crap~~
-
 A Minecraft client that can record a replay file (*.mcpr) which can be recognized by [Replay Mod](https://www.replaymod.com/)
 
 Great thanks to [SARC](https://github.com/Robitobi01/SARC) for the replay logic stuffs and [pyCraft](https://github.com/ammaraskar/pyCraft) for the minecraft client stuffs
@@ -28,21 +26,14 @@ The requirements are also stored in `requirements.txt`
 
 ### Minecraft server
 
-PCRC currently supports connecting to vanilla Minecraft server. Supports versions:
+PCRC currently supports connecting to vanilla Minecraft server. Supported versions:
 
-- 1.12
-- 1.12.2
+- 1.12 / 1.12.2
 - 1.14.4
 - 1.15.2
-- 1.16.1
-- 1.16.2
-- 1.16.3
-- 1.16.4
-- 1.16.5
+- 1.16.1 ~ 1.16.5
 - 1.17.1
-- 1.18
-- 1.18.1
-- 1.18.2
+- 1.18 ~ 1.18.2
 
 ## Advantage
 
