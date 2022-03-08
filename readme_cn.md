@@ -140,6 +140,8 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 `auto_relogin`: 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
 
+`auto_relogin_attempts`: 在成功连接至服务器前，自动重连的最大尝试次数。默认值: `5`
+
 `chat_spam_protect`: 是否在必要时自动延迟发送聊天消息，以防止被因滥发消息而踢出游戏
 
 `command_prefix`: 任何以 `command_prefix` 开头的聊天信息将会被认为是控制 PCRC 的指令。默认值: `!!PCRC`
@@ -219,6 +221,8 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 `!!PCRC set`: 输出所有可设置的选项
 
 `!!PCRC set` <选项> <值>: 将<选项>设置为<值>，不会写入配置文件
+
+`!!PCRC respawn`: 让 PCRC 机器人尝试复活
 
 ## 注意事项
 

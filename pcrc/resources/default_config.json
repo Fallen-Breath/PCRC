@@ -21,7 +21,7 @@
     "delay_before_afk_second": 15,
     "record_packets_when_afk": true,
     "auto_relogin": true,
-    "auto_relogin_retries": 5,
+    "auto_relogin_attempts": 5,
     "chat_spam_protect": true,
     "command_prefix": "!!PCRC",
 

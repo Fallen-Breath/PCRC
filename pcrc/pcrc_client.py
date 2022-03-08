@@ -29,7 +29,7 @@ class PcrcClient:
 		self.chat_manager = ChatManager(self)
 		self.recorder = Recorder(self)
 		self.input_manager = input_manager or StdinInputManager()
-		self.retry_counter = RetryCounter(self.config.get('auto_relogin_retries'))
+		self.retry_counter = RetryCounter(self.config.get('auto_relogin_attempts'))
 
 		self.logger.set_debug(self.config.get('debug_mode'))
 
@@ -176,7 +176,7 @@ class PcrcClient:
 	def stop(self, by_user: bool, *, auto_restart: bool = False, callback: Optional[Callable[[], Any]] = None):
 		"""
 		:param by_user: If it's stopped by user, connection error due to disconnecting will be suppressed
-		:param auto_restart: If PCRC should try to auto restart (auto_relogin_retries option will be considered)
+		:param auto_restart: If PCRC should try to auto restart (auto_relogin_attempts option will be considered)
 		:param callback: The optional callback method to be called after fully stopped
 		"""
 		if self.__flag_stopping:

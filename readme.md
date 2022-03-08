@@ -140,6 +140,8 @@ Examples for those account related config entries:
 
 `auto_relogin`: If this option is enabled and the client gets disconnected, it will automatically try to reconnect
 
+`auto_relogin_attempts`: The maximum amount of relogin attempts before login success . Default: `5`
+
 `chat_spam_protect`: Automatically delay between sending chat messages if necessary to prevent being kicked for spamming
 
 `command_prefix`: Any chat message starts with `command_prefix` will be recognize as a command to control PCRC. Default: `!!PCRC`
@@ -227,6 +229,8 @@ Using normal in game chatting to trigger
 `!!PCRC set <option> <value>`: set the value of `<option>` to `<value>` which won't write to config file
 
 `!!PCRC name <filename>`: set recording file name to `<filename>`
+
+`!!PCRC respawn`: let PCRC bot try to respawn
 
 ## Notes
 
