@@ -1,6 +1,5 @@
-from uuid import UUID
-
 from minecraft.networking.packets import Packet
+from minecraft.networking.types import UUID
 from pcrc.utils import packet_util
 
 
