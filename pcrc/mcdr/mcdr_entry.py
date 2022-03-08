@@ -4,6 +4,7 @@ from queue import Queue, Empty
 from typing import Optional
 
 from mcdreforged.api.decorator import new_thread
+from mcdreforged.command.builder.exception import UnknownArgument
 from mcdreforged.command.builder.nodes.arguments import GreedyText
 from mcdreforged.command.builder.nodes.basic import Literal, CommandContext
 from mcdreforged.command.command_source import CommandSource, PlayerCommandSource
@@ -51,6 +52,7 @@ def register_command(server: PluginServerInterface):
 	server.register_command(
 		Literal('!!PCRC').
 		requires(lambda src: src.has_permission(config.permission_required)).
+		on_error(UnknownArgument, lambda: 0, handled=True).
 		then(Literal('start').runs(start_pcrc)).
 		then(Literal('stop').runs(stop_pcrc)).
 		then(Literal('reload').runs(reload_config)).
