@@ -34,7 +34,6 @@ def is_stopped():
 def start():
 	global pcrc
 	if is_stopped():
-		logger.info('Creating new PCRC recorder')
 		success = pcrc.start()
 		logger.info('Recorder started, success = {}'.format(success))
 	else:

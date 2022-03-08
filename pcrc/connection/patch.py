@@ -41,7 +41,7 @@ def __player_position_fix():
 
 	def patched_PlayingReactor_react(self, packet):
 		original_react(self, packet)
-		if packet.packet_name == "player position and look" and not self.connection.context.protocol_later_eq(107):
+		if packet.packet_name == "player position and look" and self.connection.context.protocol_later_eq(107):
 			position_response = PositionAndLookPacket()
 			position_response.x = packet.x
 			position_response.feet_y = packet.y
@@ -98,11 +98,14 @@ def __default_proto_version_inject():
 	main_with = redbaron_util.get_node(connect_method, node_type=WithNode)
 	idx = redbaron_util.get_node_index(main_with, node_type=AssignmentNode, predicate=lambda n: str(n.target) == 'self.spawned')
 	redbaron_util.insert_nodes(main_with, idx, [
-		RedBaron('''self.recorder.logger.info('Allow versions of the server: {}'.format(self.allowed_proto_versions))'''),
+		RedBaron('''self.pcrc.logger.info('Allow versions of the server: {}'.format(self.allowed_proto_versions))'''),
 		RedBaron('''if len(self.allowed_proto_versions) > 1: self.context.protocol_version = self.default_proto_version''')
 	])
 
-	patched_class_source = connect_method.dumps()
+	# idk why but this thing prevents IndentationError from method _connect from happening
+	connect_method.value.insert(0, 'pass')
+
+	patched_class_source = red.dumps()
 	globals_ = dict(connection.__dict__)
 	exec(patched_class_source, globals_)
 	PatchedConnection = globals_['Connection']

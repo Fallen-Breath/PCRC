@@ -17,6 +17,7 @@ from pcrc.logger import PcrcLogger
 from pcrc.recording.chat import ChatManager, ChatPriority
 from pcrc.recording.recorder import Recorder
 from pcrc.states import ConnectionState
+from pcrc.utils.retry_counter import RetryCounter
 from pcrc.utils.translation import Translation
 
 
@@ -28,6 +29,7 @@ class PcrcClient:
 		self.chat_manager = ChatManager(self)
 		self.recorder = Recorder(self)
 		self.input_manager = input_manager or StdinInputManager()
+		self.retry_counter = RetryCounter(self.config.get('auto_relogin_retries'))
 
 		self.logger.set_debug(self.config.get('debug_mode'))
 
@@ -35,7 +37,7 @@ class PcrcClient:
 		self.__connection_state = ConnectionState.disconnected
 		self.__flag_stopping = False
 		self.__flag_stop_by_user = False
-		self.__flag_should_restart = False
+		self.__flag_auto_restart: bool = False
 		self.mc_protocol: Optional[int] = None
 		self.mc_version: Optional[str] = None
 		self.player_name: Optional[str] = None
@@ -151,6 +153,18 @@ class PcrcClient:
 		self.__connection_state = ConnectionState.disconnected
 
 	def start(self) -> bool:
+		"""
+		Starting PCRC by user
+		Resets retry counter
+		"""
+		self.retry_counter.reset_counter()
+		return self.__start()
+
+	def __start(self) -> bool:
+		"""
+		Starting PCRC by itself or by user
+		:return:
+		"""
 		with self.__start_lock:
 			self.logger.info('Starting PCRC')
 			if self.is_disconnected():
@@ -159,24 +173,32 @@ class PcrcClient:
 				self.logger.info('Cannot start PCRC before it disconnects')
 				return False
 
-	def stop(self, by_user: bool, *, restart: bool = False, callback: Optional[Callable[[], Any]] = None):
+	def stop(self, by_user: bool, *, auto_restart: bool = False, callback: Optional[Callable[[], Any]] = None):
 		"""
 		:param by_user: If it's stopped by user, connection error due to disconnecting will be suppressed
-		:param restart: If PCRC should restart after stopping
+		:param auto_restart: If PCRC should try to auto restart (auto_relogin_retries option will be considered)
 		:param callback: The optional callback method to be called after fully stopped
 		"""
 		if self.__flag_stopping:
 			self.logger.warning('PCRC is already stopping')
 			return
-		self.logger.info('Stopping PCRC, restart = {}, by_user = {}'.format(restart, by_user))
+		self.logger.info('Stopping PCRC, auto restart = {}, by_user = {}'.format(auto_restart, by_user))
 		self.chat(self.tr('chat.stopping'))
 		self.__flag_stopping = True
-		self.__flag_stop_by_user |= by_user
-		self.__flag_should_restart |= restart
+		self.__flag_stop_by_user = by_user
+		if auto_restart:
+			if self.retry_counter.can_retry():
+				self.retry_counter.consume_retry_attempt()
+				self.__flag_auto_restart = True
+			else:
+				self.logger.warning('Stopped auto relogin due to maximum retry amount {} reached'.format(self.retry_counter.max_retries))
 		self.recorder.stop_recording(callback or (lambda: ()))
 
-	def restart(self, by_user: bool):
-		self.stop(by_user=by_user, restart=True)
+	def __stop_by_external_force(self):
+		self.stop(by_user=False, auto_restart=self.config.get('auto_relogin'))
+
+	def restart(self):
+		self.stop(by_user=True, callback=self.__start)
 
 	# =======================
 	#        Callbacks
@@ -184,10 +206,10 @@ class PcrcClient:
 
 	def on_connection_exception(self, exc, exc_info):
 		(self.logger.debug if self.has_started_disconnecting() else self.logger.error)('Exception in network thread: {} {}'.format(type(exec), exc))
+		self.__connection_state = ConnectionState.disconnected
 		if not self.__flag_stop_by_user:
 			self.logger.debug(traceback.format_exc())
-			self.logger.warning('Stopping the recorder since PCRC has not been stopped by user')
-			self.stop(by_user=False, restart=self.config.get('auto_relogin'))
+			self.__stop_by_external_force()
 
 	# called when there's only 1 protocol version in allowed_proto_versions in pycraft connection
 	def on_protocol_version_decided(self, protocol_version):
@@ -202,7 +224,7 @@ class PcrcClient:
 		self.__connection_state = ConnectionState.logging_in
 		self.__flag_stopping = False
 		self.__flag_stop_by_user = False
-		self.__flag_should_restart = False
+		self.__flag_auto_restart = False
 
 	def __on_connected(self):
 		self.__connection.register_packet_listener(self.on_packet_received, Packet)
@@ -224,13 +246,13 @@ class PcrcClient:
 		self.mc_version = None
 		self.mc_protocol = None
 		self.logger.info('PCRC stopped')
+		self.logger.info('---------------------------------------')
 
-		if self.__flag_should_restart:
-			self.logger.info('---------------------------------------')
+		if self.__flag_auto_restart:
 			for i in range(3):
 				self.logger.info('PCRC restarting in {}s'.format(3 - i))
 				time.sleep(1)
-			self.start()
+			self.__start()
 
 	def on_replay_file_saved(self):
 		if self.is_online():
@@ -258,12 +280,13 @@ class PcrcClient:
 	def on_game_joined_packet(self, packet):
 		self.logger.info('PCRC bot joined the server')
 		self.__connection_state = ConnectionState.connected
+		self.retry_counter.reset_counter()
 		self.chat(self.tr('chat.game_join'))
 
 	def on_disconnect_packet(self, packet):
 		self.logger.info('PCRC disconnected from the server, reason = {}'.format(packet.json_data))
 		self.__connection_state = ConnectionState.disconnected
-		self.stop(by_user=False, restart=self.config.get('auto_relogin'))
+		self.__stop_by_external_force()
 
 	def on_chat_message_packet(self, packet):
 		js = json.loads(packet.json_data)
@@ -332,7 +355,7 @@ class PcrcClient:
 		"""
 		Disconnected and file saved
 		"""
-		return self.is_disconnected() and self.recorder.is_stopped() and not self.__flag_should_restart
+		return self.is_disconnected() and self.recorder.is_stopped() and not self.__flag_auto_restart
 
 	def is_running(self) -> bool:
 		return not self.is_fully_stopped()

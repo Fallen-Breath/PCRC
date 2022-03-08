@@ -242,12 +242,12 @@ class Recorder:
 		if self.replay_file.size > self.get_file_size_limit():
 			self.logger.info('tmcpr file size limit {}MB reached! Restarting'.format(misc_util.B2MB(self.get_file_size_limit())))
 			self.pcrc.chat(self.tr('chat.reached_file_size_limit', misc_util.B2MB(self.get_file_size_limit())))
-			self.pcrc.restart(by_user=False)
+			self.pcrc.restart()
 
 		if self.get_time_recorded(current_time) > self.get_time_recorded_limit():
 			self.logger.info('{} actual recording time reached!'.format(misc_util.format_milli(self.get_time_recorded_limit())))
 			self.pcrc.chat(self.tr('chat.reached_time_limit', misc_util.format_milli(self.get_time_recorded_limit())))
-			self.pcrc.restart(by_user=False)
+			self.pcrc.restart()
 
 		def get_showinfo_time():
 			return int(self.get_time_passed(current_time) / (5 * 60 * 1000))
@@ -299,7 +299,7 @@ class Recorder:
 			elif len(args) == 2 and args[1] in ['stop']:
 				self.pcrc.stop(by_user=True)
 			elif len(args) == 2 and args[1] == 'restart':
-				self.pcrc.restart(by_user=True)
+				self.pcrc.restart()
 			elif len(args) == 4 and args[1] == 'set':
 				self.pcrc.set_config(args[2], args[3])
 			elif len(args) == 2 and args[1] == 'set':
