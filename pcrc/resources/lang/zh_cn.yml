@@ -50,4 +50,5 @@ chat.command.help: |
     {0} marker add [<备注>]: 添加一个在当前时刻的标记事件，并将其命名为<备注>（可选）
     {0} marker del <序号>: 删除序号为<序号>的标记事件
     {0} name <文件名>: 将录像文件的文件名设置为 <文件名>
+    {0} respawn: 让PCRC机器人尝试复活
 chat.command.permission_denied: 权限不足

@@ -23,11 +23,13 @@ class Message:
 	def __init__(self, priority, data):
 		self.priority = priority
 		self.data = data
-		with self.__id_counter_lock:
-			self.id = self.__id_counter + 1
-			self.__id_counter += 1
+		with Message.__id_counter_lock:
+			self.id = Message.__id_counter + 1
+			Message.__id_counter += 1
 
 	def __lt__(self, other):
+		if not isinstance(other, type(self)):
+			return False
 		return self.priority < other.priority or (self.priority == other.priority and self.id < other.id)
 
 
