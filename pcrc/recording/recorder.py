@@ -5,6 +5,7 @@ from threading import Thread
 from typing import TYPE_CHECKING, Any, Optional, Callable
 
 from minecraft.networking.packets import Packet
+from minecraft.networking.packets.serverbound.play import ClientStatusPacket
 from minecraft.networking.types import PositionAndLook
 from pcrc import constant
 from pcrc.config import SettableOptions
@@ -321,16 +322,24 @@ class Recorder:
 						self.chat(self.tr('chat.command.wrong_argument'))
 			elif len(args) == 3 and args[1] == 'name':
 				self.set_file_name(args[2])
+			elif len(args) == 2 and args[1] == 'respawn':
+				self.respawn()
 			else:
 				self.chat(self.tr('chat.command.unknown', self.get_config('command_prefix')))
 		except:
 			self.logger.exception('Error when processing command "{}"'.format(command))
 
 	def spectate(self, uuid):
+		self.logger.info('Spectating to entity(uuid = {})'.format(uuid))
 		packet = SpectatePacket()
 		packet.target = uuid
 		self.send_packet(packet)
-		self.logger.info('try spectate to entity(uuid = {})'.format(uuid))
+
+	def respawn(self):
+		self.logger.info('Respawning...')
+		packet = ClientStatusPacket()
+		packet.action_id = ClientStatusPacket.RESPAWN
+		self.send_packet(packet)
 
 	def set_file_name(self, new_name):
 		old_name = self.file_name
