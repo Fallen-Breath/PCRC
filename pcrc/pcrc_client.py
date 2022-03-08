@@ -10,7 +10,7 @@ from minecraft.networking.packets import Packet, JoinGamePacket
 from minecraft.networking.packets.clientbound.play import DisconnectPacket, ChatMessagePacket, TimeUpdatePacket
 from pcrc import protocol
 from pcrc.config import Config, SettableOptions
-from pcrc.connection.pcrc_authentication import PcrcAuthenticationToken
+from pcrc.connection.pcrc_authentication import PcrcAuthenticationToken, AuthType
 from pcrc.connection.pcrc_connection import PcrcConnection
 from pcrc.input import InputManager, StdinInputManager
 from pcrc.logger import PcrcLogger
@@ -41,7 +41,7 @@ class PcrcClient:
 		self.mc_protocol: Optional[int] = None
 		self.mc_version: Optional[str] = None
 		self.player_name: Optional[str] = None
-		self.__token = PcrcAuthenticationToken(self.logger)
+		self.__token: Optional[PcrcAuthenticationToken] = PcrcAuthenticationToken(self.logger)
 		self.__start_lock = Lock()
 
 	def tr(self, key: str, *args, **kwargs) -> str:
@@ -71,22 +71,60 @@ class PcrcClient:
 	def __connect(self) -> bool:
 		self.__on_connecting()
 
-		token = self.__token
+		player_name = self.authenticate()
+		if player_name is None:
+			return False
+		self.player_name = player_name
+
+		if self.is_online():
+			self.logger.warning('Cannot connect when connected')
+			return False
+
+		self.__connection = PcrcConnection(
+			pcrc=self,
+			address=self.config.get('address'),
+			port=self.config.get('port'),
+			username=self.config.get('username'),
+			auth_token=self.__token,
+			initial_version=self.config.get('initial_version'),
+			allowed_versions=protocol.SUPPORTED_MINECRAFT_VERSIONS,
+			handle_exception=self.on_connection_exception
+		)
+		try:
+			self.__connection_state = ConnectionState.connecting
+			self.__connection.connect()
+			self.__on_connected()
+			return True
+		except socket.gaierror:
+			self.logger.error('Fail to analyze server address {}'.format(self.config.get('address')))
+		except:
+			self.logger.error('Fail to connect to {}:{}'.format(self.config.get('address'), self.config.get('port')))
+		return False
+
+	def authenticate(self) -> Optional[str]:
+		player_name = self.__authenticate()
+		if player_name is not None:
+			self.logger.info('Logged in as {} ({})'.format(player_name, self.config.get('authenticate_type')))
+		else:
+			self.logger.error('Login failed')
+		return player_name
+
+	def __authenticate(self) -> Optional[str]:
 		authenticate_type: str = self.config.get('authenticate_type')
-		if authenticate_type == 'offline':
-			token = None
+		if authenticate_type == AuthType.offline:
+			self.__token = None
 			player_name = self.config.get('username')
-		elif authenticate_type == 'mojang':
+		elif authenticate_type == AuthType.mojang:
 			try:
-				token.mojang_authenticate(self.config.get('username'), self.config.get('password'))
+				self.__token.mojang_authenticate(self.config.get('username'), self.config.get('password'))
 			except Exception as e:
 				self.logger.error(self.tr('login.mojang.failed', e))
-				return False
-			player_name = token.profile.name
-		elif authenticate_type == 'microsoft':
-			if not token.microsoft_refresh_authenticate():
+				return None
+			player_name = self.__token.profile.name
+		elif authenticate_type == AuthType.microsoft:
+			if not self.__token.microsoft_refresh_authenticate():
 				self.logger.info(self.tr('login.microsoft.url_hint.0'))
-				self.logger.info(token.MS_AUTH_URL)
+				self.logger.info(self.__token.MS_AUTH_URL)
 				self.logger.info(self.tr('login.microsoft.url_hint.1'))
 				while True:
 					user_input = self.input_manager.input(self.tr('login.microsoft.input'))
@@ -98,41 +136,14 @@ class PcrcClient:
 						auth_code = auth_codes[0]
 						break
 				try:
-					token.microsoft_authenticate(auth_code)
+					self.__token.microsoft_authenticate(auth_code)
 				except Exception as e:
 					self.logger.error(self.tr('login.microsoft.failed', e))
-					return False
-			player_name = token.username
+					return None
+			player_name = self.__token.username
 		else:
 			raise ValueError('Unrecognized authenticate type {}'.format(authenticate_type))
-
-		self.logger.info('Logged in as {} ({})'.format(player_name, authenticate_type))
-		self.player_name = player_name
-
-		self.__connection = PcrcConnection(
-			pcrc=self,
-			address=self.config.get('address'),
-			port=self.config.get('port'),
-			username=self.config.get('username'),
-			auth_token=token,
-			initial_version=self.config.get('initial_version'),
-			allowed_versions=protocol.SUPPORTED_MINECRAFT_VERSIONS,
-			handle_exception=self.on_connection_exception
-		)
-
-		if self.is_online():
-			self.logger.warning('Cannot connect when connected')
-			return False
-		try:
-			self.__connection_state = ConnectionState.connecting
-			self.__connection.connect()
-			self.__on_connected()
-			return True
-		except socket.gaierror:
-			self.logger.error('Fail to analyze server address {}'.format(self.config.get('address')))
-		except:
-			self.logger.error('Fail to connect to {}:{}'.format(self.config.get('address'), self.config.get('port')))
-		return False
+		return player_name
 
 	def disconnect(self):
 		if self.is_online():
