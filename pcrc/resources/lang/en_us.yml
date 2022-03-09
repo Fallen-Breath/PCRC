@@ -1,9 +1,8 @@
-login.mojang.failed: 'Failed to authenticate with Mojang: {}'
+login.failed: 'Failed to authenticate with {0}: {1}'
 login.microsoft.url_hint.0: Please open the url below in your browse
 login.microsoft.url_hint.1: After logged in, you will be redirected to an empty page. Enter the redirected url here
 login.microsoft.input: 'Input redirected url: '
 login.microsoft.input.invalid: Please input a valid redirected url. There should be a "code" entry in url's queries
-login.microsoft.failed: 'Failed to authenticate with Microsoft: {}'
 
 chat.game_join: o/ start recording!
 chat.disconnect: o/ bye!

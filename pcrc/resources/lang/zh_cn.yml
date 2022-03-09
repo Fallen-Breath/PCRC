@@ -1,9 +1,8 @@
-login.mojang.failed: 'Mojang身份验证失败: {}'
+login.failed: '{0}身份验证失败: {1}'
 login.microsoft.url_hint.0: 请在浏览器中打开以下网址以登录到微软账号
 login.microsoft.url_hint.1: 登录后，你将被重定向到一个空白页面。在下方输入重定向后的网页链接地址
 login.microsoft.input: '输入重定向后的地址: '
 login.microsoft.input.invalid: 请输入有效的重定向后的地址。地址的query部分应含有code条目
-login.microsoft.failed: '微软身份验证失败: {}'
 
 chat.game_join: o/ 开始录制！
 chat.disconnect: o/ bye~

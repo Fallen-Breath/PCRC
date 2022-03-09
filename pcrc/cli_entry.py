@@ -35,9 +35,9 @@ def start():
 	global pcrc
 	if is_stopped():
 		success = pcrc.start()
-		logger.info('Recorder started, success = {}'.format(success))
+		logger.info('PCRC started, success = {}'.format(success))
 	else:
-		logger.warning('Recorder is running, ignore')
+		logger.warning('PCRC is running, ignore')
 
 
 def stop():

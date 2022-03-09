@@ -4,13 +4,12 @@ import time
 import traceback
 from threading import Lock
 from typing import Optional, Callable, Any
-from urllib.parse import urlparse, parse_qs
 
 from minecraft.networking.packets import Packet, JoinGamePacket
 from minecraft.networking.packets.clientbound.play import DisconnectPacket, ChatMessagePacket, TimeUpdatePacket
 from pcrc import protocol
 from pcrc.config import Config, SettableOptions
-from pcrc.connection.pcrc_authentication import PcrcAuthenticationToken, AuthType
+from pcrc.connection.pcrc_authentication import Authenticator
 from pcrc.connection.pcrc_connection import PcrcConnection
 from pcrc.input import InputManager, StdinInputManager
 from pcrc.logger import PcrcLogger
@@ -29,6 +28,7 @@ class PcrcClient:
 		self.chat_manager = ChatManager(self)
 		self.recorder = Recorder(self)
 		self.input_manager = input_manager or StdinInputManager()
+		self.authenticator = Authenticator.get_class(self.config.get('authenticate_type'))(self)
 		self.retry_counter = RetryCounter(self.config.get('auto_relogin_attempts'))
 
 		self.logger.set_debug(self.config.get('debug_mode'))
@@ -41,7 +41,6 @@ class PcrcClient:
 		self.mc_protocol: Optional[int] = None
 		self.mc_version: Optional[str] = None
 		self.player_name: Optional[str] = None
-		self.__token: Optional[PcrcAuthenticationToken] = PcrcAuthenticationToken(self.logger)
 		self.__start_lock = Lock()
 
 	def tr(self, key: str, *args, **kwargs) -> str:
@@ -60,7 +59,29 @@ class PcrcClient:
 	# ===================
 
 	def is_online(self):
-		return self.__connection_state in {ConnectionState.connected}
+		return self.__connection_state == ConnectionState.connected
+
+	def is_disconnected(self) -> bool:
+		return self.__connection_state == ConnectionState.disconnected
+
+	def has_started_disconnecting(self) -> bool:
+		return self.__connection_state == ConnectionState.disconnecting or self.is_disconnected()
+
+	def is_fully_stopped(self) -> bool:
+		"""
+		Disconnected and file saved
+		"""
+		return self.is_disconnected() and self.recorder.is_stopped() and not self.__flag_auto_restart
+
+	def is_running(self) -> bool:
+		return not self.is_fully_stopped()
+
+	def has_authenticated(self) -> bool:
+		return self.authenticator.has_authenticated()
+
+	# ===================
+	#     Connection
+	# ===================
 
 	def connect(self) -> bool:
 		success = self.__connect()
@@ -71,10 +92,10 @@ class PcrcClient:
 	def __connect(self) -> bool:
 		self.__on_connecting()
 
-		player_name = self.authenticate()
-		if player_name is None:
-			return False
-		self.player_name = player_name
+		if not self.has_authenticated():
+			if not self.authenticate():
+				return False
+		self.player_name = self.authenticator.player_name
 
 		if self.is_online():
 			self.logger.warning('Cannot connect when connected')
@@ -85,7 +106,7 @@ class PcrcClient:
 			address=self.config.get('address'),
 			port=self.config.get('port'),
 			username=self.config.get('username'),
-			auth_token=self.__token,
+			auth_token=self.authenticator.generate_pycraft_token(),
 			initial_version=self.config.get('initial_version'),
 			allowed_versions=protocol.SUPPORTED_MINECRAFT_VERSIONS,
 			handle_exception=self.on_connection_exception
@@ -101,49 +122,16 @@ class PcrcClient:
 			self.logger.error('Fail to connect to {}:{}'.format(self.config.get('address'), self.config.get('port')))
 		return False
 
-	def authenticate(self) -> Optional[str]:
-		player_name = self.__authenticate()
-		if player_name is not None:
-			self.logger.info('Logged in as {} ({})'.format(player_name, self.config.get('authenticate_type')))
+	def authenticate(self) -> bool:
+		auth_type: str = self.config.get('authenticate_type')
+		try:
+			self.authenticator.authenticate()
+		except Exception as e:
+			self.logger.error(self.tr('login.failed', auth_type.capitalize(), e))
+			return False
 		else:
-			self.logger.error('Login failed')
-		return player_name
-
-	def __authenticate(self) -> Optional[str]:
-		authenticate_type: str = self.config.get('authenticate_type')
-		if authenticate_type == AuthType.offline:
-			self.__token = None
-			player_name = self.config.get('username')
-		elif authenticate_type == AuthType.mojang:
-			try:
-				self.__token.mojang_authenticate(self.config.get('username'), self.config.get('password'))
-			except Exception as e:
-				self.logger.error(self.tr('login.mojang.failed', e))
-				return None
-			player_name = self.__token.profile.name
-		elif authenticate_type == AuthType.microsoft:
-			if not self.__token.microsoft_refresh_authenticate():
-				self.logger.info(self.tr('login.microsoft.url_hint.0'))
-				self.logger.info(self.__token.MS_AUTH_URL)
-				self.logger.info(self.tr('login.microsoft.url_hint.1'))
-				while True:
-					user_input = self.input_manager.input(self.tr('login.microsoft.input'))
-					queries = parse_qs(urlparse(user_input).query)
-					auth_codes = queries.get('code', [])
-					if len(auth_codes) != 1:
-						self.logger.info(self.tr('login.microsoft.input.invalid'))
-					else:
-						auth_code = auth_codes[0]
-						break
-				try:
-					self.__token.microsoft_authenticate(auth_code)
-				except Exception as e:
-					self.logger.error(self.tr('login.microsoft.failed', e))
-					return None
-			player_name = self.__token.username
-		else:
-			raise ValueError('Unrecognized authenticate type {}'.format(authenticate_type))
-		return player_name
+			self.logger.info('Logged in as {} ({})'.format(self.authenticator.player_name, auth_type))
+			return True
 
 	def disconnect(self):
 		if self.is_online():
@@ -355,18 +343,3 @@ class PcrcClient:
 			self.__connection.write_packet(packet)
 		else:
 			self.logger.warning('Trying to send packet ({}) when being offline'.format(packet))
-
-	def is_disconnected(self) -> bool:
-		return self.__connection_state == ConnectionState.disconnected
-
-	def has_started_disconnecting(self) -> bool:
-		return self.__connection_state == ConnectionState.disconnecting or self.is_disconnected()
-
-	def is_fully_stopped(self) -> bool:
-		"""
-		Disconnected and file saved
-		"""
-		return self.is_disconnected() and self.recorder.is_stopped() and not self.__flag_auto_restart
-
-	def is_running(self) -> bool:
-		return not self.is_fully_stopped()
