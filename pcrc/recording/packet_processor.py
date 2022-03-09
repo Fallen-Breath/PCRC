@@ -1,12 +1,13 @@
 from logging import Logger
-from typing import TYPE_CHECKING, List, Callable
+from typing import TYPE_CHECKING, List, Callable, Dict, Set
 
-from minecraft.networking.packets import Packet, PlayerPositionAndLookPacket
+from minecraft.networking.packets import Packet, PlayerPositionAndLookPacket, PlayerListItemPacket
 from minecraft.networking.packets.clientbound.play import TimeUpdatePacket, SpawnPlayerPacket, SpawnObjectPacket, RespawnPacket
-from minecraft.networking.types import PositionAndLook
+from minecraft.networking.types import PositionAndLook, GameMode
 from pcrc.packets.s2c import DestroyEntitiesPacket, ChangeGameStatePacket, SpawnLivingEntityPacket
 from pcrc.packets.s2c.entity_packet import AbstractEntityPacket
 from pcrc.protocol import MobTypeIds
+from pcrc.recording.player_list import PlayerListManager
 
 if TYPE_CHECKING:
 	from pcrc.recording.recorder import Recorder
@@ -16,14 +17,16 @@ class PacketProcessor:
 	def __init__(self, recorder: 'Recorder'):
 		self.recorder: 'Recorder' = recorder
 		self.logger: Logger = recorder.logger
-		self.blocked_entity_ids = set()
-		self.player_ids = set()
+		self.player_manager = PlayerListManager(recorder)
+		self.blocked_entity_ids: Set[int] = set()
+		self.entity_id_to_player_uuid: Dict[int, str] = {}
 		self.recorded_time_packet = False
 
-	def init(self):
+	def reset(self):
 		self.blocked_entity_ids.clear()
-		self.player_ids.clear()
+		self.entity_id_to_player_uuid.clear()
 		self.recorded_time_packet = False
+		self.player_manager.reset()
 
 	def process(self, packet: Packet) -> bool:
 		try:
@@ -71,8 +74,8 @@ class PacketProcessor:
 			if isinstance(packet, SpawnPlayerPacket):
 				entity_id = getattr(packet, 'entity_id')
 				uuid = getattr(packet, 'player_UUID')
-				if entity_id not in self.player_ids:
-					self.player_ids.add(entity_id)
+				if entity_id not in self.entity_id_to_player_uuid.keys():
+					self.entity_id_to_player_uuid[entity_id] = uuid
 					self.logger.debug('Player spawned, added to player id list, id = {}'.format(entity_id))
 				if uuid not in self.recorder.player_uuids:
 					self.recorder.player_uuids.append(uuid)
@@ -109,8 +112,8 @@ class PacketProcessor:
 					if entity_id in self.blocked_entity_ids:
 						self.blocked_entity_ids.remove(entity_id)
 						self.logger.debug('Entity destroyed, removed from blocked entity id list, id = {}'.format(entity_id))
-					if entity_id in self.player_ids:
-						self.player_ids.remove(entity_id)
+					if entity_id in self.entity_id_to_player_uuid.keys():
+						self.entity_id_to_player_uuid.pop(entity_id)
 						self.logger.debug('Player destroyed, removed from player id list, id = {}'.format(entity_id))
 			return True
 
@@ -118,9 +121,13 @@ class PacketProcessor:
 		def process_entity_packets():
 			if isinstance(packet, AbstractEntityPacket):
 				entity_id = packet.entity_id
-				if entity_id in self.player_ids:
-					self.recorder.refresh_player_movement()
-					self.logger.debug('Update player movement time from {}, triggered by entity id {}'.format(packet, entity_id))
+				if entity_id in self.entity_id_to_player_uuid.keys():
+					player_uuid = self.entity_id_to_player_uuid[entity_id]
+					if self.player_manager.get_game_mode(player_uuid) == GameMode.SPECTATOR and self.recorder.get_config('afk_ignore_spectator'):
+						self.logger.debug('Player movement from {} received but it\'s a spectator and user chooses to ignore it'.format(entity_id))
+					else:
+						self.recorder.refresh_player_movement()
+						self.logger.debug('Update player movement time from {}, triggered by entity id {}'.format(packet, entity_id))
 				if entity_id in self.blocked_entity_ids:
 					self.logger.debug('Ignored entity packet of blocked entity id {}'.format(entity_id))
 					return False
@@ -133,6 +140,10 @@ class PacketProcessor:
 				self.recorded_time_packet = False
 			return True
 
+		def process_player_list():
+			if isinstance(packet, PlayerListItemPacket):
+				self.player_manager.on_packet(packet)
+
 		processors: List[Callable[[], bool]] = [
 			filter_bad_packet,
 			process_player_position_and_look,
@@ -143,6 +154,7 @@ class PacketProcessor:
 			process_destroy_entities,
 			process_entity_packets,
 			process_respawn,
+			process_player_list,
 		]
 
 		for processor in processors:

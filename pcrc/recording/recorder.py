@@ -146,6 +146,7 @@ class Recorder:
 		self.file_thread = None
 		self.replay_file = ReplayRecording(temp_file_dir=self.get_config('recording_temp_file_directory'))
 		self.pos = None
+		self.packet_processor.reset()
 
 	def on_replay_file_saved(self):
 		self.__recording_state = RecordingState.stopped
