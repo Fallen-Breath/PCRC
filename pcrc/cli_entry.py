@@ -1,7 +1,6 @@
 import sys
 import time
 from logging import Logger
-from threading import Event
 
 from pcrc import constant
 from pcrc.config import SettableOptions, Config
@@ -37,7 +36,7 @@ def start():
 		if pcrc.start():
 			logger.info('PCRC started')
 		else:
-			logger.info('Failed to start PCRC')
+			logger.warning('Failed to start PCRC')
 	else:
 		logger.warning('PCRC is running, ignore')
 
@@ -45,10 +44,7 @@ def start():
 def stop():
 	global pcrc
 	if is_working():
-		event = Event()
-		pcrc.stop(by_user=True, callback=lambda: event.set())
-		event.wait()
-		logger.info('PCRC stopped')
+		pcrc.stop(block=True)
 	else:
 		logger.info('PCRC is not running, ignore')
 

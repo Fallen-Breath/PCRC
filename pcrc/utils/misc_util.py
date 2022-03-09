@@ -1,7 +1,7 @@
 import time
-
-
 # convert file size to MB
+from typing import Optional, Callable, Any
+
 from minecraft.networking.types import PositionAndLook
 
 
@@ -28,3 +28,11 @@ def format_milli(millis: int) -> str:
 	minutes = millis // (1000 * 60) % 60
 	hours = millis // (1000 * 60 * 60)
 	return '{:0>2}:{:0>2}:{:0>2}'.format(hours, minutes, seconds)
+
+
+def chain_callback(*callbacks: Optional[Callable[[], Any]]) -> Callable[[], Any]:
+	def callback():
+		for cb in callbacks:
+			if callable(cb):
+				cb()
+	return callback

@@ -298,7 +298,7 @@ class Recorder:
 				else:
 					self.chat(self.tr('chat.command.position.unknown'))
 			elif len(args) == 2 and args[1] in ['stop']:
-				self.pcrc.stop(by_user=True)
+				self.pcrc.stop()
 			elif len(args) == 2 and args[1] == 'restart':
 				self.pcrc.restart()
 			elif len(args) == 4 and args[1] == 'set':

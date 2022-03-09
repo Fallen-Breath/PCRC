@@ -2,7 +2,7 @@ import json
 import socket
 import time
 import traceback
-from threading import Lock
+from threading import Lock, Event
 from typing import Optional, Callable, Any
 
 from minecraft.networking.packets import Packet, JoinGamePacket
@@ -16,6 +16,7 @@ from pcrc.logger import PcrcLogger
 from pcrc.recording.chat import ChatManager, ChatPriority
 from pcrc.recording.recorder import Recorder
 from pcrc.states import ConnectionState
+from pcrc.utils import misc_util
 from pcrc.utils.retry_counter import RetryCounter
 from pcrc.utils.translation import Translation
 
@@ -43,6 +44,9 @@ class PcrcClient:
 		self.player_name: Optional[str] = None
 		self.__start_lock = Lock()
 
+	def __del__(self):
+		self.discard()
+
 	def tr(self, key: str, *args, **kwargs) -> str:
 		return self.translation.translate(key, self.config.get('language')).format(*args, **kwargs)
 
@@ -66,6 +70,9 @@ class PcrcClient:
 
 	def has_started_disconnecting(self) -> bool:
 		return self.__connection_state == ConnectionState.disconnecting or self.is_disconnected()
+
+	def is_stopping(self) -> bool:
+		return self.__flag_stopping
 
 	def is_fully_stopped(self) -> bool:
 		"""
@@ -172,7 +179,7 @@ class PcrcClient:
 				self.logger.info('Cannot start PCRC before it disconnects')
 				return False
 
-	def stop(self, by_user: bool, *, auto_restart: bool = False, callback: Optional[Callable[[], Any]] = None):
+	def __stop(self, by_user: bool, *, auto_restart: bool = False, callback: Callable[[], Any]) -> bool:
 		"""
 		:param by_user: If it's stopped by user, connection error due to disconnecting will be suppressed
 		:param auto_restart: If PCRC should try to auto restart (auto_relogin_attempts option will be considered)
@@ -180,7 +187,7 @@ class PcrcClient:
 		"""
 		if self.__flag_stopping:
 			self.logger.warning('PCRC is already stopping')
-			return
+			return False
 		self.logger.info('Stopping PCRC, auto restart = {}, by_user = {}'.format(auto_restart, by_user))
 		self.chat(self.tr('chat.stopping'))
 		self.__flag_stopping = True
@@ -191,13 +198,24 @@ class PcrcClient:
 				self.__flag_auto_restart = True
 			else:
 				self.logger.warning('Stopped auto relogin due to maximum retry amount {} reached'.format(self.retry_counter.max_retries))
-		self.recorder.stop_recording(callback or (lambda: ()))
+		self.recorder.stop_recording(callback)
+		return True
+
+	def stop(self, auto_restart: bool = False, callback: Optional[Callable[[], Any]] = None, block: bool = False):
+		event = Event()
+		callback = misc_util.chain_callback(callback, lambda: event.set())
+		executed = self.__stop(by_user=True, auto_restart=auto_restart, callback=callback)
+		if executed and block:
+			event.wait()
 
 	def __stop_by_external_force(self):
-		self.stop(by_user=False, auto_restart=self.config.get('auto_relogin'))
+		self.__stop(by_user=False, auto_restart=self.config.get('auto_relogin'), callback=lambda: 0)
 
 	def restart(self):
-		self.stop(by_user=True, callback=self.__start)
+		self.stop(callback=self.__start)
+
+	def discard(self):
+		self.authenticator.interrupt_refresh()
 
 	# =======================
 	#        Callbacks

@@ -87,22 +87,25 @@ def stop_pcrc(source: CommandSource):
 	# for players, the bot is able to handle `!!PCRC stop` command itself
 	if source.is_console:
 		source.reply('Stopping PCRC')
-		pcrc.stop(by_user=True)
+		pcrc.stop()
 
 
 def on_unload(server: PluginServerInterface):
 	def on_pcrc_stop():
 		pcrc_module.pop_pycraft_lib_path()
 		pcrc.logger.close_file()
+		pcrc.discard()
 
 	if pcrc.is_running():
-		pcrc.stop(by_user=True, callback=on_pcrc_stop)
+		pcrc.stop(callback=on_pcrc_stop)
 	else:
 		on_pcrc_stop()
 
 
 def on_mcdr_stop(server: PluginServerInterface):
 	if pcrc.is_running():
+		if not pcrc.is_stopping():
+			pcrc.stop(block=True)
 		for i in range(60 * 10):
 			if pcrc.is_running():
 				server.logger.info('Waiting for PCRC to stop')
