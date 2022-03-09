@@ -34,8 +34,10 @@ def is_stopped():
 def start():
 	global pcrc
 	if is_stopped():
-		success = pcrc.start()
-		logger.info('PCRC started, success = {}'.format(success))
+		if pcrc.start():
+			logger.info('PCRC started')
+		else:
+			logger.info('Failed to start PCRC')
 	else:
 		logger.warning('PCRC is running, ignore')
 
@@ -46,9 +48,9 @@ def stop():
 		event = Event()
 		pcrc.stop(by_user=True, callback=lambda: event.set())
 		event.wait()
-		logger.info('Recorder stopped')
+		logger.info('PCRC stopped')
 	else:
-		logger.info('Recorder is not running, ignore')
+		logger.info('PCRC is not running, ignore')
 
 
 def say(message: str):

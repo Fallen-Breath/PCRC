@@ -155,7 +155,7 @@ class MojangAuthenticator(Authenticator):
 		self._on_authenticated()
 
 	def _refresh_authentication(self):
-		self.logger.info('Refresh token with Mojang')
+		self.logger.info('Refreshing token with Mojang')
 		self.__pycraft_token.refresh()
 
 	def generate_pycraft_token(self) -> Optional[AuthenticationToken]:
@@ -200,7 +200,7 @@ class MicrosoftAuthenticator(Authenticator):
 		self._on_authenticated()
 
 	def _refresh_authentication(self):
-		self.logger.info('Refresh token with Microsoft')
+		self.logger.info('Refreshing token with Microsoft')
 		self.authenticate_with_refresh_token(self.__refresh_token)
 
 	def generate_pycraft_token(self) -> Optional[AuthenticationToken]:
