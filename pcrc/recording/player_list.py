@@ -17,6 +17,19 @@ class PlayerInfo:
 	def __init__(self):
 		pass
 
+	def is_spectator(self) -> bool:
+		return self.game_mode == GameMode.SPECTATOR
+
+	def __lt__(self, other):
+		if not isinstance(other, type(self)):
+			return False
+		if self.is_spectator() and not other.is_spectator():
+			return False
+		elif not self.is_spectator() and other.is_spectator():
+			return True
+		else:
+			return self.name.lower() < other.name.lower()
+
 
 class PlayerListManager:
 	def __init__(self, recorder: 'Recorder'):
@@ -60,12 +73,13 @@ class PlayerListManager:
 		return info.game_mode
 
 	def dump_player_list(self) -> str:
-		lines: List[Tuple[str, str]] = []
+		data: Dict[PlayerInfo, Tuple[str, str]] = {}
 		for uuid, info in self.__player_map.items():
 			if info.display_name is not None:
 				name = '{} ({})'.format(info.display_name, info.name)
 			else:
 				name = info.name
-			lines.append((name, '{} {}ms'.format(GameMode.name_from_value(info.game_mode).lower(), info.ping)))
+			data[info] = (name, '{} {}ms'.format(GameMode.name_from_value(info.game_mode).lower(), info.ping))
+		lines: List[Tuple[str, str]] = list(map(data.get, sorted(data.keys())))
 		max_name_length = max(map(lambda l: len(l[0]), lines))
 		return '\n'.join(map(lambda l: '{}{} | {}'.format(l[0], ' ' * (max_name_length - len(l[0])), l[1]), lines))
