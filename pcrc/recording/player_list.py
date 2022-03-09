@@ -1,6 +1,7 @@
-from typing import Dict, List, TYPE_CHECKING, Optional
+from typing import Dict, List, TYPE_CHECKING, Optional, Tuple
 
 from minecraft.networking.packets import PlayerListItemPacket
+from minecraft.networking.types import GameMode
 
 if TYPE_CHECKING:
 	from pcrc.recording.recorder import Recorder
@@ -11,7 +12,7 @@ class PlayerInfo:
 	properties: List[PlayerListItemPacket.PlayerProperty]
 	game_mode: int
 	ping: int
-	display_name: str
+	display_name: Optional[str]
 
 	def __init__(self):
 		pass
@@ -58,3 +59,13 @@ class PlayerListManager:
 			return None
 		return info.game_mode
 
+	def dump_player_list(self) -> str:
+		lines: List[Tuple[str, str]] = []
+		for uuid, info in self.__player_map.items():
+			if info.display_name is not None:
+				name = '{} ({})'.format(info.display_name, info.name)
+			else:
+				name = info.name
+			lines.append((name, '{} {}ms'.format(GameMode.name_from_value(info.game_mode).lower(), info.ping)))
+		max_name_length = max(map(lambda l: len(l[0]), lines))
+		return '\n'.join(map(lambda l: '{}{} | {}'.format(l[0], ' ' * (max_name_length - len(l[0])), l[1]), lines))

@@ -31,7 +31,7 @@ def is_stopped():
 
 
 def show_help():
-	logger.info('Command list: help|start|stop|restart|exit|auth|say|whitelist|set|status')
+	logger.info('Command list: help|start|stop|restart|exit|auth|say|whitelist|set|status|list')
 
 
 def start():
@@ -121,6 +121,16 @@ def show_status():
 		logger.info(line)
 
 
+def show_player_list():
+	if pcrc.is_online():
+		logger.info('===== Server Player List =====')
+		player_manager = pcrc.recorder.packet_processor.player_manager
+		for line in player_manager.dump_player_list().splitlines():
+			logger.info('  ' + line)
+	else:
+		logger.warning('PCRC is not online, cannot get player list')
+
+
 def main():
 	on_start_up()
 	pcrc.authenticate()
@@ -158,6 +168,8 @@ def main():
 				config_changed = True
 			elif text == 'status':
 				show_status()
+			elif text == 'list':
+				show_player_list()
 			else:
 				logger.error('Command "{}" not found!'.format(text))
 
