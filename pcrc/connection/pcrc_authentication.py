@@ -25,7 +25,7 @@ class AuthType:
 
 
 class Authenticator(ABC):
-	TOKEN_REFRESH_INTERVAL = 1 * 60  # 3 hours
+	TOKEN_REFRESH_INTERVAL = 3 * 60 * 60  # 3 hours
 
 	def __init__(self, pcrc: 'PcrcClient'):
 		self.pcrc = pcrc
