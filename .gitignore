@@ -1,5 +1,6 @@
 # Python
 /venv
+**/__pycache__
 
 # IDE
 /.idea
