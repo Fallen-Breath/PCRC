@@ -168,6 +168,8 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 仅在独立运行时有效
 
+`help`: Show the list of console command
+
 `start`: 开启 PCRC 并开始录制
 
 `stop`: 停止 PCRC 并关闭录制
@@ -175,6 +177,8 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 `restart`: 重启 PCRC
 
 `exit`: 退出程序
+
+`auth`: 再次尝试 Minecraft 登录验证。在登录失败时使用
 
 `say <信息>`: 将文字 `<信息>` 作为聊天信息发送至服务器
 
@@ -185,6 +189,10 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 `whitelist [add|del] <玩家名>` 向白名单增/删玩家
 
 `whitelist status` 查看白名单列表及其开启状态
+
+`status`: 查看 PCRC 的状态
+
+`list`: 在连接至服务器后显示玩家列表
 
 ### MCDR 插件指令
 

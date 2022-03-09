@@ -174,23 +174,31 @@ Command prefix `!!PCRC` can be customized in the config file
 
 Available if launched directly
 
-`start`: start PCRC and start recording
+`help`: Show the list of console command
 
-`stop`: stop PCRC and stop recording
+`start`: Start PCRC and start recording
 
-`restart`: restart PCRC
+`stop`: Stop PCRC and stop recording
 
-`exit`: exit the program
+`restart`: Restart PCRC
 
-`say <text>`: send text `<text>` to the server as a chat message
+`exit`: Exit the program
 
-`set <option> <value>` set option to value of PCRC and in the config file
+`auth`: Authenticate with minecraft again. Used when the previous authentication failed
+
+`say <text>`: Send text `<text>` to the server as a chat message
+
+`set <option> <value>` Set option to value of PCRC and in the config file
 
 `whitelist [on|off]` Switch the whitelist switch
 
 `whitelist [add|del] <player>` Add or delete a player to(from) the whitelist
 
 `whitelist status` To view the status of the whitelist and the whitelisted player(s)
+
+`status`: Show the status of PCRC
+
+`list`: Show the player list in the server if connected
 
 ### MCDR Plugin command
 
