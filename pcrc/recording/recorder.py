@@ -28,7 +28,7 @@ class Recorder:
 		self.__recording_state = RecordingState.stopped
 
 		# recording information
-		self.start_time: int = 0
+		self.start_time: int = -1
 		self.last_player_movement: int = 0
 		self.afk_time: int = 0
 		self.last_t: int = 0
@@ -81,6 +81,8 @@ class Recorder:
 		return self.has_no_player_movement() and self.get_config('with_player_only')
 
 	def get_time_passed(self, current_time: Optional[int] = None):
+		if self.start_time < 0:
+			return 0
 		if current_time is None:
 			current_time = misc_util.get_milli_time()
 		return current_time - self.start_time
@@ -147,6 +149,7 @@ class Recorder:
 
 	def on_replay_file_saved(self):
 		self.__recording_state = RecordingState.stopped
+		self.start_time = -1
 		self.file_thread = None
 		self.replay_file = None
 		self.pcrc.on_replay_file_saved()
@@ -262,11 +265,14 @@ class Recorder:
 			)
 
 	def get_status(self) -> str:
+		"""
+		Will be a multi-line string
+		"""
 		return self.tr(
 			'chat.command.status',
 			self.is_recording(), self.is_recording() and not self.is_afking(),
 			misc_util.format_milli(self.get_time_recorded()), misc_util.format_milli(self.get_time_passed()),
-			self.packet_counter, misc_util.B2MB(len(self.file_buffer)), misc_util.B2MB(self.replay_file.size),
+			self.packet_counter, misc_util.B2MB(len(self.file_buffer)), misc_util.B2MB(self.replay_file.size) if self.replay_file is not None else '-1',
 			self.file_name
 		)
 

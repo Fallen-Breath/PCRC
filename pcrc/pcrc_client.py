@@ -45,7 +45,10 @@ class PcrcClient:
 		self.__start_lock = Lock()
 
 	def __del__(self):
-		self.discard()
+		try:
+			self.discard()
+		except AttributeError:
+			pass
 
 	def tr(self, key: str, *args, **kwargs) -> str:
 		return self.translation.translate(key, self.config.get('language')).format(*args, **kwargs)
@@ -354,10 +357,10 @@ class PcrcClient:
 				else:
 					self.chat_manager.add_chat(line)
 		else:
-			self.logger.debug('Trying to send chat message ({}) when being offline'.format(message))
+			self.logger.debug('Trying to send chat message "{}" when being offline'.format(message))
 
 	def send_packet(self, packet: Packet):
 		if self.is_online():
 			self.__connection.write_packet(packet)
 		else:
-			self.logger.warning('Trying to send packet ({}) when being offline'.format(packet))
+			self.logger.warning('Trying to send packet {} when being offline'.format(packet))

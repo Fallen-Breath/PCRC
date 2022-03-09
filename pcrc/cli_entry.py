@@ -17,7 +17,7 @@ def on_start_up():
 		logger.error('Please fill in the config file on demand')
 		sys.exit(1)
 
-	logger.info('PCRC {} starting up'.format(constant.VERSION))
+	logger.info('PCRC v{} starting up'.format(constant.VERSION))
 	logger.info('PCRC is open source, u can find it here: https://github.com/Fallen-Breath/PCRC')
 	logger.info('Supported Minecraft version = {}'.format(SUPPORTED_MINECRAFT_VERSIONS))
 
@@ -30,8 +30,11 @@ def is_stopped():
 	return pcrc.is_fully_stopped()
 
 
+def show_help():
+	logger.info('Command list: help|start|stop|restart|exit|auth|say|whitelist|set|status')
+
+
 def start():
-	global pcrc
 	if is_stopped():
 		if pcrc.start():
 			logger.info('PCRC started')
@@ -42,52 +45,66 @@ def start():
 
 
 def stop():
-	global pcrc
 	if is_working():
 		pcrc.stop(block=True)
 	else:
-		logger.info('PCRC is not running, ignore')
+		logger.info('PCRC is not running, ignore. Enter "exit" if you want to exit PCRC')
 
 
-def say(message: str):
-	pcrc.chat(message)
+def auth():
+	if pcrc.has_authenticated():
+		logger.info('Minecraft authentication is already done')
+	else:
+		pcrc.authenticate()
+
+
+def say(text: str):
+	args = text.split(' ', 1)
+	if len(args) == 1 or len(args[1]) == 0:
+		logger.info('say <message>')
+	else:
+		if pcrc.is_online():
+			pcrc.chat(args[1])
+		else:
+			logger.warning('PCRC is not online, cannot chat')
 
 
 def whitelist_commands(text: str, config: Config):
 	whitelist = config.get('whitelist')
 	wl_isenabled = config.get('enabled')
-	cmd = text.split(' ')
-	if len(cmd) == 1:
-		logger.info('whitelist add|del|on|off|status')
-	elif len(cmd) == 3 and cmd[1] == 'add':
-		whitelist.append(cmd[2])
-		logger.info('Added {} to whitelist'.format(cmd[2]))
-	elif len(cmd) == 3 and cmd[1] == 'del':
+	args = text.split(' ')
+	if len(args) == 1:
+		logger.info('whitelist [add <name>|del <name>|on|off|status]')
+	elif len(args) == 3 and args[1] == 'add':
+		whitelist.append(args[2])
+		logger.info('Added {} to whitelist'.format(args[2]))
+	elif len(args) == 3 and args[1] == 'del':
 		try:
-			whitelist.remove(cmd[2])
+			whitelist.remove(args[2])
 		except ValueError:
-			logger.info('Player {} is not in the whitelist!'.format(cmd[2]))
+			logger.info('Player {} is not in the whitelist!'.format(args[2]))
 		else:
-			logger.info('Removed {} from the whitelist.'.format(cmd[2]))
-	elif len(cmd) == 2 and cmd[1] == 'on':
+			logger.info('Removed {} from the whitelist.'.format(args[2]))
+	elif len(args) == 2 and args[1] == 'on':
 		config.set_value('enabled', 'True')
 		logger.info('Whitelist Enabled.')
-	elif len(cmd) == 2 and cmd[1] == 'off':
+	elif len(args) == 2 and args[1] == 'off':
 		config.set_value('enabled', 'False')
 		logger.info('Whitelist Disabled.')
-	elif len(cmd) == 2 and cmd[1] == 'status':
+	elif len(args) == 2 and args[1] == 'status':
 		logger.info('Status: {}'.format(wl_isenabled))
-		logger.info('White list: {}'.format(whitelist))
+		logger.info('Whitelist: {}'.format(whitelist))
 
 
 def set_option_commands(text: str, config: Config):
-	cmd = text.split(' ')
-	if len(cmd) == 1:
-		logger.info('Available commands: {}'.format(SettableOptions))
+	args = text.split(' ')
+	if len(args) == 1:
+		logger.info('ste <option> <value>')
+		logger.info('Available options: {}'.format(SettableOptions))
 		return
-	option = cmd[1]
+	option = args[1]
 	try:
-		value = config.convert_to_option_type(option, cmd[2])
+		value = config.convert_to_option_type(option, args[2])
 		config.set_value(option, value)
 		logger.info('Assign "{}" = "{}" ({}) now'.format(option, value, config.get_option_type(option).__name__))
 		config.set_value(option, value, forced=True)
@@ -96,8 +113,11 @@ def set_option_commands(text: str, config: Config):
 
 
 def show_status():
-	msg = 'Online: {}; \n{}'.format(pcrc.is_online(), pcrc.recorder.get_status())
-	for line in msg.splitlines():
+	logger.info('======= PCRC v{} ======='.format(constant.VERSION))
+	logger.info('Online: {}'.format(pcrc.is_online()))
+	logger.info('Working: {}'.format(is_working()))
+	logger.info('Stopped: {}'.format(is_stopped()))
+	for line in pcrc.recorder.get_status().splitlines():
 		logger.info(line)
 
 
@@ -115,7 +135,9 @@ def main():
 
 			config = pcrc.config
 			config_changed = False
-			if text == "start":
+			if text in ['help', '?']:
+				show_help()
+			elif text == "start":
 				start()
 			elif text == "stop":
 				stop()
@@ -124,8 +146,10 @@ def main():
 				start()
 			elif text == 'exit':
 				break
-			elif text.startswith('say '):
-				say(text[4:])
+			elif text == 'auth':
+				auth()
+			elif text.startswith('say'):
+				say(text)
 			elif text.startswith('whitelist'):
 				whitelist_commands(text, config)
 				config_changed = True
@@ -147,16 +171,17 @@ def main():
 			logger.exception('Error handling console input')
 	try:
 		if is_working():
-			logger.info('Stopping recorder before exit')
+			logger.info('Stopping PCRC before exit')
 			stop()
 		else:
-			logger.info('Waiting for recorder to stop before exit')
-			while pcrc.is_running():
-				time.sleep(0.1)
+			if pcrc.is_running():
+				logger.info('Waiting for PCRC to stop before exit')
+				while pcrc.is_running():
+					time.sleep(0.1)
 	except (KeyboardInterrupt, SystemExit):
 		logger.info('Forced to stop')
 		return
 	except:
-		logger.exception('Error waiting for recorder to stop')
+		logger.exception('Error waiting for PCRC to stop')
 
 	logger.info('Exited')
