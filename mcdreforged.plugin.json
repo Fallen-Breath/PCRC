@@ -1,6 +1,6 @@
 {
 	"id": "pcrc",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"name": "PCRC",
 	"description": {
 		"en_us": "PyCraft based Replay Client",
