@@ -143,6 +143,7 @@ class PacketProcessor:
 		def process_player_list():
 			if isinstance(packet, PlayerListItemPacket):
 				self.player_manager.on_packet(packet)
+			return True
 
 		processors: List[Callable[[], bool]] = [
 			filter_bad_packet,
@@ -157,7 +158,7 @@ class PacketProcessor:
 			process_player_list,
 		]
 
+		ret = True
 		for processor in processors:
-			if not processor():
-				return False
+			ret &= processor()
 		return True
