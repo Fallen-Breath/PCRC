@@ -39,24 +39,26 @@ class EntityMovementPacket(AbstractEntityPacket):
 	packet_name = 'Entity Movement'
 
 
-class EntityPositionPacket(AbstractEntityPacket):
-	"""
-	wiki.vg names:
-	- 1.12: "Entity Relative Move"
-	- >1.12: "Entity Position"
-	"""
-	@classmethod
-	def get_id(cls, context):
-		return \
-			41 if context.protocol_later_eq(756) else \
-			39 if context.protocol_later_eq(754) else \
-			39 if context.protocol_later_eq(736) else \
-			41 if context.protocol_later_eq(578) else \
-			40 if context.protocol_later_eq(498) else \
-			38 if context.protocol_later_eq(335) else \
-			-1
-
-	packet_name = 'Entity Position'
+# see pycraft minecraft.networking.packets.clientbound.play.EntityPositionDeltaPacket
+#
+# class EntityPositionPacket(AbstractEntityPacket):
+# 	"""
+# 	wiki.vg names:
+# 	- 1.12: "Entity Relative Move"
+# 	- >1.12: "Entity Position"
+# 	"""
+# 	@classmethod
+# 	def get_id(cls, context):
+# 		return \
+# 			41 if context.protocol_later_eq(756) else \
+# 			39 if context.protocol_later_eq(754) else \
+# 			39 if context.protocol_later_eq(736) else \
+# 			41 if context.protocol_later_eq(578) else \
+# 			40 if context.protocol_later_eq(498) else \
+# 			38 if context.protocol_later_eq(335) else \
+# 			-1
+#
+# 	packet_name = 'Entity Position'
 
 
 class EntityPositionAndRotationPacket(AbstractEntityPacket):
@@ -170,18 +172,20 @@ class EntityMetadataPacket(AbstractEntityPacket):
 	packet_name = 'Entity Metadata'
 
 
-class EntityVelocityPacket(AbstractEntityPacket):
-	@classmethod
-	def get_id(cls, context):
-		return \
-			79 if context.protocol_later_eq(756) else \
-			70 if context.protocol_later_eq(578) else \
-			69 if context.protocol_later_eq(498) else \
-			62 if context.protocol_later_eq(340) else \
-			61 if context.protocol_later_eq(335) else \
-			-1
-
-	packet_name = 'Entity Velocity'
+# see pycraft minecraft.networking.packets.clientbound.play.EntityVelocityPacket
+#
+# class EntityVelocityPacket(AbstractEntityPacket):
+# 	@classmethod
+# 	def get_id(cls, context):
+# 		return \
+# 			79 if context.protocol_later_eq(756) else \
+# 			70 if context.protocol_later_eq(578) else \
+# 			69 if context.protocol_later_eq(498) else \
+# 			62 if context.protocol_later_eq(340) else \
+# 			61 if context.protocol_later_eq(335) else \
+# 			-1
+#
+# 	packet_name = 'Entity Velocity'
 
 
 class EntityEquipmentPacket(AbstractEntityPacket):

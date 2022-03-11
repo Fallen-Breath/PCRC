@@ -5,9 +5,9 @@ from minecraft.networking.packets import Packet, PlayerPositionAndLookPacket, Pl
 from minecraft.networking.packets.clientbound.play import TimeUpdatePacket, SpawnPlayerPacket, SpawnObjectPacket, RespawnPacket
 from minecraft.networking.types import PositionAndLook, GameMode
 from pcrc.packets.s2c import DestroyEntitiesPacket, ChangeGameStatePacket, SpawnLivingEntityPacket
-from pcrc.packets.s2c.entity_packet import AbstractEntityPacket
 from pcrc.protocol import MobTypeIds
 from pcrc.recording.player_list import PlayerListManager
+from pcrc.utils import packet_util
 
 if TYPE_CHECKING:
 	from pcrc.recording.recorder import Recorder
@@ -119,7 +119,8 @@ class PacketProcessor:
 
 		# Detecting player activity to continue recording and remove items or bats
 		def process_entity_packets():
-			if isinstance(packet, AbstractEntityPacket):
+			if packet_util.is_entity_packet(packet):
+				# noinspection PyUnresolvedReferences
 				entity_id = packet.entity_id
 				if entity_id in self.entity_id_to_player_uuid.keys():
 					player_uuid = self.entity_id_to_player_uuid[entity_id]

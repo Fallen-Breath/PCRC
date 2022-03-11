@@ -54,7 +54,8 @@ class ChatManager:
 		if current_thread() == self.__thread:
 			raise RuntimeError('Cannot invoke ChatManager.stop on its chat thread')
 		self.__running = False
-		self.__thread.join()
+		if self.__thread is not None:
+			self.__thread.join()
 		while True:
 			try:
 				self.__message_queue.get_nowait()

@@ -45,6 +45,7 @@ def start():
 
 
 def stop():
+	pcrc.interrupt_auto_restart()
 	if is_working():
 		pcrc.stop(block=True)
 	else:

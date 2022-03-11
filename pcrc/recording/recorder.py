@@ -240,7 +240,7 @@ class Recorder:
 					self.logger.debug('PCRC is afking but {} is an important packet so PCRC recorded it'.format(packet_name))
 				else:
 					pass
-					# self.logger.debug('{} recorded'.format(packet_name))
+					self.logger.debug('{} recorded'.format(packet_name))
 			else:
 				self.logger.debug('{} ignore due to being afk'.format(packet_name))
 

@@ -37,7 +37,6 @@ class PcrcClient:
 		self.__connection: Optional[PcrcConnection] = None
 		self.__connection_state = ConnectionState.disconnected
 		self.__flag_stopping = False
-		self.__flag_stop_by_user = False
 		self.__flag_auto_restart: bool = False
 		self.mc_protocol: Optional[int] = None
 		self.mc_version: Optional[str] = None
@@ -184,7 +183,6 @@ class PcrcClient:
 
 	def __stop(self, by_user: bool, *, auto_restart: bool = False, callback: Callable[[], Any]) -> bool:
 		"""
-		:param by_user: If it's stopped by user, connection error due to disconnecting will be suppressed
 		:param auto_restart: If PCRC should try to auto restart (auto_relogin_attempts option will be considered)
 		:param callback: The optional callback method to be called after fully stopped
 		"""
@@ -194,7 +192,6 @@ class PcrcClient:
 		self.logger.info('Stopping PCRC, auto restart = {}, by_user = {}'.format(auto_restart, by_user))
 		self.chat(self.tr('chat.stopping'))
 		self.__flag_stopping = True
-		self.__flag_stop_by_user = by_user
 		if auto_restart:
 			if self.retry_counter.can_retry():
 				self.retry_counter.consume_retry_attempt()
@@ -204,18 +201,25 @@ class PcrcClient:
 		self.recorder.stop_recording(callback)
 		return True
 
-	def stop(self, auto_restart: bool = False, callback: Optional[Callable[[], Any]] = None, block: bool = False):
+	def stop(self, callback: Optional[Callable[[], Any]] = None, block: bool = False) -> bool:
+		"""
+		Stop PCRC by user
+		"""
 		event = Event()
 		callback = misc_util.chain_callback(callback, lambda: event.set())
-		executed = self.__stop(by_user=True, auto_restart=auto_restart, callback=callback)
+		executed = self.__stop(by_user=True, callback=callback)
 		if executed and block:
 			event.wait()
+		return executed
 
 	def __stop_by_external_force(self):
 		self.__stop(by_user=False, auto_restart=self.config.get('auto_relogin'), callback=lambda: 0)
 
 	def restart(self):
 		self.stop(callback=self.__start)
+
+	def interrupt_auto_restart(self):
+		self.__flag_auto_restart = False
 
 	def discard(self):
 		self.authenticator.interrupt_refresh()
@@ -227,10 +231,10 @@ class PcrcClient:
 	def on_connection_exception(self, exception: Exception, exc_info):
 		log = self.logger.debug if self.has_started_disconnecting() else self.logger.exception
 		log('Exception in network thread: {} ({})'.format(exception, getattr(type(exception), '__name__')))
-		self.__connection_state = ConnectionState.disconnected
-		if not self.__flag_stop_by_user:
+		if log == self.logger.debug:
 			self.logger.debug(traceback.format_exc())
-			self.__stop_by_external_force()
+		self.__connection_state = ConnectionState.disconnected
+		self.__stop_by_external_force()
 
 	# called when there's only 1 protocol version in allowed_proto_versions in pycraft connection
 	def on_protocol_version_decided(self, protocol_version):
@@ -244,7 +248,6 @@ class PcrcClient:
 	def __on_connecting(self):
 		self.__connection_state = ConnectionState.logging_in
 		self.__flag_stopping = False
-		self.__flag_stop_by_user = False
 		self.__flag_auto_restart = False
 
 	def __on_connected(self):
@@ -273,7 +276,10 @@ class PcrcClient:
 			for i in range(3):
 				self.logger.info('PCRC restarting in {}s'.format(3 - i))
 				time.sleep(1)
-			self.__start()
+			if self.__flag_auto_restart:
+				self.__start()
+			else:
+				self.logger.warning('PCRC auto-restart interrupted by user')
 
 	def on_replay_file_saved(self):
 		if self.is_online():
