@@ -136,9 +136,11 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
     
 `delay_before_afk_second`:  所有人都离开与暂停录制间的延迟，单位: 秒。默认值: `15`
 
-`record_packets_when_afk`: 若设为 `false`，PCRC 将会在暂停录制时忽略几乎所有到来的数据包（SARC 的行为）。这将显著减小录制文件体积，但是如果玩家离开后世界里仍有事件在发生的话，这可能会造成实体/方块不同步
+`afk_ignore_spectator`: 若设为 `true`，PCRC 在判断是否所有玩家均已离开以决定是否暂停录制时，将会忽略来自旁观者模式的数据包。默认值: `true`
 
-`auto_relogin`: 当客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
+`record_packets_when_afk`: 若设为 `false`，PCRC 将会在暂停录制时忽略几乎所有到来的数据包（SARC 的行为）。这将显著减小录制文件体积，但是如果玩家离开后世界里仍有事件在发生的话，这可能会造成实体/方块不同步。默认值: `true`
+
+`auto_relogin`: 当 PCRC 客户端掉线时是否自动重连。若为 `true`，PCRC 会在掉线后尝试重连
 
 `auto_relogin_attempts`: 在成功连接至服务器前，自动重连的最大尝试次数。默认值: `5`
 

@@ -136,9 +136,11 @@ Examples for those account related config entries:
     
 `delay_before_afk_second`: The time delay between every player leaving and PCRC pausing recording. Default: `15`
 
-`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording (SARC's behavior). This can decrease the replay file size a lot but might cause block / entity desync if there will be something happening after player leaves
+`afk_ignore_spectator`: If set to true, PCRC will ignore all packets from spectator players when determining if it should pause recording due to all players have left. Default: `true`
 
-`auto_relogin`: If this option is enabled and the client gets disconnected, it will automatically try to reconnect
+`record_packets_when_afk`: If set to false, PCRC will ignore almost every incoming packets when PCRC pauses recording (SARC's behavior). This can decrease the replay file size a lot but might cause block / entity desync if there will be something happening after player leaves. Default: `true`
+
+`auto_relogin`: If this option is enabled, and the client gets disconnected, PCRC will automatically try to reconnect
 
 `auto_relogin_attempts`: The maximum amount of relogin attempts before login success . Default: `5`
 
