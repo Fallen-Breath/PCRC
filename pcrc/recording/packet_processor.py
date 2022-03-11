@@ -129,7 +129,7 @@ class PacketProcessor:
 						self.recorder.refresh_player_movement()
 						self.logger.debug('Update player movement time from {}, triggered by entity id {}'.format(packet, entity_id))
 				if entity_id in self.blocked_entity_ids:
-					self.logger.debug('Ignored entity packet of blocked entity id {}'.format(entity_id))
+					# self.logger.debug('Ignored entity packet of blocked entity id {}'.format(entity_id))
 					return False
 			return True
 

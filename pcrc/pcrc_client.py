@@ -224,8 +224,9 @@ class PcrcClient:
 	#        Callbacks
 	# =======================
 
-	def on_connection_exception(self, exc, exc_info):
-		(self.logger.debug if self.has_started_disconnecting() else self.logger.error)('Exception in network thread: {} {}'.format(type(exec), exc))
+	def on_connection_exception(self, exception: Exception, exc_info):
+		log = self.logger.debug if self.has_started_disconnecting() else self.logger.exception
+		log('Exception in network thread: {} ({})'.format(exception, getattr(type(exception), '__name__')))
 		self.__connection_state = ConnectionState.disconnected
 		if not self.__flag_stop_by_user:
 			self.logger.debug(traceback.format_exc())
