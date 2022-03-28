@@ -28,15 +28,15 @@ class PacketProcessor:
 		self.recorded_time_packet = False
 		self.player_manager.reset()
 
-	def process(self, packet: Packet) -> bool:
+	def process(self, packet: Packet, current_time: int) -> bool:
 		try:
-			return self._process(packet)
+			return self._process(packet, current_time)
 		except:
 			self.logger.error('Error when processing packet {}'.format(packet))
 			self.logger.error('Packet id = {}; Packet name = {}'.format(packet.id, type(packet).__name__))
 			raise
 
-	def _process(self, packet: Packet) -> bool:
+	def _process(self, packet: Packet, current_time: int) -> bool:
 		def filter_bad_packet() -> bool:
 			# if packet_name in constant.BAD_PACKETS:
 			# 	return False
@@ -80,7 +80,7 @@ class PacketProcessor:
 				if uuid not in self.recorder.player_uuids:
 					self.recorder.player_uuids.append(uuid)
 					self.logger.info('Player spawned, added to uuid list, uuid = {}'.format(uuid))
-				self.recorder.refresh_player_movement()
+				self.recorder.refresh_player_movement(current_time)
 			return True
 
 		def process_spawn_entity() -> bool:
@@ -127,7 +127,7 @@ class PacketProcessor:
 					if self.player_manager.get_game_mode(player_uuid) == GameMode.SPECTATOR and self.recorder.get_config('afk_ignore_spectator'):
 						self.logger.debug('Player movement from {} received but it\'s a spectator and user chooses to ignore it'.format(entity_id))
 					else:
-						self.recorder.refresh_player_movement()
+						self.recorder.refresh_player_movement(current_time)
 						self.logger.debug('Update player movement time from {}, triggered by entity id {}'.format(packet, entity_id))
 				if entity_id in self.blocked_entity_ids:
 					# self.logger.debug('Ignored entity packet of blocked entity id {}'.format(entity_id))

@@ -31,8 +31,8 @@ class Recorder:
 		self.start_time: int = -1
 		self.last_player_movement: int = 0
 		self.afk_time: int = 0
-		self.last_t: int = 0
-		self.last_no_player_movement: bool = False
+		self.last_packet_time: int = 0
+		self.last_no_player_movement: Optional[bool] = None
 		self.player_uuids = []
 		self.file_buffer = bytearray()
 		self.last_showinfo_time: int = 0
@@ -69,8 +69,10 @@ class Recorder:
 	def is_recording(self):
 		return self.__recording_state == RecordingState.recording
 
-	def refresh_player_movement(self):
-		self.last_player_movement = misc_util.get_milli_time()
+	def refresh_player_movement(self, current_time: Optional[int] = None):
+		if current_time is None:
+			current_time = misc_util.get_milli_time()
+		self.last_player_movement = current_time
 
 	def has_no_player_movement(self, current_time: Optional[int] = None):
 		if current_time is None:
@@ -136,8 +138,8 @@ class Recorder:
 		self.start_time = misc_util.get_milli_time()
 		self.last_player_movement = self.start_time
 		self.afk_time = 0
-		self.last_t = 0
-		self.last_no_player_movement = False
+		self.last_packet_time = self.start_time
+		self.last_no_player_movement = None
 		self.player_uuids.clear()
 		self.file_buffer.clear()
 		self.last_showinfo_time = 0
@@ -216,17 +218,17 @@ class Recorder:
 
 		packet_name = type(packet).__name__
 		current_time = misc_util.get_milli_time()
-		should_record_this: bool = self.packet_processor.process(packet)
+		should_record_this: bool = self.packet_processor.process(packet, current_time)
 
 		# Increase afk timer when recording stopped, afk timer prevents afk time in replays
 		if self.get_config('with_player_only'):
-			noPlayerMovement = self.has_no_player_movement(current_time)
-			if noPlayerMovement:
-				self.afk_time += current_time - self.last_t
-			if self.last_no_player_movement != noPlayerMovement:
-				self.pcrc.chat(self.tr('chat.pause_recording') if self.is_afking() else self.tr('chat.continue_recording'))
-			self.last_no_player_movement = noPlayerMovement
-		self.last_t = current_time
+			no_player_movement: bool = self.has_no_player_movement(current_time)
+			if no_player_movement:
+				self.afk_time += current_time - self.last_packet_time
+			if self.last_no_player_movement != no_player_movement:
+				self.pcrc.chat(self.tr('chat.pause_recording') if no_player_movement else self.tr('chat.continue_recording'))
+			self.last_no_player_movement = no_player_movement
+		self.last_packet_time = current_time
 
 		# Recording
 		if should_record_this:
@@ -240,9 +242,12 @@ class Recorder:
 					self.logger.debug('PCRC is afking but {} is an important packet so PCRC recorded it'.format(packet_name))
 				else:
 					pass
-					self.logger.debug('{} recorded'.format(packet_name))
+					# self.logger.debug('{} recorded'.format(packet_name))
 			else:
 				self.logger.debug('{} ignore due to being afk'.format(packet_name))
+
+		if packet_name == 'PlayerListItemPacket':
+			self.logger.debug('{} ww'.format(packet))
 
 		if self.replay_file.size > self.get_file_size_limit():
 			self.logger.info('tmcpr file size limit {}MB reached! Restarting'.format(misc_util.B2MB(self.get_file_size_limit())))
