@@ -4,6 +4,7 @@
     "recording_temp_file_directory": "PCRC_recording_temp",
     "recording_storage_directory": "PCRC_recordings",
     "debug_mode": false,
+    "debug_packet": false,
 
     "__2__": "-------- Account and Server --------",
     "authenticate_type": "offline",

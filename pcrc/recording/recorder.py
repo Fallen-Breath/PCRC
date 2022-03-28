@@ -241,13 +241,10 @@ class Recorder:
 				if self.is_afking() and packet_util.is_important(packet):
 					self.logger.debug('PCRC is afking but {} is an important packet so PCRC recorded it'.format(packet_name))
 				else:
-					pass
-					# self.logger.debug('{} recorded'.format(packet_name))
+					if self.get_config('debug_packet'):
+						self.logger.debug('{} recorded'.format(packet_name))
 			else:
 				self.logger.debug('{} ignore due to being afk'.format(packet_name))
-
-		if packet_name == 'PlayerListItemPacket':
-			self.logger.debug('{} ww'.format(packet))
 
 		if self.replay_file.size > self.get_file_size_limit():
 			self.logger.info('tmcpr file size limit {}MB reached! Restarting'.format(misc_util.B2MB(self.get_file_size_limit())))
