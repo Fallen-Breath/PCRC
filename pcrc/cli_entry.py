@@ -116,7 +116,6 @@ def set_option_commands(text: str, config: Config):
 def show_status():
 	logger.info('======= PCRC v{} ======='.format(constant.VERSION))
 	logger.info('Online: {}'.format(pcrc.is_online()))
-	logger.info('Working: {}'.format(is_working()))
 	logger.info('Stopped: {}'.format(is_stopped()))
 	for line in pcrc.recorder.get_status().splitlines():
 		logger.info(line)
