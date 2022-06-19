@@ -45,6 +45,8 @@ def on_load(server: PluginServerInterface, old):
 	pcrc.logger.set_console_logging_prefix('PCRC@{}'.format(hex((id(pcrc) >> 16) & (id(pcrc) & 0xFFFF))[2:].rjust(4, '0')))
 	register_command(server)
 
+	new_thread('PCRC init')(pcrc.init)()
+
 
 def register_command(server: PluginServerInterface):
 	reload_config(None)

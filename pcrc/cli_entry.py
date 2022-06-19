@@ -134,6 +134,7 @@ def show_player_list():
 
 def main():
 	on_start_up()
+	pcrc.init()
 	auth(warn_if_already_auth=False)
 
 	logger.info('Enter "start" to start PCRC')
