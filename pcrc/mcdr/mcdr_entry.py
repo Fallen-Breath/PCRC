@@ -12,7 +12,6 @@ from mcdreforged.plugin.server_interface import PluginServerInterface, ServerInt
 from mcdreforged.utils.logger import SyncStdoutStreamHandler
 
 import pcrc as pcrc_module
-import pcrc.config as pcrc_config
 from pcrc.input import InputManager
 from pcrc.mcdr.mcdr_config import McdrConfig
 from pcrc.pcrc_client import PcrcClient
@@ -37,8 +36,19 @@ class MCDRInputManager(InputManager):
 		return user_inputs.get()
 
 
+def tweaks_pcrc_constants():
+	def modify_based_dir(file_path: str) -> str:
+		return os.path.join(psi.get_data_folder(), os.path.basename(file_path))
+
+	import pcrc.config as pcrc_config
+	from pcrc.connection import pcrc_authentication
+
+	pcrc_config.CONFIG_FILE = modify_based_dir(pcrc_config.CONFIG_FILE)
+	pcrc_authentication.SAVED_TOKEN_FILE = modify_based_dir(pcrc_authentication.SAVED_TOKEN_FILE)
+
+
 def on_load(server: PluginServerInterface, old):
-	pcrc_config.CONFIG_FILE = os.path.join(psi.get_data_folder(), 'config.json')
+	tweaks_pcrc_constants()
 	global pcrc
 	pcrc = PcrcClient(input_manager=MCDRInputManager())
 	pcrc.logger.set_console_handler(SyncStdoutStreamHandler())
