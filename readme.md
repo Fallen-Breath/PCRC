@@ -89,6 +89,8 @@ When used as a plugin for MCDR, the path to the configuration file will be `conf
 
 `password`: The password of the Minecraft account if you are using `mojang` type online mode login
 
+`store_token`: When set to true and the `authenticate_type` is `microsoft`, the microsoft login token will be saved to file `token.json`. When launching PCRC the stored token will be loaded and used if it's not expired. Noted: The login token will be stored in plaintext
+
 `address`: IP Address of the Minecraft server
 
 `port`: Port of the Minecraft server

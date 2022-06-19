@@ -43,6 +43,8 @@ class PcrcClient:
 		self.player_name: Optional[str] = None
 		self.__start_lock = Lock()
 
+		self.authenticator.init()
+
 	def __del__(self):
 		try:
 			self.discard()

@@ -52,9 +52,10 @@ def stop():
 		logger.info('PCRC is not running, ignore. Enter "exit" if you want to exit PCRC')
 
 
-def auth():
+def auth(*, warn_if_already_auth: bool = True):
 	if pcrc.has_authenticated():
-		logger.info('Minecraft authentication is already done')
+		if warn_if_already_auth:
+			logger.warning('Minecraft authentication is already done')
 	else:
 		pcrc.authenticate()
 
@@ -133,7 +134,7 @@ def show_player_list():
 
 def main():
 	on_start_up()
-	pcrc.authenticate()
+	auth(warn_if_already_auth=False)
 
 	logger.info('Enter "start" to start PCRC')
 	while True:

@@ -10,6 +10,7 @@
     "authenticate_type": "offline",
     "username": "bot_PCRC",
     "password": "secret",
+    "store_token": false,
     "address": "localhost",
     "port": 25565,
     "server_name": "SECRET SERVER",

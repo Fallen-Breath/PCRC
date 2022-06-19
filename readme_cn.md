@@ -89,6 +89,8 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 `password`: 用于 Mojang 账号登录的密码
 
+`store_token`: 当设为 true 且 `authenticate_type` 为 `microsoft` 时，微软账号登录所获取的令牌将被储存于文件 `token.json` 中。在启动 PCRC 时，该文件中的令牌将被使用，只要它还没过期。注意，令牌将以明文储存
+
 `address`: Minecraft 服务器的 IP 地址
 
 `port`: Minecraft 服务器的端口
