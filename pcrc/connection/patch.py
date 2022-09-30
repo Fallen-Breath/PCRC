@@ -98,7 +98,7 @@ def __default_proto_version_inject():
 	main_with = redbaron_util.get_node(connect_method, node_type=WithNode)
 	idx = redbaron_util.get_node_index(main_with, node_type=AssignmentNode, predicate=lambda n: str(n.target) == 'self.spawned')
 	redbaron_util.insert_nodes(main_with, idx, [
-		RedBaron('''self.pcrc.logger.info('Allow versions of the server: {}'.format(self.allowed_proto_versions))'''),
+		RedBaron('''self.pcrc.logger.info('Allowed server versions: {}'.format(self.allowed_proto_versions))'''),
 		RedBaron('''if len(self.allowed_proto_versions) > 1: self.context.protocol_version = self.default_proto_version''')
 	])
 

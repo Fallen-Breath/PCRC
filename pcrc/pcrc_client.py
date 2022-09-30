@@ -74,7 +74,7 @@ class PcrcClient:
 		return self.__connection_state == ConnectionState.disconnected
 
 	def has_started_disconnecting(self) -> bool:
-		return self.__connection_state == ConnectionState.disconnecting or self.is_disconnected()
+		return self.__connection_state in (ConnectionState.disconnecting, ConnectionState.disconnected)
 
 	def is_stopping(self) -> bool:
 		return self.__flag_stopping
@@ -191,6 +191,7 @@ class PcrcClient:
 		"""
 		if self.__flag_stopping:
 			self.logger.warning('PCRC is already stopping')
+			traceback.print_stack()
 			return False
 		self.logger.info('Stopping PCRC, auto restart = {}, by_user = {}'.format(auto_restart, by_user))
 		self.chat(self.tr('chat.stopping'))
@@ -234,10 +235,9 @@ class PcrcClient:
 	def on_connection_exception(self, exception: Exception, exc_info):
 		log = self.logger.debug if self.has_started_disconnecting() else self.logger.exception
 		log('Exception in network thread: {} ({})'.format(exception, getattr(type(exception), '__name__')))
-		if log == self.logger.debug:
-			self.logger.debug(traceback.format_exc())
 		self.__connection_state = ConnectionState.disconnected
-		self.__stop_by_external_force()
+		if not self.has_started_disconnecting():
+			self.__stop_by_external_force()
 
 	# called when there's only 1 protocol version in allowed_proto_versions in pycraft connection
 	def on_protocol_version_decided(self, protocol_version):

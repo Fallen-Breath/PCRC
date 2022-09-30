@@ -1,9 +1,9 @@
 from logging import Logger
-from typing import TYPE_CHECKING, List, Callable, Dict, Set
+from typing import TYPE_CHECKING, List, Callable, Dict, Set, Optional, Tuple
 
-from minecraft.networking.packets import Packet, PlayerPositionAndLookPacket, PlayerListItemPacket
+from minecraft.networking.packets import Packet, PlayerPositionAndLookPacket, PlayerListItemPacket, PacketBuffer
 from minecraft.networking.packets.clientbound.play import TimeUpdatePacket, SpawnPlayerPacket, SpawnObjectPacket, RespawnPacket
-from minecraft.networking.types import PositionAndLook, GameMode
+from minecraft.networking.types import PositionAndLook, GameMode, VarInt
 from pcrc.packets.s2c import DestroyEntitiesPacket, ChangeGameStatePacket, SpawnLivingEntityPacket
 from pcrc.protocol import MobTypeIds
 from pcrc.recording.player_list import PlayerListManager
@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class PacketProcessor:
+	Result = Tuple[bool, Optional[bytes]]
+
 	def __init__(self, recorder: 'Recorder'):
 		self.recorder: 'Recorder' = recorder
 		self.logger: Logger = recorder.logger
@@ -28,7 +30,7 @@ class PacketProcessor:
 		self.recorded_time_packet = False
 		self.player_manager.reset()
 
-	def process(self, packet: Packet, current_time: int) -> bool:
+	def process(self, packet: Packet, current_time: int) -> Result:
 		try:
 			return self._process(packet, current_time)
 		except:
@@ -36,7 +38,7 @@ class PacketProcessor:
 			self.logger.error('Packet id = {}; Packet name = {}'.format(packet.id, type(packet).__name__))
 			raise
 
-	def _process(self, packet: Packet, current_time: int) -> bool:
+	def _process(self, packet: Packet, current_time: int) -> Result:
 		def filter_bad_packet() -> bool:
 			# if packet_name in constant.BAD_PACKETS:
 			# 	return False
@@ -53,12 +55,17 @@ class PacketProcessor:
 
 		# world time control
 		def process_time_update() -> bool:
-			if not self.recorded_time_packet:
-				self.recorded_time_packet = True
-				day_time = self.recorder.get_config('daytime')
-				if 0 <= day_time < 24000 and isinstance(packet, TimeUpdatePacket):
-					self.logger.info('Set daytime to: ' + str(day_time))
-					packet.time_of_day = -day_time  # If negative sun will stop moving at the Math.abs of the time
+			if isinstance(packet, TimeUpdatePacket):
+				if self.recorded_time_packet:
+					return False
+				else:
+					day_time = self.recorder.get_config('daytime')
+					if 0 <= day_time < 24000:
+						self.logger.info('Set daytime to: ' + str(day_time))
+						packet.time_of_day = -day_time  # If negative sun will stop moving at the Math.abs of the time
+						self.recorded_time_packet = True
+						nonlocal packet_changed
+						packet_changed = True
 			return True
 
 		# Weather yeet
@@ -159,7 +166,15 @@ class PacketProcessor:
 			process_player_list,
 		]
 
-		ret = True
+		packet_changed = False
+		ret, content = True, None
+
 		for processor in processors:
 			ret &= processor()
-		return True
+
+		if packet_changed:
+			packet_buffer = PacketBuffer()
+			VarInt.send(packet.id, packet_buffer)
+			packet.write_fields(packet_buffer)
+			content = packet_buffer.get_writable()
+		return ret, content
