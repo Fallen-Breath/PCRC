@@ -31,7 +31,7 @@ def is_stopped():
 
 
 def show_help():
-	logger.info('Command list: help|start|stop|restart|exit|auth|say|whitelist|set|status|list')
+	logger.info('Command list: help|start|stop|restart|exit|reload|auth|say|whitelist|set|status|list')
 
 
 def start():
@@ -132,6 +132,11 @@ def show_player_list():
 		logger.warning('PCRC is not online, cannot get player list')
 
 
+def reload():
+	if pcrc.reload_config():
+		logger.info('PCRC config reloaded')
+
+
 def main():
 	on_start_up()
 	pcrc.init()
@@ -143,7 +148,7 @@ def main():
 			text = input()
 			if text == '':
 				continue
-			logger.info('Processing command "{}"'.format(text))
+			logger.info('Processing CLI command "{}"'.format(text))
 
 			config = pcrc.config
 			config_changed = False
@@ -158,6 +163,8 @@ def main():
 				start()
 			elif text == 'exit':
 				break
+			elif text == "reload":
+				reload()
 			elif text == 'auth':
 				auth()
 			elif text.startswith('say'):

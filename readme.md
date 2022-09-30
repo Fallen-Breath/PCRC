@@ -200,6 +200,8 @@ Available if launched directly
 
 `exit`: Exit the program
 
+`reload`: Reload the config file. Notes that not all config entries support hot-reload, e.g. `authenticate_type` is not hot-reload-able
+
 `auth`: Authenticate with minecraft again. Used when the previous authentication failed
 
 `say <text>`: Send text `<text>` to the server as a chat message
@@ -224,7 +226,7 @@ Available if used as a MCDR plugin
 
 `!!PCRC stop`: stop PCRC and stop recording. Only works with console command input
 
-`!!PCRC reload`: Reload the config file for MCDR
+`!!PCRC reload`: Reload the config for PCRC and the config file for MCDR. Notes that not all PCRC config entries support hot-reload
 
 `!!PCRC set_redirect_url <url>`: Input the url used in microsoft logging in
 

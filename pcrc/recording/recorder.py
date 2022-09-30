@@ -315,7 +315,7 @@ class Recorder:
 			elif len(args) == 2 and args[1] == 'restart':
 				self.pcrc.restart()
 			elif len(args) == 4 and args[1] == 'set':
-				self.pcrc.set_config(args[2], args[3])
+				self.pcrc.set_config_entry(args[2], args[3])
 			elif len(args) == 2 and args[1] == 'set':
 				self.chat(self.tr('chat.command.set.title'))
 				self.chat(', '.join(SettableOptions))

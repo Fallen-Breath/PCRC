@@ -25,6 +25,10 @@ class Config:
 
 	def __init__(self):
 		self.was_missing_file = False
+		self.__load()
+
+	def __load(self):
+		self.was_missing_file = False
 		try:
 			with open(CONFIG_FILE, 'r', encoding='utf8') as f:
 				self.data = json.load(f)
@@ -33,6 +37,9 @@ class Config:
 			self.was_missing_file = True
 		self.fill_missing_options()
 		self.write_to_file()
+
+	def reload(self):
+		self.__load()
 
 	def fill_missing_options(self):
 		new_data = {}

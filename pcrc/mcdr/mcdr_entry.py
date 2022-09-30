@@ -80,9 +80,9 @@ def set_redirect_url(source: CommandSource, context: CommandContext):
 def reload_config(source: Optional[CommandSource]):
 	global config
 	config = psi.load_config_simple('mcdr_config.json', target_class=McdrConfig)
+	pcrc.reload_config()
 	if source is not None:
-		source.reply('PCRC plugin config reloaded')
-		source.reply('If you want to reload the config of PCRC, you need to reload the plugin via `!!MCDR plugin reload` command')
+		source.reply('PCRC config reloaded')
 
 
 @new_thread('PCRC Connect')
@@ -103,16 +103,17 @@ def stop_pcrc(source: CommandSource):
 		pcrc.stop()
 
 
-def on_unload(server: PluginServerInterface):
-	def on_pcrc_stop():
-		pcrc_module.pop_pycraft_lib_path()
-		pcrc.logger.close_file()
-		pcrc.discard()
+def cleanup():
+	pcrc_module.pop_pycraft_lib_path()
+	pcrc.logger.close_file()
+	pcrc.discard()
 
+
+def on_unload(server: PluginServerInterface):
 	if pcrc.is_running():
-		pcrc.stop(callback=on_pcrc_stop)
+		pcrc.stop(callback=cleanup)
 	else:
-		on_pcrc_stop()
+		cleanup()
 
 
 def on_mcdr_stop(server: PluginServerInterface):
@@ -127,3 +128,4 @@ def on_mcdr_stop(server: PluginServerInterface):
 						time.sleep(0.1)
 		if pcrc.is_running():
 			server.logger.info('PCRC took too long to stop (more than 10min)! Exit anyway')
+	cleanup()

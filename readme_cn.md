@@ -194,6 +194,8 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 `exit`: 退出程序
 
+`reload`: 重新加载配置文件。注意并非所有的配置文件项均支持热重载，如 `authenticate_type` 是不支持热重载的
+
 `auth`: 再次尝试 Minecraft 登录验证。在登录失败时使用
 
 `say <信息>`: 将文字 `<信息>` 作为聊天信息发送至服务器
@@ -218,7 +220,7 @@ PCRC 目前支持连接官服原版 Minecraft 服务端，支持以下版本：
 
 `!!PCRC stop`: 停止 PCRC 并关闭录制。仅对控制台输入有效
 
-`!!PCRC reload`: 重载与 MCDR 相关的配置文件
+`!!PCRC reload`: 重载 PCRC 的配置文件和与 MCDR 相关的配置文件。注意并非所有的 PCRC 配置文件项均支持热重载
 
 `!!PCRC set_redirect_url <url>`: 输入用于微软账号登录时的页面链接
 

@@ -32,7 +32,7 @@ class PcrcLogger(Logger):
 	def __init__(self):
 		super().__init__('PCRC')
 		self.console_handler: Optional[Handler] = None
-		self.file_handler: Optional[Formatter] = None
+		self.file_handler: Optional[Handler] = None
 
 		self.set_console_handler(StreamHandler(sys.stdout))
 		self.set_file_handler(LOG_FILE_PATH)

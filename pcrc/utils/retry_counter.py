@@ -14,3 +14,6 @@ class RetryCounter:
 
 	def consume_retry_attempt(self):
 		self.counter += 1
+
+	def set_max_retries(self, max_retries: int):
+		self.max_retries = max_retries
