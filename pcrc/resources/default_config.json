@@ -35,6 +35,7 @@
     "remove_items": false,
     "remove_bats": true,
     "remove_phantoms": true,
+    "on_joined_commands": [],
 
     "__5__": "-------- PCRC Whitelist --------",
     "enabled": false,

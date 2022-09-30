@@ -91,14 +91,6 @@ When used as a plugin for MCDR, the path to the configuration file will be `conf
 
 `store_token`: When set to true and the `authenticate_type` is `microsoft`, the microsoft login token will be saved to file `token.json`. When launching PCRC the stored token will be loaded and used if it's not expired. Noted: The login token will be stored in plaintext
 
-`address`: IP Address of the Minecraft server
-
-`port`: Port of the Minecraft server
-
-`server_name`: The server name showed in replay viewer
-
-`initial_version`: The preferred Minecraft version that used to connect to bungeecord like server
-
 Examples for those account related config entries:
 
 ```json5
@@ -127,6 +119,14 @@ Examples for those account related config entries:
     "password": "",  // This entry will not be used and will be ignored
 }
 ```
+
+`address`: IP Address of the Minecraft server
+
+`port`: Port of the Minecraft server
+
+`server_name`: The server name showed in replay viewer
+
+`initial_version`: The preferred Minecraft version that used to connect to bungeecord like server
 
 ### PCRC Control
 
@@ -163,6 +163,18 @@ Examples for those account related config entries:
 `remove_bats`: If set to true, bats won't be recorded
 
 `remove_phantoms`: If set to true, phantoms won't be recorded
+
+`on_joined_commands`: A string list storing the commands that the PCRC bot will enter in sequence after it joins the game. You might need this if the server has some kind of login plugin etc.
+
+```json5
+// on_joined_commands example
+{
+    "on_joined_commands": [
+        "/login myPassword",
+        "/server myServer"
+    ],
+}
+```
 
 ### PCRC Whitelist
 

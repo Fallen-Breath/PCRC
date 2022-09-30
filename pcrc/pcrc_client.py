@@ -311,6 +311,10 @@ class PcrcClient:
 		self.logger.info('PCRC bot joined the server')
 		self.__connection_state = ConnectionState.connected
 		self.retry_counter.reset_counter()
+		commands = self.config.get('on_joined_commands')
+		if commands is not None and len(commands) > 0:
+			for cmd in commands:
+				self.chat(cmd)
 		self.chat(self.tr('chat.game_join'))
 
 	def on_disconnect_packet(self, packet):
