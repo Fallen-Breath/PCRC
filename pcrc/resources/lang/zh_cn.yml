@@ -1,53 +1,59 @@
-login.failed: '{0}身份验证失败: {1}'
-login.microsoft.url_hint.0: 请在浏览器中打开以下网址以登录到微软账号
-login.microsoft.url_hint.1: 登录后，你将被重定向到一个空白页面。在下方输入重定向后的网页链接地址
-login.microsoft.input: '输入重定向后的地址: '
-login.microsoft.input.invalid: 请输入有效的重定向后的地址。地址的query部分应含有code条目
+login:
+  failed: '{0}身份验证失败: {1}'
+  microsoft:
+    url_hint.0: 请在浏览器中打开以下网址以登录到微软账号
+    url_hint.1: 登录后，你将被重定向到一个空白页面。在下方输入重定向后的网页链接地址
+    input: 
+      .: '输入重定向后的地址: '
+      invalid: 请输入有效的重定向后的地址。地址的query部分应含有code条目
 
-chat.game_join: o/ 开始录制！
-chat.disconnect: o/ bye~
-chat.continue_recording: 有玩家在附近活动，继续录制
-chat.pause_recording: 附近玩家均已离开，暂停录制
-chat.creating_recording_file: 正在生成录像文件
-chat.created_recording_file: 录像文件 "{0}" 已生成
-chat.stopping: PCRC 正在关闭
-chat.reached_file_size_limit: 文件大小限制 {0}MB 已达到！正在重启 PCRC
-chat.reached_time_limit: 录制时间限制 {0} 已达到！正在重启 PCRC
-chat.illegal_toption_name: |
+chat:
+  game_join: o/ 开始录制！
+  disconnect: o/ bye~
+  continue_recording: 有玩家在附近活动，继续录制
+  pause_recording: 附近玩家均已离开，暂停录制
+  creating_recording_file: 正在生成录像文件
+  created_recording_file: 录像文件 "{0}" 已生成
+  stopping: PCRC 正在关闭
+  reached_file_size_limit: 文件大小限制 {0}MB 已达到！正在重启 PCRC
+  reached_time_limit: 录制时间限制 {0} 已达到！正在重启 PCRC
+  illegal_toption_name: |
     你不能修改选项“{0}”！
     使用“{1} set”来查看可修改的选项
-chat.option_set: 正在将<{0}>设置为<{1}>
-chat.command.status: |
-    工作中: {0}; 录制中: {1}
-    录制时长/工作时长: {2}/{3}
-    录制数据包数: {4}
-    缓存大小/文件大小: {5}MB/{6}MB
-    文件名: {7}
-chat.command.spectate: 正在观察者模式传送至{0} (uuid = {1})
-chat.command.position: 我在{0}
-chat.command.position.unknown: 我不知道我在哪 QWQ
-chat.command.marker.no_marker: 未找到任何标记事件
-chat.command.set.title: '可设置的选项有:'
-chat.command.marker.list_title: '标记事件列表:'
-chat.command.marker.add: 已添加位于{0}的标记事件
-chat.command.marker.delete: 已删除位于{0}的标记事件
-chat.command.name: 已将文件名设为“{0}”
-chat.command.unknown: 未知指令！输入“{0}”以获取帮助
-chat.command.wrong_argument: 参数错误！
-chat.command.help: |
-    ----- PCRC命令列表 -----
-    {0}: 显示帮助信息
-    {0} status: 显示状态
-    {0} here: 发送一个“!!here”指令
-    {0} pos: 显示所处位置，不一定100%准确
-    {0} spec: 旁观者传送至发送指令的玩家
-    {0} stop: 关闭PCRC
-    {0} restart: 重启PCRC
-    {0} set: 输出所有可设置的选项
-    {0} set <选项> <值>: 将<选项>设置为<值>，不会写入配置文件
-    {0} marker: 输出所有的标记事件
-    {0} marker add [<备注>]: 添加一个在当前时刻的标记事件，并将其命名为<备注>（可选）
-    {0} marker del <序号>: 删除序号为<序号>的标记事件
-    {0} name <文件名>: 将录像文件的文件名设置为 <文件名>
-    {0} respawn: 让PCRC机器人尝试复活
-chat.command.permission_denied: 权限不足
+  option_set: 正在将<{0}>设置为<{1}>
+  command:
+    status: |
+      工作中: {0}; 录制中: {1}
+      录制时长/工作时长: {2}/{3}
+      录制数据包数: {4}
+      缓存大小/文件大小: {5}MB/{6}MB
+      文件名: {7}
+    spectate: 正在观察者模式传送至{0} (uuid = {1})
+    position: 我在{0}
+    position.unknown: 我不知道我在哪 QWQ
+    set.title: '可设置的选项有:'
+    marker:
+      no_marker: 未找到任何标记事件
+      list_title: '标记事件列表:'
+      add: 已添加位于{0}的标记事件
+      delete: 已删除位于{0}的标记事件
+    name: 已将文件名设为“{0}”
+    unknown: 未知指令！输入“{0}”以获取帮助
+    wrong_argument: 参数错误！
+    help: |
+      ----- PCRC命令列表 -----
+      {0}: 显示帮助信息
+      {0} status: 显示状态
+      {0} here: 发送一个“!!here”指令
+      {0} pos: 显示所处位置，不一定100%准确
+      {0} spec: 旁观者传送至发送指令的玩家
+      {0} stop: 关闭PCRC
+      {0} restart: 重启PCRC
+      {0} set: 输出所有可设置的选项
+      {0} set <选项> <值>: 将<选项>设置为<值>，不会写入配置文件
+      {0} marker: 输出所有的标记事件
+      {0} marker add [<备注>]: 添加一个在当前时刻的标记事件，并将其命名为<备注>（可选）
+      {0} marker del <序号>: 删除序号为<序号>的标记事件
+      {0} name <文件名>: 将录像文件的文件名设置为 <文件名>
+      {0} respawn: 让PCRC机器人尝试复活
+    permission_denied: 权限不足
