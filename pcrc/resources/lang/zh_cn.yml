@@ -17,7 +17,7 @@ chat:
   stopping: PCRC 正在关闭
   reached_file_size_limit: 文件大小限制 {0}MB 已达到！正在重启 PCRC
   reached_time_limit: 录制时间限制 {0} 已达到！正在重启 PCRC
-  illegal_toption_name: |
+  illegal_option_name: |
     你不能修改选项“{0}”！
     使用“{1} set”来查看可修改的选项
   option_set: 正在将<{0}>设置为<{1}>

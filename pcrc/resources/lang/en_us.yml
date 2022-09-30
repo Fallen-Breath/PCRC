@@ -17,7 +17,7 @@ chat:
   stopping: PCRC stopping
   reached_file_size_limit: File size limit {0}MB reached! Restarting PCRC
   reached_time_limit: Recording time limit {0} reached! Restarting PCRC
-  illegal_toption_name: |
+  illegal_option_name: |
     You cannot change option "{0}"!
     Use "{1} set" to see settable options
   option_set: Setting <{0}> to <{1}>

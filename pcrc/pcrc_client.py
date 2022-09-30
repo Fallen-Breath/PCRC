@@ -57,7 +57,7 @@ class PcrcClient:
 
 	def set_config(self, option, value, forced=False):
 		if not forced and option not in SettableOptions:
-			self.chat(self.tr('chat.illegal_toption_name', option, self.config.get('command_prefix')))
+			self.chat(self.tr('chat.illegal_option_name', option, self.config.get('command_prefix')))
 			return
 		self.chat(self.tr('chat.option_set', option, value))
 		self.config.set_value(option, value)
