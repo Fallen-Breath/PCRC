@@ -81,7 +81,8 @@ def reload_config(source: Optional[CommandSource]):
 	global config
 	config = psi.load_config_simple('mcdr_config.json', target_class=McdrConfig)
 	if source is not None:
-		source.reply('Config reloaded')
+		source.reply('PCRC plugin config reloaded')
+		source.reply('If you want to reload the config of PCRC, you need to reload the plugin via `!!MCDR plugin reload` command')
 
 
 @new_thread('PCRC Connect')
