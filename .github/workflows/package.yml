@@ -69,5 +69,5 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          distrubutions\PCRC.pyz
-          distrubutions\PCRC.exe
+          distrubutions/PCRC.pyz
+          distrubutions/PCRC.exe
