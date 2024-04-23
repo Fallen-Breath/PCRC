@@ -3,13 +3,7 @@ import time
 from queue import Queue, Empty
 from typing import Optional
 
-from mcdreforged.api.decorator import new_thread
-from mcdreforged.command.builder.exception import UnknownArgument, UnknownCommand
-from mcdreforged.command.builder.nodes.arguments import GreedyText
-from mcdreforged.command.builder.nodes.basic import Literal, CommandContext
-from mcdreforged.command.command_source import CommandSource, PlayerCommandSource
-from mcdreforged.plugin.server_interface import PluginServerInterface, ServerInterface
-from mcdreforged.utils.logger import SyncStdoutStreamHandler
+from mcdreforged.api.all import new_thread, PluginServerInterface, ServerInterface, UnknownArgument, UnknownCommand, GreedyText, Literal, CommandContext, CommandSource, PlayerCommandSource, SyncStdoutStreamHandler
 
 import pcrc as pcrc_module
 from pcrc.input import InputManager

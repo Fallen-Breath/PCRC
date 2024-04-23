@@ -1,4 +1,4 @@
-from mcdreforged.utils.serializer import Serializable
+from mcdreforged.api.all import Serializable
 
 
 class McdrConfig(Serializable):
